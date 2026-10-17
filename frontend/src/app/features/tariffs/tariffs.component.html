@@ -62,7 +62,7 @@
       </div>
 
       <div class="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-xl border border-slate-200 self-start md:self-auto">
-        Valores expresados en ARS con IVA incluido
+        Valores expresados en MXN con IVA incluido
       </div>
     </div>
 
@@ -79,20 +79,24 @@
           class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition shadow-xs"
         >
           @for (s of tariffs(); track s.id) {
-            <option [value]="s.id">{{ s.nombre }} — (${{ s.precioBase | number: '1.0-0' }})</option>
+            <option [value]="s.id">{{ s.nombre }} — (${{ s.precioBase | number: '1.0-0' }} MXN)</option>
           }
         </select>
         @if (selectedSimService(); as serv) {
-          <p class="text-xs text-slate-500 italic mt-1 line-clamp-1">
-            {{ serv.descripcion }}
-          </p>
+          <div class="flex items-center gap-3 mt-2 p-2 rounded-xl bg-slate-50/80 border border-slate-200">
+            <img [src]="serv.imagenUrl" [alt]="serv.nombre" class="w-12 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+            <div class="overflow-hidden">
+              <span class="text-xs font-bold text-slate-800 block truncate">{{ serv.nombre }}</span>
+              <p class="text-xs text-slate-500 italic line-clamp-1">{{ serv.descripcion }}</p>
+            </div>
+          </div>
         }
       </div>
 
-      <!-- Selector de Seguro / Obra Social -->
+      <!-- Selector de Seguro / Cobertura Médica -->
       <div class="lg:col-span-4 space-y-1.5">
         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-          2. Cobertura de Obra Social / Prepaga
+          2. Cobertura de Seguro de Gastos Médicos
         </label>
         <select
           [ngModel]="simInsuranceId()"
@@ -121,17 +125,17 @@
           <span class="text-3xl sm:text-4xl font-black text-emerald-700 tracking-tight">
             ${{ calculation().copay | number: '1.0-0' }}
           </span>
-          <span class="text-xs font-bold text-slate-400">ARS</span>
+          <span class="text-xs font-bold text-slate-400">MXN</span>
         </div>
 
         <div class="mt-3 pt-3 border-t border-slate-100 space-y-1 text-xs">
           <div class="flex justify-between text-slate-500">
             <span>Arancel Institucional:</span>
-            <span class="font-semibold text-slate-700">${{ calculation().base | number: '1.0-0' }}</span>
+            <span class="font-semibold text-slate-700">${{ calculation().base | number: '1.0-0' }} MXN</span>
           </div>
           <div class="flex justify-between text-emerald-700 font-medium">
             <span>Descuento cobertura ({{ calculation().percent }}%):</span>
-            <span>-${{ calculation().discount | number: '1.0-0' }}</span>
+            <span>-${{ calculation().discount | number: '1.0-0' }} MXN</span>
           </div>
         </div>
 
@@ -212,63 +216,76 @@
       </button>
     </div>
 
-    <!-- Grid de Tarjetas de Prestaciones -->
+    <!-- Grid de Tarjetas de Prestaciones con Fotografía Clínica Real -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       @for (serv of filteredTariffs(); track serv.id) {
-        <div class="glass-panel p-6 rounded-2xl border border-slate-200/90 hover:border-blue-300 hover:shadow-lg transition-all flex flex-col justify-between group">
+        <div class="glass-panel overflow-hidden rounded-2xl border border-slate-200/90 hover:border-blue-300 hover:shadow-xl transition-all flex flex-col justify-between group">
           <div>
-            <!-- Categoría y Duración -->
-            <div class="flex items-center justify-between mb-3">
+            <!-- Fotografía Clínica del Servicio / Gabinete / Sala -->
+            <div class="relative h-48 w-full overflow-hidden bg-slate-100">
+              <img
+                [src]="serv.imagenUrl"
+                [alt]="serv.nombre"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+              />
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-transparent"></div>
+              
+              <!-- Badges Superpuestos -->
               <span
-                class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
+                class="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider backdrop-blur-md shadow-sm"
                 [ngClass]="{
-                  'bg-blue-100 text-blue-800': serv.categoria === 'consulta',
-                  'bg-rose-100 text-rose-800': serv.categoria === 'internacion',
-                  'bg-purple-100 text-purple-800': serv.categoria === 'estudio',
-                  'bg-emerald-100 text-emerald-800': serv.categoria === 'cirugia'
+                  'bg-blue-600/90 text-white': serv.categoria === 'consulta',
+                  'bg-rose-600/90 text-white': serv.categoria === 'internacion',
+                  'bg-purple-600/90 text-white': serv.categoria === 'estudio',
+                  'bg-emerald-600/90 text-white': serv.categoria === 'cirugia'
                 }"
               >
                 {{ serv.categoriaNombre }}
               </span>
-              <span class="text-xs text-slate-500 font-medium flex items-center gap-1">
-                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+
+              <span class="absolute bottom-2.5 right-3 text-xs text-white font-semibold flex items-center gap-1 drop-shadow-md">
+                <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 {{ serv.tiempoEstimado }}
               </span>
             </div>
 
-            <!-- Título y Precio -->
-            <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
-              {{ serv.nombre }}
-            </h3>
+            <!-- Contenido del Card -->
+            <div class="p-6">
+              <!-- Título y Precio -->
+              <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                {{ serv.nombre }}
+              </h3>
 
-            <div class="mt-2.5 flex items-baseline gap-1.5">
-              <span class="text-2xl sm:text-3xl font-black text-slate-900">
-                ${{ serv.precioBase | number: '1.0-0' }}
-              </span>
-              <span class="text-xs font-semibold text-slate-400">ARS</span>
-              <span class="text-xs text-emerald-600 font-semibold ml-2">● Arancel particular</span>
-            </div>
+              <div class="mt-2.5 flex items-baseline gap-1.5">
+                <span class="text-2xl sm:text-3xl font-black text-slate-900">
+                  ${{ serv.precioBase | number: '1.0-0' }}
+                </span>
+                <span class="text-xs font-semibold text-slate-400">MXN</span>
+                <span class="text-xs text-emerald-600 font-semibold ml-2">● Arancel particular</span>
+              </div>
 
-            <p class="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-              {{ serv.descripcion }}
-            </p>
+              <p class="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                {{ serv.descripcion }}
+              </p>
 
-            <!-- Lista de lo que incluye la prestación -->
-            <div class="mt-4 pt-3 border-t border-slate-100">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Incluye:</span>
-              <ul class="space-y-1.5 text-xs text-slate-600">
-                @for (inc of serv.incluye; track inc) {
-                  <li class="flex items-start gap-2">
-                    <svg class="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                    <span>{{ inc }}</span>
-                  </li>
-                }
-              </ul>
+              <!-- Lista de lo que incluye la prestación -->
+              <div class="mt-4 pt-3 border-t border-slate-100">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Incluye:</span>
+                <ul class="space-y-1.5 text-xs text-slate-600">
+                  @for (inc of serv.incluye; track inc) {
+                    <li class="flex items-start gap-2">
+                      <svg class="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                      <span>{{ inc }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
             </div>
           </div>
 
           <!-- Acciones -->
-          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+          <div class="p-6 pt-0 border-t border-slate-100 flex items-center justify-between gap-3">
             <button
               (click)="selectForSimulation(serv.id)"
               class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
@@ -305,7 +322,7 @@
       </div>
       <h3 class="font-bold text-base text-slate-900">Medios de Pago Aceptados</h3>
       <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-        Disponemos de terminales de cobro para tarjetas de débito, crédito (con planes en cuotas), transferencias bancarias directas y efectivo en ventanilla de caja.
+        Disponemos de terminales de cobro para tarjetas de débito, crédito (con planes en cuotas sin intereses), transferencias bancarias directas y efectivo en ventanilla de caja.
       </p>
     </div>
 
@@ -313,9 +330,9 @@
       <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold mb-3">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
       </div>
-      <h3 class="font-bold text-base text-slate-900">Validación de Obras Sociales</h3>
+      <h3 class="font-bold text-base text-slate-900">Aseguradoras y Gastos Médicos</h3>
       <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-        Contamos con acreditación en línea para OSDE, Swiss Medical, Galeno, PAMI y convenios particulares. Recepción autoriza el diferencial de copago al momento del ingreso.
+        Contamos con acreditación en línea para GNP Seguros, MetLife México, AXA Seguros, Seguros Monterrey New York Life y convenios particulares. Recepción autoriza el diferencial de copago al momento del ingreso.
       </p>
     </div>
 

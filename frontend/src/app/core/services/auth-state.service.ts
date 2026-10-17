@@ -44,7 +44,7 @@ export const BASIC_USER: AppUser = {
   roles: ['basic_user'],
   patientId: 1,
   dni: '28456123',
-  insurance: 'OSDE 310 (Póliza 88992)',
+  insurance: 'GNP Seguros (Póliza 88992)',
 };
 
 @Injectable({

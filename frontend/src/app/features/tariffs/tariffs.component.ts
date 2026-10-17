@@ -23,7 +23,7 @@ export class TariffsComponent implements OnInit {
 
   // Simulador interactivo de copago
   readonly simServiceId = signal<string>('srv-card-02');
-  readonly simInsuranceId = signal<number>(1); // OSDE 310 por defecto
+  readonly simInsuranceId = signal<number>(1); // GNP Seguros por defecto
 
   // Lista filtrada reactiva
   readonly filteredTariffs = computed(() => {

@@ -32,6 +32,7 @@ export interface ClinicalServiceTariff {
   incluye: string[];
   tiempoEstimado: string;
   coberturaAplica: boolean;
+  imagenUrl: string;
 }
 
 // Datos de contingencia clínica sincronizados fielmente con 02_seed_centromedico.sql
@@ -152,11 +153,11 @@ export class ApiService {
     return this.http.get<any[]>(`${this.baseUrl}/patients`, { params }).pipe(
       tap(() => this.isConnected.set(true)),
       catchError(() => of([
-        { idPaciente: 1, dni: '28456123', nombre: 'Juan', apellido: 'Pérez García', email: 'juan.perez@email.com', telefono: '+52 55 1234-5678', sexo: 'M', idObraSocial: 1, obraSocial: 'OSDE 310 (Póliza 88992)', numeroAfiliado: '88992' },
-        { idPaciente: 2, dni: '32198745', nombre: 'Mariana', apellido: 'Gómez', email: 'mgomez@email.com', telefono: '+52 55 2345-6789', sexo: 'F', idObraSocial: 2, obraSocial: 'Swiss Medical' },
-        { idPaciente: 3, dni: '25632147', nombre: 'Roberto', apellido: 'Castro', email: 'rcastro@email.com', telefono: '+52 55 3456-7890', sexo: 'M', idObraSocial: 3, obraSocial: 'Galeno Oro' },
-        { idPaciente: 4, dni: '34852963', nombre: 'Lucía', apellido: 'Fernández', email: 'lfernandez@email.com', telefono: '+52 55 4567-8901', sexo: 'F', idObraSocial: 4, obraSocial: 'PAMI Jubilados' },
-        { idPaciente: 5, dni: '39147258', nombre: 'Ana', apellido: 'Torres', email: 'atorres@email.com', telefono: '+52 55 5678-9012', sexo: 'F', idObraSocial: 5, obraSocial: 'Particular' }
+        { idPaciente: 1, dni: '28456123', nombre: 'Juan', apellido: 'Pérez García', email: 'juan.perez@email.com', telefono: '+52 55 1234-5678', sexo: 'M', idObraSocial: 1, obraSocial: 'GNP Seguros (Póliza 88992)', numeroAfiliado: '88992' },
+        { idPaciente: 2, dni: '32198745', nombre: 'Mariana', apellido: 'Gómez', email: 'mgomez@email.com', telefono: '+52 55 2345-6789', sexo: 'F', idObraSocial: 2, obraSocial: 'MetLife México' },
+        { idPaciente: 3, dni: '25632147', nombre: 'Roberto', apellido: 'Castro', email: 'rcastro@email.com', telefono: '+52 55 3456-7890', sexo: 'M', idObraSocial: 3, obraSocial: 'AXA Seguros' },
+        { idPaciente: 4, dni: '34852963', nombre: 'Lucía', apellido: 'Fernández', email: 'lfernandez@email.com', telefono: '+52 55 4567-8901', sexo: 'F', idObraSocial: 4, obraSocial: 'Seguros Monterrey NYL' },
+        { idPaciente: 5, dni: '39147258', nombre: 'Ana', apellido: 'Torres', email: 'atorres@email.com', telefono: '+52 55 5678-9012', sexo: 'F', idObraSocial: 5, obraSocial: 'Particular / Sin Póliza' }
       ]))
     );
   }
@@ -172,11 +173,11 @@ export class ApiService {
   getInsurances(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/patients/insurances`).pipe(
       catchError(() => of([
-        { idObraSocial: 1, nombre: 'OSDE 310', codigoSeguro: 'OSDE-310', porcentajeCobertura: 80 },
-        { idObraSocial: 2, nombre: 'Swiss Medical', codigoSeguro: 'SM-BLACK', porcentajeCobertura: 75 },
-        { idObraSocial: 3, nombre: 'Galeno Oro', codigoSeguro: 'GAL-ORO', porcentajeCobertura: 65 },
-        { idObraSocial: 4, nombre: 'PAMI Jubilados', codigoSeguro: 'PAMI-NAC', porcentajeCobertura: 100 },
-        { idObraSocial: 5, nombre: 'Particular/Ninguno', codigoSeguro: 'PARTIC', porcentajeCobertura: 0 }
+        { idObraSocial: 1, nombre: 'GNP Seguros', codigoSeguro: 'GNP-MED', porcentajeCobertura: 80 },
+        { idObraSocial: 2, nombre: 'MetLife México', codigoSeguro: 'METLIFE-PLUS', porcentajeCobertura: 75 },
+        { idObraSocial: 3, nombre: 'AXA Seguros', codigoSeguro: 'AXA-SALUD', porcentajeCobertura: 70 },
+        { idObraSocial: 4, nombre: 'Seguros Monterrey NYL', codigoSeguro: 'SMNYL-VIP', porcentajeCobertura: 85 },
+        { idObraSocial: 5, nombre: 'Particular / Sin Póliza', codigoSeguro: 'PARTIC', porcentajeCobertura: 0 }
       ]))
     );
   }
@@ -228,13 +229,13 @@ export class ApiService {
   getSpecialties(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/doctors/specialties`).pipe(
       catchError(() => of([
-        { idEspecialidad: 1, nombre: 'Medicina General', precioConsultaBase: 15000 },
-        { idEspecialidad: 2, nombre: 'Cardiología', precioConsultaBase: 25000 },
-        { idEspecialidad: 3, nombre: 'Traumatología', precioConsultaBase: 22000 },
-        { idEspecialidad: 4, nombre: 'Dermatología', precioConsultaBase: 20000 },
-        { idEspecialidad: 5, nombre: 'Pediatría', precioConsultaBase: 18000 },
-        { idEspecialidad: 6, nombre: 'Neurología', precioConsultaBase: 28000 },
-        { idEspecialidad: 7, nombre: 'Gastroenterología', precioConsultaBase: 23000 }
+        { idEspecialidad: 1, nombre: 'Medicina General', precioConsultaBase: 950 },
+        { idEspecialidad: 2, nombre: 'Cardiología', precioConsultaBase: 1600 },
+        { idEspecialidad: 3, nombre: 'Traumatología', precioConsultaBase: 1400 },
+        { idEspecialidad: 4, nombre: 'Dermatología', precioConsultaBase: 1300 },
+        { idEspecialidad: 5, nombre: 'Pediatría', precioConsultaBase: 1100 },
+        { idEspecialidad: 6, nombre: 'Neurología', precioConsultaBase: 1800 },
+        { idEspecialidad: 7, nombre: 'Gastroenterología', precioConsultaBase: 1500 }
       ]))
     );
   }
@@ -247,11 +248,12 @@ export class ApiService {
         categoriaNombre: 'Consulta Médica',
         nombre: 'Consulta de Medicina General',
         descripcion: 'Atención médica primaria preventiva, control clínico general y diagnóstico integral.',
-        precioBase: 15000,
+        precioBase: 950,
         modalidad: 'Consulta ambulatoria presencial',
         incluye: ['Valoración somatométrica', 'Revisión clínica completa', 'Emisión de recetas y órdenes médicas'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/consultation.jpg',
       },
       {
         id: 'srv-card-02',
@@ -259,11 +261,12 @@ export class ApiService {
         categoriaNombre: 'Consulta Médica',
         nombre: 'Consulta Especializada en Cardiología',
         descripcion: 'Evaluación cardiovascular integral, prevención de riesgo isquémico y ajuste terapéutico.',
-        precioBase: 25000,
+        precioBase: 1600,
         modalidad: 'Consulta ambulatoria con especialista',
         incluye: ['Auscultación y valoración hemodinámica', 'Revisión de estudios previos', 'Plan de seguimiento cardíaco'],
         tiempoEstimado: '30 - 45 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/cardiology.jpg',
       },
       {
         id: 'srv-trauma-03',
@@ -271,11 +274,12 @@ export class ApiService {
         categoriaNombre: 'Consulta Médica',
         nombre: 'Consulta de Traumatología y Ortopedia',
         descripcion: 'Diagnóstico y tratamiento del sistema musculoesquelético, articulaciones y lesiones deportivas.',
-        precioBase: 22000,
+        precioBase: 1400,
         modalidad: 'Consulta ambulatoria con especialista',
         incluye: ['Maniobras ortopédicas de valoración', 'Indicación de inmovilización o kinesiología', 'Revisión de placas'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/consultation.jpg',
       },
       {
         id: 'srv-pedia-04',
@@ -283,11 +287,12 @@ export class ApiService {
         categoriaNombre: 'Consulta Médica',
         nombre: 'Consulta de Pediatría y Control del Niño Sano',
         descripcion: 'Monitoreo del desarrollo psicomotriz, esquema de vacunación y nutrición en niños y adolescentes.',
-        precioBase: 18000,
+        precioBase: 1100,
         modalidad: 'Consulta ambulatoria pediátrica',
         incluye: ['Control pondoestatural (peso y talla)', 'Revisión de cartilla de vacunación', 'Orientación a tutores'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/pediatrics.jpg',
       },
       {
         id: 'srv-derm-05',
@@ -295,11 +300,12 @@ export class ApiService {
         categoriaNombre: 'Consulta Médica',
         nombre: 'Consulta de Dermatología Clínica',
         descripcion: 'Valoración dermatoscópica de lesiones cutáneas, lunares, dermatitis y patologías dérmicas.',
-        precioBase: 20000,
+        precioBase: 1300,
         modalidad: 'Consulta ambulatoria con especialista',
         incluye: ['Dermatoscopía digital', 'Recomendación de tratamiento tópico/sistémico', 'Plan de cuidado dérmico'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/consultation.jpg',
       },
       {
         id: 'srv-neuro-06',
@@ -307,11 +313,12 @@ export class ApiService {
         categoriaNombre: 'Consulta Médica',
         nombre: 'Consulta de Neurología Clínica',
         descripcion: 'Evaluación del sistema nervioso central y periférico, cefaleas, neuropatías y trastornos motores.',
-        precioBase: 28000,
+        precioBase: 1800,
         modalidad: 'Consulta de alta especialidad',
         incluye: ['Examen neurológico completo de pares craneales', 'Evaluación de reflejos y marcha', 'Prescripción especializada'],
         tiempoEstimado: '45 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/consultation.jpg',
       },
       {
         id: 'srv-hab-gen',
@@ -319,11 +326,12 @@ export class ApiService {
         categoriaNombre: 'Hospitalización',
         nombre: 'Cama General en Habitación Compartida',
         descripcion: 'Alojamiento en piso asistencial con supervisión médica y cuidados continuos de enfermería.',
-        precioBase: 45000,
+        precioBase: 3800,
         modalidad: 'Por día de estancia hospitalaria',
         incluye: ['Cama hospitalaria eléctrica articulada', 'Cuidados de enfermería comodín continua', 'Servicio de nutrición clínica', 'Monitoreo de constantes vitales'],
         tiempoEstimado: '24 horas',
         coberturaAplica: true,
+        imagenUrl: '/images/services/hospital_room.jpg',
       },
       {
         id: 'srv-hab-ind',
@@ -331,11 +339,12 @@ export class ApiService {
         categoriaNombre: 'Hospitalización',
         nombre: 'Habitación Individual de Recuperación',
         descripcion: 'Alojamiento individual privado con cama para acompañante, baño privado y máxima tranquilidad.',
-        precioBase: 75000,
+        precioBase: 6500,
         modalidad: 'Por día de estancia hospitalaria',
         incluye: ['Privacidad total y suite individual', 'Atención directa de enfermería', 'Régimen de visitas extendido', 'Monitoreo multiparamétrico'],
         tiempoEstimado: '24 horas',
         coberturaAplica: true,
+        imagenUrl: '/images/services/hospital_room.jpg',
       },
       {
         id: 'srv-hab-uti',
@@ -343,11 +352,12 @@ export class ApiService {
         categoriaNombre: 'Hospitalización',
         nombre: 'Unidad de Terapia Intensiva (UTI)',
         descripcion: 'Cuidado crítico de alta complejidad con soporte vital avanzado, respirador y vigilancia médica permanente.',
-        precioBase: 160000,
+        precioBase: 18500,
         modalidad: 'Por día de terapia intensiva',
         incluye: ['Monitoreo hemodinámico invasivo 24/7', 'Médico intensivista de guardia exclusiva', 'Enfermería intensiva 1 a 1', 'Gases medicinales y soporte vital'],
         tiempoEstimado: '24 horas',
         coberturaAplica: true,
+        imagenUrl: '/images/services/hospital_room.jpg',
       },
       {
         id: 'srv-est-ecg',
@@ -355,11 +365,12 @@ export class ApiService {
         categoriaNombre: 'Estudio Diagnóstico',
         nombre: 'Electrocardiograma (ECG) de 12 Derivaciones',
         descripcion: 'Registro de la actividad eléctrica cardíaca con informe e interpretación cardiológica inmediata.',
-        precioBase: 12500,
+        precioBase: 850,
         modalidad: 'Estudio ambulatorio no invasivo',
         incluye: ['Trazado electrocardiográfico en papel milimetrado', 'Informe firmado por cardiólogo', 'Entrega digital en expediente'],
         tiempoEstimado: '15 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/cardiology.jpg',
       },
       {
         id: 'srv-est-eco',
@@ -367,11 +378,12 @@ export class ApiService {
         categoriaNombre: 'Estudio Diagnóstico',
         nombre: 'Ecografía Doppler Diagnóstica',
         descripcion: 'Ultrasonido diagnóstico en tiempo real para valorar flujo vascular y morfología de órganos.',
-        precioBase: 24000,
+        precioBase: 1950,
         modalidad: 'Gabinete de diagnóstico por imágenes',
         incluye: ['Exploración ecográfica con transductor de alta resolución', 'Registro de video e imágenes', 'Dictamen radiológico especializado'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/cardiology.jpg',
       },
       {
         id: 'srv-est-lab',
@@ -379,11 +391,12 @@ export class ApiService {
         categoriaNombre: 'Estudio Diagnóstico',
         nombre: 'Perfil Bioquímico & Laboratorio Clínico',
         descripcion: 'Análisis de sangre completo: hemograma, glucemia, función renal (creatinina/urea) y perfil lipídico.',
-        precioBase: 14000,
+        precioBase: 1200,
         modalidad: 'Toma de muestra en laboratorio',
         incluye: ['Extracción de muestra con material descartable', 'Procesamiento automatizado', 'Resultados disponibles en 24 hrs en portal'],
         tiempoEstimado: '10 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/laboratory.jpg',
       },
       {
         id: 'srv-cx-menor',
@@ -391,11 +404,12 @@ export class ApiService {
         categoriaNombre: 'Procedimiento Quirúrgico',
         nombre: 'Procedimiento Quirúrgico Menor Ambulatorio',
         descripcion: 'Intervenciones bajo anestesia local en quirófano ambulatorio: exéresis de quistes, biopsias y drenajes.',
-        precioBase: 35000,
+        precioBase: 4800,
         modalidad: 'Quirófano ambulatorio',
         incluye: ['Derechos de sala quirúrgica', 'Anestesia local y campos estériles', 'Material de curación y sutura', 'Informe de patología'],
         tiempoEstimado: '45 - 60 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/surgery.jpg',
       },
       {
         id: 'srv-cx-sutura',
@@ -403,11 +417,12 @@ export class ApiService {
         categoriaNombre: 'Procedimiento Quirúrgico',
         nombre: 'Curación Compleja y Retiro de Puntos',
         descripcion: 'Curación avanzada de heridas quirúrgicas, asepsia profunda y desbridamiento por enfermería especializada.',
-        precioBase: 12000,
+        precioBase: 900,
         modalidad: 'Gabinete de curaciones',
         incluye: ['Material antiséptico e apósitos especiales', 'Manejo del dolor local', 'Instrucciones para el hogar'],
         tiempoEstimado: '20 min',
         coberturaAplica: true,
+        imagenUrl: '/images/services/surgery.jpg',
       },
     ]);
   }
