@@ -1,9 +1,16 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { HipaaSessionModalComponent } from './core/components/hipaa-session-modal.component';
 
 @Component({
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    CommonModule,
+    HipaaSessionModalComponent,
+  ],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
@@ -12,7 +19,7 @@ export class App {
   readonly isDark = signal<boolean>(false);
   readonly isMobileMenuOpen = signal<boolean>(false);
 
-  toggleDarkMode() {
+  toggleDarkMode(): void {
     this.isDark.update((v) => !v);
     if (this.isDark()) {
       document.documentElement.classList.add('dark');
@@ -21,11 +28,11 @@ export class App {
     }
   }
 
-  toggleMobileMenu() {
+  toggleMobileMenu(): void {
     this.isMobileMenuOpen.update((v) => !v);
   }
 
-  closeMobileMenu() {
+  closeMobileMenu(): void {
     this.isMobileMenuOpen.set(false);
   }
 }

@@ -1,3 +1,0 @@
-Puedes construir una aplicacion web consistente, coherente y eficiente a partir del modelo centro medico, con frontend en angular 21 y tailwindcss v4, con backend en nestjs 12 y base de datos postgres 18, ambos con typescript y los mejores features y capabilities para cada uno de ellos, te preparé una carpeta llamada healthtech-platform con la estructura inicial de carpetas
-
-Puedes implementar TDD, DDD, Nginx y todo en español mexicano, auto logout en cumplimiento de hipaa, no hagas malas practicas como hardcodear html dentro de typescript, ya que será una app productiva, haces un git init pls, recomiendas implementar keycloak para auth con admin_user y basic_user?, que más recomiendas implementar para que sea segura y escalable?
