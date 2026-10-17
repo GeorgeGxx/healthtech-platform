@@ -63,6 +63,6 @@ export class LoginComponent implements OnInit {
 
   continueAsGuest(): void {
     this.auth.switchToGuest();
-    this.router.navigate(['/servicios-y-costos']);
+    this.router.navigate(['/']);
   }
 }

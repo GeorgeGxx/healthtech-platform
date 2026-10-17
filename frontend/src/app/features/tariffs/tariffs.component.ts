@@ -90,7 +90,7 @@ export class TariffsComponent implements OnInit {
   selectForSimulation(serviceId: string): void {
     this.simServiceId.set(serviceId);
     // Scroll suave hacia el simulador
-    const el = document.getElementById('simulador-aranceles');
+    const el = document.getElementById('simulador-costos');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
