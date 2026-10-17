@@ -1,11 +1,11 @@
-<div class="space-y-6 animate-fadeIn">
+<div class="space-y-6 animate-fade-in">
   <!-- Encabezado -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
     <div>
-      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
         Censo de Camas y Hospitalización
       </h1>
-      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+      <p class="text-sm text-slate-500 mt-1">
         Control de piso hospitalario, admisiones de urgencia/programadas y egresos médicos
       </p>
     </div>
@@ -24,21 +24,21 @@
       <div
         class="glass-panel p-5 rounded-2xl shadow-sm border transition-all flex flex-col justify-between"
         [ngClass]="{
-          'border-rose-300 dark:border-rose-900/60 bg-rose-50/20 dark:bg-rose-950/10': bed.ocupada,
-          'border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/20 dark:bg-emerald-950/10': !bed.ocupada
+          'border-rose-300 bg-rose-50/20': bed.ocupada,
+          'border-emerald-300 bg-emerald-50/20': !bed.ocupada
         }"
       >
         <div>
           <div class="flex items-start justify-between">
             <div>
               <span class="text-xs font-mono text-slate-400 block uppercase font-bold">Piso {{ bed.piso }}</span>
-              <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
                 {{ bed.numero }}
-                <span class="px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider"
+                <span class="px-2 py-0.5 text-xs font-bold font-bold rounded uppercase tracking-wider"
                   [ngClass]="{
-                    'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300': bed.tipo === 'terapia_intensiva',
-                    'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300': bed.tipo === 'individual',
-                    'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300': bed.tipo === 'general'
+                    'bg-purple-100 text-purple-800': bed.tipo === 'terapia_intensiva',
+                    'bg-blue-100 text-blue-800': bed.tipo === 'individual',
+                    'bg-slate-100 text-slate-700': bed.tipo === 'general'
                   }">
                   {{ bed.tipo }}
                 </span>
@@ -47,8 +47,8 @@
             <span
               class="px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider"
               [ngClass]="{
-                'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300': bed.ocupada,
-                'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300': !bed.ocupada
+                'bg-rose-100 text-rose-800': bed.ocupada,
+                'bg-emerald-100 text-emerald-800': !bed.ocupada
               }"
             >
               {{ bed.ocupada ? 'Ocupada' : 'Disponible' }}
@@ -56,44 +56,44 @@
           </div>
 
           <!-- Detalle del Paciente Internado -->
-          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 text-xs">
+          <div class="mt-4 pt-3 border-t border-slate-100 text-xs">
             @if (bed.ocupada && bed.pacienteActual) {
               <div class="space-y-1.5">
-                <p class="font-bold text-sm text-slate-900 dark:text-white">
+                <p class="font-bold text-sm text-slate-900">
                   {{ bed.pacienteActual.nombreCompleto }}
                 </p>
                 <p class="text-slate-500">
-                  Médico tratante: <strong class="text-slate-700 dark:text-slate-300">{{ bed.pacienteActual.medicoResponsable }}</strong>
+                  Médico tratante: <strong class="text-slate-700">{{ bed.pacienteActual.medicoResponsable }}</strong>
                 </p>
                 <p class="text-slate-500">
-                  Ingreso: <strong class="text-slate-700 dark:text-slate-300">{{ bed.pacienteActual.fechaIngreso | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                  Ingreso: <strong class="text-slate-700">{{ bed.pacienteActual.fechaIngreso | date: 'dd/MM/yyyy HH:mm' }}</strong>
                 </p>
-                <p class="text-slate-600 dark:text-slate-400 p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] line-clamp-2">
+                <p class="text-slate-600 p-2 rounded-lg bg-slate-100 text-xs font-medium line-clamp-2">
                   {{ bed.pacienteActual.diagnosticoIngreso }}
                 </p>
               </div>
             } @else {
               <div class="py-4 text-center text-slate-400">
-                <p class="font-medium text-emerald-600 dark:text-emerald-400">Cama lista para asignación</p>
-                <p class="text-[11px] text-slate-500 mt-1">Costo diario: \${{ bed.costoDia | number: '1.0-0' }} MXN</p>
+                <p class="font-medium text-emerald-600">Cama lista para asignación</p>
+                <p class="text-xs font-medium text-slate-500 mt-1">Costo diario: \${{ bed.costoDia | number: '1.0-0' }} MXN</p>
               </div>
             }
           </div>
         </div>
 
         <!-- Acciones -->
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-end">
+        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end">
           @if (bed.ocupada && bed.pacienteActual) {
             <button
               (click)="openDischargeModal(bed.pacienteActual.idInternacion)"
-              class="px-3 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 rounded-lg border border-rose-200 dark:border-rose-900"
+              class="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200"
             >
               Conceder Alta Médica
             </button>
           } @else {
             <button
               (click)="quickAdmit(bed.idHabitacion)"
-              class="px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 rounded-lg border border-emerald-200 dark:border-emerald-900"
+              class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200"
             >
               Asignar Cama
             </button>
@@ -106,8 +106,8 @@
   <!-- Modal de Egreso / Alta Médica -->
   @if (showDischargeModal()) {
     <div class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-2">Conceder Alta Hospitalaria</h2>
+      <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+        <h2 class="text-xl font-bold text-slate-900 mb-2">Conceder Alta Hospitalaria</h2>
         <p class="text-xs text-slate-500 mb-4">El sistema devengará automáticamente los días de estancia y liquidará el costo total.</p>
 
         <form (submit)="confirmDischarge($event)" class="space-y-4">
@@ -119,12 +119,12 @@
               required
               rows="3"
               placeholder="Detalle la evolución favorable o criterio de egreso según NOM-004..."
-              class="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg px-3 py-2 text-sm"
+              class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm"
             ></textarea>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-2">
-            <button type="button" (click)="closeDischargeModal()" class="px-4 py-2 text-sm text-slate-600 dark:text-slate-400">
+            <button type="button" (click)="closeDischargeModal()" class="px-4 py-2 text-sm text-slate-600">
               Cancelar
             </button>
             <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md">
@@ -139,13 +139,13 @@
   <!-- Modal de Admisión -->
   @if (showAdmitModal()) {
     <div class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
-        <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Nueva Admisión Hospitalaria</h2>
+      <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+        <h2 class="text-xl font-bold text-slate-900 mb-4">Nueva Admisión Hospitalaria</h2>
 
         <form (submit)="confirmAdmit($event)" class="space-y-4">
           <div>
             <label class="block text-xs font-semibold mb-1">Paciente</label>
-            <select [(ngModel)]="admitData.idPaciente" name="idPaciente" required class="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg px-3 py-2 text-sm">
+            <select [(ngModel)]="admitData.idPaciente" name="idPaciente" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
               @for (p of patients(); track p.idPaciente) {
                 <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (CURP/ID: {{ p.dni }})</option>
               }
@@ -154,7 +154,7 @@
 
           <div>
             <label class="block text-xs font-semibold mb-1">Médico Responsable</label>
-            <select [(ngModel)]="admitData.idMedicoResponsable" name="idMedicoResponsable" required class="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg px-3 py-2 text-sm">
+            <select [(ngModel)]="admitData.idMedicoResponsable" name="idMedicoResponsable" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
               @for (d of doctors(); track d.idMedico) {
                 <option [value]="d.idMedico">Dr/a. {{ d.nombre }} {{ d.apellido }}</option>
               }
@@ -163,7 +163,7 @@
 
           <div>
             <label class="block text-xs font-semibold mb-1">Habitación / Cama Asignada</label>
-            <select [(ngModel)]="admitData.idHabitacion" name="idHabitacion" required class="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg px-3 py-2 text-sm">
+            <select [(ngModel)]="admitData.idHabitacion" name="idHabitacion" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
               @for (b of bedCensus(); track b.idHabitacion) {
                 @if (!b.ocupada) {
                   <option [value]="b.idHabitacion">{{ b.numero }} ({{ b.tipo }}) - Piso {{ b.piso }}</option>
@@ -174,11 +174,11 @@
 
           <div>
             <label class="block text-xs font-semibold mb-1">Diagnóstico de Ingreso</label>
-            <textarea [(ngModel)]="admitData.diagnosticoIngreso" name="diagnostico" required rows="2" placeholder="Motivo clínico de la hospitalización..." class="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg px-3 py-2 text-sm"></textarea>
+            <textarea [(ngModel)]="admitData.diagnosticoIngreso" name="diagnostico" required rows="2" placeholder="Motivo clínico de la hospitalización..." class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm"></textarea>
           </div>
 
           <div class="flex items-center justify-end gap-3 pt-2">
-            <button type="button" (click)="closeAdmitModal()" class="px-4 py-2 text-sm text-slate-600 dark:text-slate-400">
+            <button type="button" (click)="closeAdmitModal()" class="px-4 py-2 text-sm text-slate-600">
               Cancelar
             </button>
             <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-md">

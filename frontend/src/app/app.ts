@@ -20,7 +20,6 @@ export class App {
   readonly auth = inject(AuthStateService);
   private router = inject(Router);
 
-  readonly isDark = signal<boolean>(false);
   readonly isMobileMenuOpen = signal<boolean>(false);
 
   switchUser(role: 'admin_user' | 'basic_user'): void {
@@ -30,15 +29,6 @@ export class App {
     } else {
       this.auth.switchToBasicUser();
       this.router.navigate(['/appointments']);
-    }
-  }
-
-  toggleDarkMode(): void {
-    this.isDark.update((v) => !v);
-    if (this.isDark()) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
     }
   }
 
