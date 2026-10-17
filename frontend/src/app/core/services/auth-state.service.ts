@@ -92,7 +92,7 @@ export class AuthStateService {
 
   logout(): void {
     this.setUser(GUEST_USER);
-    this.router.navigate(['/servicios-y-costos']);
+    this.router.navigate(['/']);
   }
 
   switchToAdmin(): void {
@@ -107,7 +107,7 @@ export class AuthStateService {
 
   switchToGuest(): void {
     this.setUser(GUEST_USER);
-    this.router.navigate(['/servicios-y-costos']);
+    this.router.navigate(['/']);
   }
 
   private setUser(user: AppUser): void {

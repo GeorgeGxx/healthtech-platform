@@ -138,9 +138,8 @@
           </a>
         } @else if (auth.isBasicUser()) {
           <!-- Vistas Exclusivas para el Paciente (Juan Pérez García) -->
-          <div class="px-3 py-2.5 text-xs font-bold text-sky-800 bg-sky-50 rounded-xl mb-3 border border-sky-200/70 flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
-            <span>Mi Portal de Paciente</span>
+          <div class="px-3 py-2 text-xs font-bold text-sky-800 bg-sky-50 rounded-xl mb-3 border border-sky-200/70">
+            Mi Portal de Paciente
           </div>
 
           <a
@@ -192,15 +191,16 @@
           </a>
 
           <a
-            routerLink="/servicios-y-costos"
+            routerLink="/"
             routerLinkActive="bg-sky-50 text-sky-700 font-bold border border-sky-200/70 shadow-xs"
+            [routerLinkActiveOptions]="{ exact: true }"
             (click)="closeMobileMenu()"
             class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100/90 transition-all"
           >
             <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
             </div>
-            <span>Aranceles & Servicios</span>
+            <span>Servicios & Aranceles</span>
           </a>
 
           <a
@@ -216,21 +216,17 @@
           </a>
         } @else {
           <!-- Vistas para el Visitante / Guest User (No Autenticado) -->
-          <div class="px-3 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 rounded-xl mb-3 border border-slate-200 flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-            <span>Portal de Consulta Pública</span>
-          </div>
-
           <a
-            routerLink="/servicios-y-costos"
+            routerLink="/"
             routerLinkActive="bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/70 shadow-xs"
+            [routerLinkActiveOptions]="{ exact: true }"
             (click)="closeMobileMenu()"
             class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-700 hover:bg-slate-100/90 transition-all"
           >
             <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
             </div>
-            <span>Aranceles & Servicios</span>
+            <span>Servicios & Aranceles</span>
           </a>
 
           <a
@@ -306,28 +302,25 @@
           <button
             (click)="switchUser('admin_user')"
             [class]="auth.isAdmin() ? 'bg-emerald-600 text-white font-extrabold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
-            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs flex items-center gap-1.5 cursor-pointer"
+            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
             title="Ingresar como personal de Recepción y Coordinación Médica"
           >
-            <span class="w-1.5 h-1.5 rounded-full" [class]="auth.isAdmin() ? 'bg-white' : 'bg-emerald-500'"></span>
             Recepción
           </button>
           <button
             (click)="switchUser('basic_user')"
             [class]="auth.isBasicUser() ? 'bg-sky-600 text-white font-extrabold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
-            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs flex items-center gap-1.5 cursor-pointer"
+            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
             title="Ingresar como el paciente Juan Pérez García"
           >
-            <span class="w-1.5 h-1.5 rounded-full" [class]="auth.isBasicUser() ? 'bg-white' : 'bg-sky-500'"></span>
             Paciente
           </button>
           <button
             (click)="switchUser('guest')"
             [class]="auth.isGuest() ? 'bg-slate-700 text-white font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-800 font-medium'"
-            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs flex items-center gap-1.5 cursor-pointer"
+            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
             title="Ver como visitante no autenticado (costos y servicios)"
           >
-            <span class="w-1.5 h-1.5 rounded-full" [class]="auth.isGuest() ? 'bg-white' : 'bg-slate-400'"></span>
             Invitado
           </button>
         </div>

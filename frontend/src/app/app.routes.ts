@@ -6,18 +6,19 @@ export const routes: Routes = [
     path: '',
     pathMatch: 'full',
     canActivate: [rootRedirectGuard],
-    children: [],
-  },
-  {
-    path: 'servicios-y-costos',
     loadComponent: () =>
       import('./features/tariffs/tariffs.component').then(
         (m) => m.TariffsComponent,
       ),
   },
   {
+    path: 'servicios-y-costos',
+    redirectTo: '',
+    pathMatch: 'full',
+  },
+  {
     path: 'tariffs',
-    redirectTo: 'servicios-y-costos',
+    redirectTo: '',
     pathMatch: 'full',
   },
   {
@@ -86,6 +87,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'servicios-y-costos',
+    redirectTo: '',
   },
 ];

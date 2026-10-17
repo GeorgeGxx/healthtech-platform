@@ -3,9 +3,9 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthStateService } from '../services/auth-state.service';
 
 /**
- * Redirige la raíz ('') según el estado de autenticación:
+ * Controla el acceso a la raíz ('') que es el Home público del centro médico:
  * - Usuario autenticado -> /dashboard
- * - Visitante / Guest -> /servicios-y-costos
+ * - Visitante / Guest -> Permite el acceso directo en http://localhost/ (sin redirigir la URL)
  */
 export const rootRedirectGuard: CanActivateFn = () => {
   const auth = inject(AuthStateService);
@@ -14,7 +14,7 @@ export const rootRedirectGuard: CanActivateFn = () => {
   if (auth.isAuthenticated()) {
     return router.createUrlTree(['/dashboard']);
   }
-  return router.createUrlTree(['/servicios-y-costos']);
+  return true;
 };
 
 /**
