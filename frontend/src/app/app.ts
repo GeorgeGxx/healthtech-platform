@@ -22,14 +22,18 @@ export class App {
 
   readonly isMobileMenuOpen = signal<boolean>(false);
 
-  switchUser(role: 'admin_user' | 'basic_user'): void {
+  switchUser(role: 'admin_user' | 'basic_user' | 'guest'): void {
     if (role === 'admin_user') {
       this.auth.switchToAdmin();
-      this.router.navigate(['/dashboard']);
-    } else {
+    } else if (role === 'basic_user') {
       this.auth.switchToBasicUser();
-      this.router.navigate(['/appointments']);
+    } else {
+      this.auth.switchToGuest();
     }
+  }
+
+  logout(): void {
+    this.auth.logout();
   }
 
   toggleMobileMenu(): void {

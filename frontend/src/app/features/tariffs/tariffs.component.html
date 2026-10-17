@@ -1,0 +1,332 @@
+<div class="space-y-10 animate-fade-in pb-12">
+  <!-- Encabezado Principal y Presentación Institucional -->
+  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white p-6 sm:p-10 shadow-xl">
+    <div class="relative z-10 max-w-3xl space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-emerald-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Transparencia de Costos y Aranceles Médicos 2026
+      </div>
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-white">
+        Guía de Servicios y Aranceles del Centro Médico
+      </h1>
+      <p class="text-sm sm:text-base text-slate-200 leading-relaxed max-w-2xl">
+        Conoce el valor de nuestras consultas médicas con especialistas, internaciones hospitalarias y estudios diagnósticos. Calcula de forma inmediata tu copago según tu seguro o cobertura de salud.
+      </p>
+
+      <div class="pt-2 flex flex-wrap items-center gap-3">
+        @if (auth.isGuest()) {
+          <a
+            routerLink="/login"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+            Ingresar a Mi Portal
+          </a>
+        } @else {
+          <a
+            routerLink="/appointments"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-emerald-500/25"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Agendar Consulta
+          </a>
+        }
+        <a
+          href="#simulador-aranceles"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-sm border border-white/20 transition-all backdrop-blur-sm"
+        >
+          <svg class="w-4 h-4 text-sky-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          Simular Copago con Mi Seguro
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- SIMULADOR INTERACTIVO DE ARANCELES Y COBERTURA (COPAGO) -->
+  <!-- ========================================================================= -->
+  <div id="simulador-aranceles" class="glass-panel p-6 sm:p-8 rounded-3xl border border-blue-200/80 shadow-md bg-gradient-to-br from-white via-blue-50/20 to-indigo-50/30">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="p-2 rounded-xl bg-blue-600 text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          </span>
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900">
+            Simulador de Cobertura y Copago en Caja
+          </h2>
+        </div>
+        <p class="text-xs sm:text-sm text-slate-600 mt-1 ml-11">
+          Selecciona un servicio y tu cobertura médica para conocer con precisión el valor bonificado y el saldo neto a pagar.
+        </p>
+      </div>
+
+      <div class="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-xl border border-slate-200 self-start md:self-auto">
+        Valores expresados en ARS con IVA incluido
+      </div>
+    </div>
+
+    <!-- Controles del Simulador -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6 items-center">
+      <!-- Selector de Servicio -->
+      <div class="lg:col-span-4 space-y-1.5">
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+          1. Servicio o Especialidad Médica
+        </label>
+        <select
+          [ngModel]="simServiceId()"
+          (ngModelChange)="simServiceId.set($event)"
+          class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition shadow-xs"
+        >
+          @for (s of tariffs(); track s.id) {
+            <option [value]="s.id">{{ s.nombre }} — (${{ s.precioBase | number: '1.0-0' }})</option>
+          }
+        </select>
+        @if (selectedSimService(); as serv) {
+          <p class="text-xs text-slate-500 italic mt-1 line-clamp-1">
+            {{ serv.descripcion }}
+          </p>
+        }
+      </div>
+
+      <!-- Selector de Seguro / Obra Social -->
+      <div class="lg:col-span-4 space-y-1.5">
+        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+          2. Cobertura de Obra Social / Prepaga
+        </label>
+        <select
+          [ngModel]="simInsuranceId()"
+          (ngModelChange)="simInsuranceId.set(+$event)"
+          class="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition shadow-xs"
+        >
+          @for (ins of insurances(); track ins.idObraSocial) {
+            <option [value]="ins.idObraSocial">
+              {{ ins.nombre }} ({{ ins.porcentajeCobertura }}% de cobertura)
+            </option>
+          }
+        </select>
+        @if (selectedSimInsurance(); as ins) {
+          <p class="text-xs text-slate-500 mt-1">
+            Convenio oficial: <strong class="text-slate-700">{{ ins.porcentajeCobertura }}% bonificado por institución</strong>
+          </p>
+        }
+      </div>
+
+      <!-- Tarjeta de Resultado Calculado -->
+      <div class="lg:col-span-4 p-5 rounded-2xl bg-white border-2 border-emerald-500/30 shadow-md">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          Copago Neto a Pagar en Recepción
+        </span>
+        <div class="flex items-baseline gap-2">
+          <span class="text-3xl sm:text-4xl font-black text-emerald-700 tracking-tight">
+            ${{ calculation().copay | number: '1.0-0' }}
+          </span>
+          <span class="text-xs font-bold text-slate-400">ARS</span>
+        </div>
+
+        <div class="mt-3 pt-3 border-t border-slate-100 space-y-1 text-xs">
+          <div class="flex justify-between text-slate-500">
+            <span>Arancel Institucional:</span>
+            <span class="font-semibold text-slate-700">${{ calculation().base | number: '1.0-0' }}</span>
+          </div>
+          <div class="flex justify-between text-emerald-700 font-medium">
+            <span>Descuento cobertura ({{ calculation().percent }}%):</span>
+            <span>-${{ calculation().discount | number: '1.0-0' }}</span>
+          </div>
+        </div>
+
+        <button
+          (click)="bookService(selectedSimService())"
+          class="mt-4 w-full py-2.5 px-4 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 transition shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <span>Agendar este Servicio</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- CATÁLOGO DETALLADO DE SERVICIOS POR CATEGORÍA -->
+  <!-- ========================================================================= -->
+  <div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl sm:text-2xl font-black text-slate-900">
+          Catálogo Institucional de Prestaciones
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+          Consulta costos detallados, alcance clínico y modalidades de atención ambulatoria e internación.
+        </p>
+      </div>
+
+      <!-- Buscador de Servicios -->
+      <div class="relative min-w-[240px]">
+        <input
+          type="text"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event)"
+          placeholder="Buscar prestación o estudio..."
+          class="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-xs"
+        />
+        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+    </div>
+
+    <!-- Pestañas de Filtro por Categoría -->
+    <div class="flex flex-wrap items-center gap-2 p-1.5 rounded-2xl bg-slate-100/80 border border-slate-200/80">
+      <button
+        (click)="setCategory('todos')"
+        [class]="selectedCategory() === 'todos' ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+        class="px-4 py-2 rounded-xl text-xs sm:text-sm transition cursor-pointer"
+      >
+        Todas las Prestaciones
+      </button>
+      <button
+        (click)="setCategory('consulta')"
+        [class]="selectedCategory() === 'consulta' ? 'bg-white text-blue-700 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+        class="px-4 py-2 rounded-xl text-xs sm:text-sm transition cursor-pointer"
+      >
+        Consultas Médicas
+      </button>
+      <button
+        (click)="setCategory('internacion')"
+        [class]="selectedCategory() === 'internacion' ? 'bg-white text-rose-700 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+        class="px-4 py-2 rounded-xl text-xs sm:text-sm transition cursor-pointer"
+      >
+        Internación y Camas
+      </button>
+      <button
+        (click)="setCategory('estudio')"
+        [class]="selectedCategory() === 'estudio' ? 'bg-white text-purple-700 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+        class="px-4 py-2 rounded-xl text-xs sm:text-sm transition cursor-pointer"
+      >
+        Estudios Diagnósticos
+      </button>
+      <button
+        (click)="setCategory('cirugia')"
+        [class]="selectedCategory() === 'cirugia' ? 'bg-white text-emerald-700 font-bold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+        class="px-4 py-2 rounded-xl text-xs sm:text-sm transition cursor-pointer"
+      >
+        Procedimientos Quirúrgicos
+      </button>
+    </div>
+
+    <!-- Grid de Tarjetas de Prestaciones -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (serv of filteredTariffs(); track serv.id) {
+        <div class="glass-panel p-6 rounded-2xl border border-slate-200/90 hover:border-blue-300 hover:shadow-lg transition-all flex flex-col justify-between group">
+          <div>
+            <!-- Categoría y Duración -->
+            <div class="flex items-center justify-between mb-3">
+              <span
+                class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
+                [ngClass]="{
+                  'bg-blue-100 text-blue-800': serv.categoria === 'consulta',
+                  'bg-rose-100 text-rose-800': serv.categoria === 'internacion',
+                  'bg-purple-100 text-purple-800': serv.categoria === 'estudio',
+                  'bg-emerald-100 text-emerald-800': serv.categoria === 'cirugia'
+                }"
+              >
+                {{ serv.categoriaNombre }}
+              </span>
+              <span class="text-xs text-slate-500 font-medium flex items-center gap-1">
+                <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                {{ serv.tiempoEstimado }}
+              </span>
+            </div>
+
+            <!-- Título y Precio -->
+            <h3 class="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+              {{ serv.nombre }}
+            </h3>
+
+            <div class="mt-2.5 flex items-baseline gap-1.5">
+              <span class="text-2xl sm:text-3xl font-black text-slate-900">
+                ${{ serv.precioBase | number: '1.0-0' }}
+              </span>
+              <span class="text-xs font-semibold text-slate-400">ARS</span>
+              <span class="text-xs text-emerald-600 font-semibold ml-2">● Arancel particular</span>
+            </div>
+
+            <p class="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+              {{ serv.descripcion }}
+            </p>
+
+            <!-- Lista de lo que incluye la prestación -->
+            <div class="mt-4 pt-3 border-t border-slate-100">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Incluye:</span>
+              <ul class="space-y-1.5 text-xs text-slate-600">
+                @for (inc of serv.incluye; track inc) {
+                  <li class="flex items-start gap-2">
+                    <svg class="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                    <span>{{ inc }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
+            <button
+              (click)="selectForSimulation(serv.id)"
+              class="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+            >
+              Simular copago &uarr;
+            </button>
+
+            <button
+              (click)="bookService(serv)"
+              class="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-blue-600 rounded-xl transition cursor-pointer"
+            >
+              Agendar Cita
+            </button>
+          </div>
+        </div>
+      } @empty {
+        <div class="col-span-full py-12 text-center text-slate-400 glass-panel rounded-2xl">
+          <p class="font-medium text-slate-700">No se encontraron prestaciones con los criterios de búsqueda.</p>
+          <button (click)="searchQuery.set(''); selectedCategory.set('todos')" class="text-xs text-blue-600 font-bold mt-2 hover:underline">
+            Restablecer catálogo
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- INFORMACIÓN DE PAGO, CONVENIOS Y DERECHOS DEL PACIENTE -->
+  <!-- ========================================================================= -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="glass-panel p-6 rounded-2xl border border-slate-200">
+      <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+      </div>
+      <h3 class="font-bold text-base text-slate-900">Medios de Pago Aceptados</h3>
+      <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+        Disponemos de terminales de cobro para tarjetas de débito, crédito (con planes en cuotas), transferencias bancarias directas y efectivo en ventanilla de caja.
+      </p>
+    </div>
+
+    <div class="glass-panel p-6 rounded-2xl border border-slate-200">
+      <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <h3 class="font-bold text-base text-slate-900">Validación de Obras Sociales</h3>
+      <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+        Contamos con acreditación en línea para OSDE, Swiss Medical, Galeno, PAMI y convenios particulares. Recepción autoriza el diferencial de copago al momento del ingreso.
+      </p>
+    </div>
+
+    <div class="glass-panel p-6 rounded-2xl border border-slate-200">
+      <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <h3 class="font-bold text-base text-slate-900">Derecho a Presupuesto Previo</h3>
+      <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+        Todo paciente tiene derecho a recibir un presupuesto por escrito antes de cualquier procedimiento ambulatorio o internación programada conforme a la reglamentación sanitaria.
+      </p>
+    </div>
+  </div>
+</div>

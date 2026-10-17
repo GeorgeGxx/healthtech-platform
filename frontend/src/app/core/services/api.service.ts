@@ -21,6 +21,19 @@ export interface DashboardMetrics {
   upcomingAppointments: any[];
 }
 
+export interface ClinicalServiceTariff {
+  id: string;
+  categoria: 'consulta' | 'internacion' | 'estudio' | 'cirugia';
+  categoriaNombre: string;
+  nombre: string;
+  descripcion: string;
+  precioBase: number;
+  modalidad: string;
+  incluye: string[];
+  tiempoEstimado: string;
+  coberturaAplica: boolean;
+}
+
 // Datos de contingencia clínica sincronizados fielmente con 02_seed_centromedico.sql
 const FALLBACK_METRICS: DashboardMetrics = {
   kpis: {
@@ -218,9 +231,185 @@ export class ApiService {
         { idEspecialidad: 1, nombre: 'Medicina General', precioConsultaBase: 15000 },
         { idEspecialidad: 2, nombre: 'Cardiología', precioConsultaBase: 25000 },
         { idEspecialidad: 3, nombre: 'Traumatología', precioConsultaBase: 22000 },
-        { idEspecialidad: 4, nombre: 'Dermatología', precioConsultaBase: 20000 }
+        { idEspecialidad: 4, nombre: 'Dermatología', precioConsultaBase: 20000 },
+        { idEspecialidad: 5, nombre: 'Pediatría', precioConsultaBase: 18000 },
+        { idEspecialidad: 6, nombre: 'Neurología', precioConsultaBase: 28000 },
+        { idEspecialidad: 7, nombre: 'Gastroenterología', precioConsultaBase: 23000 }
       ]))
     );
+  }
+
+  getHospitalTariffs(): Observable<ClinicalServiceTariff[]> {
+    return of([
+      {
+        id: 'srv-cg-01',
+        categoria: 'consulta',
+        categoriaNombre: 'Consulta Médica',
+        nombre: 'Consulta de Medicina General',
+        descripcion: 'Atención médica primaria preventiva, control clínico general y diagnóstico integral.',
+        precioBase: 15000,
+        modalidad: 'Consulta ambulatoria presencial',
+        incluye: ['Valoración somatométrica', 'Revisión clínica completa', 'Emisión de recetas y órdenes médicas'],
+        tiempoEstimado: '30 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-card-02',
+        categoria: 'consulta',
+        categoriaNombre: 'Consulta Médica',
+        nombre: 'Consulta Especializada en Cardiología',
+        descripcion: 'Evaluación cardiovascular integral, prevención de riesgo isquémico y ajuste terapéutico.',
+        precioBase: 25000,
+        modalidad: 'Consulta ambulatoria con especialista',
+        incluye: ['Auscultación y valoración hemodinámica', 'Revisión de estudios previos', 'Plan de seguimiento cardíaco'],
+        tiempoEstimado: '30 - 45 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-trauma-03',
+        categoria: 'consulta',
+        categoriaNombre: 'Consulta Médica',
+        nombre: 'Consulta de Traumatología y Ortopedia',
+        descripcion: 'Diagnóstico y tratamiento del sistema musculoesquelético, articulaciones y lesiones deportivas.',
+        precioBase: 22000,
+        modalidad: 'Consulta ambulatoria con especialista',
+        incluye: ['Maniobras ortopédicas de valoración', 'Indicación de inmovilización o kinesiología', 'Revisión de placas'],
+        tiempoEstimado: '30 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-pedia-04',
+        categoria: 'consulta',
+        categoriaNombre: 'Consulta Médica',
+        nombre: 'Consulta de Pediatría y Control del Niño Sano',
+        descripcion: 'Monitoreo del desarrollo psicomotriz, esquema de vacunación y nutrición en niños y adolescentes.',
+        precioBase: 18000,
+        modalidad: 'Consulta ambulatoria pediátrica',
+        incluye: ['Control pondoestatural (peso y talla)', 'Revisión de cartilla de vacunación', 'Orientación a tutores'],
+        tiempoEstimado: '30 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-derm-05',
+        categoria: 'consulta',
+        categoriaNombre: 'Consulta Médica',
+        nombre: 'Consulta de Dermatología Clínica',
+        descripcion: 'Valoración dermatoscópica de lesiones cutáneas, lunares, dermatitis y patologías dérmicas.',
+        precioBase: 20000,
+        modalidad: 'Consulta ambulatoria con especialista',
+        incluye: ['Dermatoscopía digital', 'Recomendación de tratamiento tópico/sistémico', 'Plan de cuidado dérmico'],
+        tiempoEstimado: '30 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-neuro-06',
+        categoria: 'consulta',
+        categoriaNombre: 'Consulta Médica',
+        nombre: 'Consulta de Neurología Clínica',
+        descripcion: 'Evaluación del sistema nervioso central y periférico, cefaleas, neuropatías y trastornos motores.',
+        precioBase: 28000,
+        modalidad: 'Consulta de alta especialidad',
+        incluye: ['Examen neurológico completo de pares craneales', 'Evaluación de reflejos y marcha', 'Prescripción especializada'],
+        tiempoEstimado: '45 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-hab-gen',
+        categoria: 'internacion',
+        categoriaNombre: 'Hospitalización',
+        nombre: 'Cama General en Habitación Compartida',
+        descripcion: 'Alojamiento en piso asistencial con supervisión médica y cuidados continuos de enfermería.',
+        precioBase: 45000,
+        modalidad: 'Por día de estancia hospitalaria',
+        incluye: ['Cama hospitalaria eléctrica articulada', 'Cuidados de enfermería comodín continua', 'Servicio de nutrición clínica', 'Monitoreo de constantes vitales'],
+        tiempoEstimado: '24 horas',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-hab-ind',
+        categoria: 'internacion',
+        categoriaNombre: 'Hospitalización',
+        nombre: 'Habitación Individual de Recuperación',
+        descripcion: 'Alojamiento individual privado con cama para acompañante, baño privado y máxima tranquilidad.',
+        precioBase: 75000,
+        modalidad: 'Por día de estancia hospitalaria',
+        incluye: ['Privacidad total y suite individual', 'Atención directa de enfermería', 'Régimen de visitas extendido', 'Monitoreo multiparamétrico'],
+        tiempoEstimado: '24 horas',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-hab-uti',
+        categoria: 'internacion',
+        categoriaNombre: 'Hospitalización',
+        nombre: 'Unidad de Terapia Intensiva (UTI)',
+        descripcion: 'Cuidado crítico de alta complejidad con soporte vital avanzado, respirador y vigilancia médica permanente.',
+        precioBase: 160000,
+        modalidad: 'Por día de terapia intensiva',
+        incluye: ['Monitoreo hemodinámico invasivo 24/7', 'Médico intensivista de guardia exclusiva', 'Enfermería intensiva 1 a 1', 'Gases medicinales y soporte vital'],
+        tiempoEstimado: '24 horas',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-est-ecg',
+        categoria: 'estudio',
+        categoriaNombre: 'Estudio Diagnóstico',
+        nombre: 'Electrocardiograma (ECG) de 12 Derivaciones',
+        descripcion: 'Registro de la actividad eléctrica cardíaca con informe e interpretación cardiológica inmediata.',
+        precioBase: 12500,
+        modalidad: 'Estudio ambulatorio no invasivo',
+        incluye: ['Trazado electrocardiográfico en papel milimetrado', 'Informe firmado por cardiólogo', 'Entrega digital en expediente'],
+        tiempoEstimado: '15 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-est-eco',
+        categoria: 'estudio',
+        categoriaNombre: 'Estudio Diagnóstico',
+        nombre: 'Ecografía Doppler Diagnóstica',
+        descripcion: 'Ultrasonido diagnóstico en tiempo real para valorar flujo vascular y morfología de órganos.',
+        precioBase: 24000,
+        modalidad: 'Gabinete de diagnóstico por imágenes',
+        incluye: ['Exploración ecográfica con transductor de alta resolución', 'Registro de video e imágenes', 'Dictamen radiológico especializado'],
+        tiempoEstimado: '30 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-est-lab',
+        categoria: 'estudio',
+        categoriaNombre: 'Estudio Diagnóstico',
+        nombre: 'Perfil Bioquímico & Laboratorio Clínico',
+        descripcion: 'Análisis de sangre completo: hemograma, glucemia, función renal (creatinina/urea) y perfil lipídico.',
+        precioBase: 14000,
+        modalidad: 'Toma de muestra en laboratorio',
+        incluye: ['Extracción de muestra con material descartable', 'Procesamiento automatizado', 'Resultados disponibles en 24 hrs en portal'],
+        tiempoEstimado: '10 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-cx-menor',
+        categoria: 'cirugia',
+        categoriaNombre: 'Procedimiento Quirúrgico',
+        nombre: 'Procedimiento Quirúrgico Menor Ambulatorio',
+        descripcion: 'Intervenciones bajo anestesia local en quirófano ambulatorio: exéresis de quistes, biopsias y drenajes.',
+        precioBase: 35000,
+        modalidad: 'Quirófano ambulatorio',
+        incluye: ['Derechos de sala quirúrgica', 'Anestesia local y campos estériles', 'Material de curación y sutura', 'Informe de patología'],
+        tiempoEstimado: '45 - 60 min',
+        coberturaAplica: true,
+      },
+      {
+        id: 'srv-cx-sutura',
+        categoria: 'cirugia',
+        categoriaNombre: 'Procedimiento Quirúrgico',
+        nombre: 'Curación Compleja y Retiro de Puntos',
+        descripcion: 'Curación avanzada de heridas quirúrgicas, asepsia profunda y desbridamiento por enfermería especializada.',
+        precioBase: 12000,
+        modalidad: 'Gabinete de curaciones',
+        incluye: ['Material antiséptico e apósitos especiales', 'Manejo del dolor local', 'Instrucciones para el hogar'],
+        tiempoEstimado: '20 min',
+        coberturaAplica: true,
+      },
+    ]);
   }
 
   getOffices(): Observable<any[]> {
