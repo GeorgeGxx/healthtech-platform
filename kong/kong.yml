@@ -1,0 +1,59 @@
+_format_version: "3.0"
+
+# ============================================================================
+# Kong Gateway 3.14.0.16 Declarative Configuration (DB-less mode)
+# Centro Médico Nacional - HealthTech Platform
+# ============================================================================
+
+services:
+  # 1. API Backend NestJS 12
+  - name: healthtech-backend
+    url: http://healthtech-backend:3000/api
+    routes:
+      - name: api-healthtech-route
+        paths:
+          - /api
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 180
+          policy: local
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
+  # 2. Servidor de Identidad Keycloak 26.8.1
+  - name: keycloak-auth
+    url: http://keycloak:8080
+    routes:
+      - name: keycloak-realms-route
+        paths:
+          - /realms
+          - /resources
+          - /admin
+        strip_path: false
+
+  # 3. Aplicación Web Frontend Angular 21 (Nginx SPA)
+  - name: healthtech-frontend
+    url: http://healthtech-nginx:80
+    routes:
+      - name: frontend-route
+        paths:
+          - /
+        strip_path: false
+
+# Plugins globales
+plugins:
+  - name: prometheus

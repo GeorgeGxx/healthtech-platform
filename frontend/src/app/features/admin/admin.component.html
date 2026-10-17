@@ -1,0 +1,313 @@
+<div class="space-y-8 animate-fade-in">
+  <!-- Encabezado del Panel de Administración -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200/80 dark:border-slate-800/80 pb-6">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+          Oficial de Cumplimiento & Gestión TI
+        </span>
+        <span class="text-xs text-slate-400 font-mono">v1.2.0 • HIPAA § 164.312</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1.5">
+        Panel de Administración y Gobernanza
+      </h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        Monitoreo de infraestructura de microservicios, auditoría de accesos a PHI y control de usuarios Keycloak.
+      </p>
+    </div>
+
+    <!-- Acciones rápidas de administración -->
+    <div class="flex items-center gap-3">
+      <a
+        href="http://localhost:8080"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition-all shadow-sm shadow-indigo-500/20"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        Consola Keycloak (8080)
+      </a>
+
+      <a
+        href="http://localhost:5601"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-xs transition-all shadow-sm shadow-sky-500/20"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Kibana APM (5601)
+      </a>
+    </div>
+  </div>
+
+  <!-- Estado de la Infraestructura y Servicios -->
+  <div class="space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+        Topología de Microservicios e Infraestructura Activa
+      </h2>
+      <span class="text-xs text-slate-400 font-mono">Gateway: Kong 3.14.0.16 (:8000)</span>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- PostgreSQL 18 -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300">Base de Datos</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">Activo</span>
+        </div>
+        <p class="text-lg font-black text-slate-900 dark:text-white mt-1">PostgreSQL 18</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          Exclusiones GIST tstzrange, esquemas centromedico y keycloak.
+        </p>
+      </div>
+
+      <!-- Redis 8.8.1-alpine -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300">Caché Distribuido</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">Activo</span>
+        </div>
+        <p class="text-lg font-black text-slate-900 dark:text-white mt-1">Redis 8.8.1-alpine</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          Caché de especialidades, consultorios y token sessions.
+        </p>
+      </div>
+
+      <!-- Keycloak 26.8.1 -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300">Servidor IAM</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">Postgres 18</span>
+        </div>
+        <p class="text-lg font-black text-slate-900 dark:text-white mt-1">Keycloak 26.8.1</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          healthtech-realm conectado a base PostgreSQL 18.
+        </p>
+      </div>
+
+      <!-- Kong Gateway 3.14.0.16 -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300">API Gateway</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">DB-less</span>
+        </div>
+        <p class="text-lg font-black text-slate-900 dark:text-white mt-1">Kong 3.14.0.16</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          Ruteo declarativo YAML, CORS, Rate-Limiting (:8000).
+        </p>
+      </div>
+
+      <!-- Elasticsearch 9.5.5 -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300">Observabilidad</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">Single-Node</span>
+        </div>
+        <p class="text-lg font-black text-slate-900 dark:text-white mt-1">Elasticsearch 9.5.5</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          Almacén de logs ECS, trazas OTLP y métricas clínicas.
+        </p>
+      </div>
+
+      <!-- Kibana 9.5.5 -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300">Dashboard APM</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">Activo</span>
+        </div>
+        <p class="text-lg font-black text-slate-900 dark:text-white mt-1">Kibana 9.5.5</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          Visualización y alertas en tiempo real en puerto 5601.
+        </p>
+      </div>
+
+      <!-- Elastic Agent 9.5.5 -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300">Colector OTLP</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">:8200</span>
+        </div>
+        <p class="text-lg font-black text-slate-900 dark:text-white mt-1">Elastic Agent 9.5.5</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          Receptor nativo OpenTelemetry (HTTP 4318 / gRPC 4317).
+        </p>
+      </div>
+
+      <!-- Backend NestJS 12 -->
+      <div class="glass-panel p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800/80">
+        <div class="flex items-center justify-between">
+          <span class="font-extrabold text-xs text-slate-700 dark:text-slate-300">Core Hospitalario</span>
+          <span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">Multistage</span>
+        </div>
+        <p class="text-lg font-black text-slate-900 dark:text-white mt-1">NestJS 12 API</p>
+        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          DDD Bounded Contexts + OpenTelemetry SDK activo.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gestión de los 3 Tipos de Usuarios de Keycloak -->
+  <div class="space-y-4">
+    <div class="flex items-center justify-between">
+      <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+        Modelo de Identidad y Tipos de Usuarios en Keycloak 26.8.1
+      </h2>
+      <span class="text-xs text-slate-400">Realm: healthtech-realm</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <!-- 1. admin_user (App Admin) -->
+      <div class="glass-panel p-5 rounded-2xl border-2 border-emerald-500/40 relative overflow-hidden bg-gradient-to-b from-emerald-500/5 to-transparent">
+        <div class="flex items-center justify-between mb-3">
+          <span class="px-2.5 py-1 rounded-lg bg-emerald-500 text-white font-black text-[10px] tracking-wider uppercase">
+            admin_user
+          </span>
+          <span class="text-xs text-emerald-600 dark:text-emerald-400 font-bold">App Administrator</span>
+        </div>
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Administrador Clínico</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">
+          Acceso total e irrestricto al hospital: censo de camas, facturación, auditoría HIPAA, expediente clínico y panel de gestión.
+        </p>
+        <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-900/60 text-xs font-mono space-y-1">
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Usuario:</span>
+            <span class="font-bold text-emerald-600">admin_user</span>
+          </div>
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Password:</span>
+            <span>Admin123!</span>
+          </div>
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Roles:</span>
+            <span>admin_user, doctor_user</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. basic_user (Patient Portal) -->
+      <div class="glass-panel p-5 rounded-2xl border-2 border-sky-500/40 relative overflow-hidden bg-gradient-to-b from-sky-500/5 to-transparent">
+        <div class="flex items-center justify-between mb-3">
+          <span class="px-2.5 py-1 rounded-lg bg-sky-500 text-white font-black text-[10px] tracking-wider uppercase">
+            basic_user
+          </span>
+          <span class="text-xs text-sky-600 dark:text-sky-400 font-bold">Portal Paciente</span>
+        </div>
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Usuario Básico (Paciente)</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">
+          Acceso limitado por seguridad HIPAA: solo puede consultar sus propios datos, sus citas médicas y su historial clínico.
+        </p>
+        <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-900/60 text-xs font-mono space-y-1">
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Usuario:</span>
+            <span class="font-bold text-sky-600">basic_user</span>
+          </div>
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Password:</span>
+            <span>User123!</span>
+          </div>
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Roles:</span>
+            <span>basic_user</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. admin (Keycloak Master Admin) -->
+      <div class="glass-panel p-5 rounded-2xl border-2 border-purple-500/40 relative overflow-hidden bg-gradient-to-b from-purple-500/5 to-transparent">
+        <div class="flex items-center justify-between mb-3">
+          <span class="px-2.5 py-1 rounded-lg bg-purple-500 text-white font-black text-[10px] tracking-wider uppercase">
+            admin
+          </span>
+          <span class="text-xs text-purple-600 dark:text-purple-400 font-bold">Keycloak Master</span>
+        </div>
+        <h3 class="font-bold text-base text-slate-900 dark:text-white">Administrador Keycloak</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 mb-4">
+          Administración de la plataforma de identidad: gestión de realms, clientes OIDC, flujos de autenticación y llaves criptográficas.
+        </p>
+        <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-900/60 text-xs font-mono space-y-1">
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Usuario:</span>
+            <span class="font-bold text-purple-600">admin</span>
+          </div>
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Password:</span>
+            <span>admin</span>
+          </div>
+          <div class="flex justify-between text-slate-600 dark:text-slate-300">
+            <span>Consola:</span>
+            <span>http://localhost:8080</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bitácora de Auditoría HIPAA y NOM-024 (Audit Trail) -->
+  <div class="glass-panel rounded-2xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden shadow-sm">
+    <div class="p-5 border-b border-slate-200/80 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          Trazabilidad y Bitácora de Auditoría en Tiempo Real (HIPAA § 164.312)
+        </h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          Registro inmutable en PostgreSQL 18 correlacionado con trazas de OpenTelemetry.
+        </p>
+      </div>
+
+      <button
+        (click)="cargarDatosAdmin()"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Actualizar Bitácora
+      </button>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-xs">
+        <thead>
+          <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+            <th class="p-3.5 pl-5">ID</th>
+            <th class="p-3.5">Fecha y Hora</th>
+            <th class="p-3.5">Usuario & Rol</th>
+            <th class="p-3.5">Acción</th>
+            <th class="p-3.5">Entidad Afectada</th>
+            <th class="p-3.5">ID Recurso</th>
+            <th class="p-3.5 pr-5">Dirección IP</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+          @for (log of auditLogs(); track log.idAuditoria) {
+            <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition-colors">
+              <td class="p-3.5 pl-5 font-mono text-slate-400">#{{ log.idAuditoria }}</td>
+              <td class="p-3.5 text-slate-500 font-mono">{{ log.fechaHora | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+              <td class="p-3.5">
+                <span class="font-bold text-slate-800 dark:text-slate-200 block">{{ log.nombreUsuario }}</span>
+                <span class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">{{ log.rol }}</span>
+              </td>
+              <td class="p-3.5">
+                <span class="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[10px]">
+                  {{ log.accion }}
+                </span>
+              </td>
+              <td class="p-3.5 text-slate-600 dark:text-slate-300 font-mono uppercase">{{ log.entidad }}</td>
+              <td class="p-3.5 font-mono text-slate-500">{{ log.idEntidad || 'N/A' }}</td>
+              <td class="p-3.5 pr-5 font-mono text-slate-400">{{ log.ipCliente }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="p-8 text-center text-slate-400">
+                No se registraron accesos a PHI recientemente.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

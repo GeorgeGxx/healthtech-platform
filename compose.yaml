@@ -23,10 +23,10 @@ services:
       retries: 5
 
   # ============================================================================
-  # 2. Caché Distribuido y Sesiones: Redis 7
+  # 2. Caché Distribuido y Sesiones: Redis 8.8.1-alpine
   # ============================================================================
   redis-centromedico:
-    image: redis:7-alpine
+    image: redis:8.8.1-alpine
     container_name: redis-centromedico
     command: redis-server --appendonly yes
     ports:
@@ -96,7 +96,7 @@ services:
     volumes:
       - ./observability/elastic-agent.yml:/etc/elastic-agent/elastic-agent.yml:ro
     ports:
-      - "8200:8200" # Elastic APM Server & OTLP HTTP
+      - "8200:8200" # APM Server & OTLP HTTP
       - "4317:4317" # OTLP gRPC
       - "4318:4318" # OTLP HTTP
     depends_on:
@@ -105,24 +105,60 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 6. IAM y Autenticación RBAC: Keycloak 26.1
+  # 6. IAM y Autenticación RBAC: Keycloak 26.8.1 conectado a PostgreSQL 18
   # ============================================================================
   keycloak:
-    image: quay.io/keycloak/keycloak:26.1
+    image: quay.io/keycloak/keycloak:26.8.1
     container_name: keycloak-centromedico
     command: start-dev --import-realm
     environment:
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres-centromedico:5432/keycloak
+      - KC_DB_USERNAME=postgres
+      - KC_DB_PASSWORD=postgres
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - KC_HTTP_PORT=8080
+      - KC_HEALTH_ENABLED=true
+      - KC_METRICS_ENABLED=true
     ports:
       - "8080:8080"
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    depends_on:
+      postgres-centromedico:
+        condition: service_healthy
     restart: unless-stopped
 
   # ============================================================================
-  # 7. Backend: NestJS 12 + TypeScript (DDD + OpenTelemetry OTLP + ECS Logs)
+  # 7. API Gateway: Kong Gateway 3.14.0.16 (DB-less mode)
+  # ============================================================================
+  kong-gateway:
+    image: kong:3.14.0.16
+    container_name: kong-centromedico
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_PROXY_LISTEN=0.0.0.0:8000, 0.0.0.0:8443 ssl
+    ports:
+      - "8000:8000" # Proxy HTTP principal
+      - "8443:8443" # Proxy HTTPS
+      - "8001:8001" # Admin API
+    volumes:
+      - ./kong/kong.yml:/etc/kong/kong.yml:ro
+    depends_on:
+      - healthtech-backend
+      - healthtech-nginx
+      - keycloak
+    restart: unless-stopped
+
+  # ============================================================================
+  # 8. Backend: NestJS 12 (Multi-stage + OpenTelemetry + Keycloak RBAC)
   # ============================================================================
   healthtech-backend:
     build:
@@ -153,7 +189,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 8. Reverse Proxy y Servidor Web: Nginx + Angular 21 + TailwindCSS v4
+  # 9. Servidor Web & Reverse Proxy: Nginx + Angular 21 (Multi-stage)
   # ============================================================================
   healthtech-nginx:
     build:

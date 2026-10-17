@@ -35,6 +35,7 @@ import { MedicalRecordsModule } from './modules/medical-records/medical-records.
 import { HospitalizationsModule } from './modules/hospitalizations/hospitalizations.module.js';
 import { BillingModule } from './modules/billing/billing.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
     RedisModule,
     AuthModule,
     AuditModule,
+    AdminModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -82,6 +84,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
     HospitalizationsModule,
     BillingModule,
     DashboardModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

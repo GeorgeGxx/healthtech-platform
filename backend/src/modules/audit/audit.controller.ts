@@ -1,9 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { AuditService } from './audit.service.js';
+import { Roles } from '../../auth/roles.decorator.js';
 
 @ApiTags('Auditoría y Trazabilidad HIPAA (Audit Trail)')
+@ApiBearerAuth('KeycloakAuth')
 @Controller('audit')
+@Roles('admin_user')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 

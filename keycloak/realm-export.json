@@ -1,7 +1,7 @@
 {
   "realm": "healthtech-realm",
   "enabled": true,
-  "displayName": "Centro Médico HealthTech Realm",
+  "displayName": "Centro Médico Nacional HealthTech",
   "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
@@ -12,7 +12,11 @@
     "realm": [
       {
         "name": "admin_user",
-        "description": "Administrador General del Hospital y Oficial de Cumplimiento HIPAA"
+        "description": "Administrador General del Hospital con acceso total y panel de gestión"
+      },
+      {
+        "name": "basic_user",
+        "description": "Usuario paciente con acceso exclusivo a sus datos, citas y expediente clínico"
       },
       {
         "name": "doctor_user",
@@ -25,21 +29,13 @@
       {
         "name": "receptionist_user",
         "description": "Recepcionista y Coordinador de Citas Médicas y Cobranza"
-      },
-      {
-        "name": "patient_user",
-        "description": "Paciente con acceso de solo lectura a su propio historial médico"
-      },
-      {
-        "name": "basic_user",
-        "description": "Usuario básico autenticado"
       }
     ]
   },
   "clients": [
     {
       "clientId": "healthtech-platform",
-      "name": "HealthTech Angular SPA & NestJS Backend",
+      "name": "HealthTech Angular SPA",
       "enabled": true,
       "publicClient": true,
       "directAccessGrantsEnabled": true,
@@ -47,18 +43,31 @@
       "redirectUris": [
         "http://localhost/*",
         "http://localhost:4200/*",
-        "http://localhost:3000/*"
+        "http://localhost:8000/*"
       ],
       "webOrigins": ["*"]
+    },
+    {
+      "clientId": "healthtech-backend",
+      "name": "HealthTech NestJS Backend",
+      "enabled": true,
+      "publicClient": false,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "secret": "healthtech-backend-secret-2026",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:8000/*"
+      ]
     }
   ],
   "users": [
     {
-      "username": "admin",
+      "username": "admin_user",
       "enabled": true,
-      "email": "admin@centromedico.mx",
+      "email": "admin_user@centromedico.mx",
       "firstName": "Administrador",
-      "lastName": "Hospitalario",
+      "lastName": "General",
       "credentials": [
         {
           "type": "password",
@@ -69,34 +78,19 @@
       "realmRoles": ["admin_user", "doctor_user"]
     },
     {
-      "username": "dr.gonzalez",
+      "username": "basic_user",
       "enabled": true,
-      "email": "fernando.gonzalez@centromedico.mx",
-      "firstName": "Fernando",
-      "lastName": "González Valdés",
+      "email": "basic_user@centromedico.mx",
+      "firstName": "Juan",
+      "lastName": "Pérez García",
       "credentials": [
         {
           "type": "password",
-          "value": "Doctor123!",
+          "value": "User123!",
           "temporary": false
         }
       ],
-      "realmRoles": ["doctor_user"]
-    },
-    {
-      "username": "recepcion",
-      "enabled": true,
-      "email": "citas@centromedico.mx",
-      "firstName": "Coordinación",
-      "lastName": "de Citas",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "Citas123!",
-          "temporary": false
-        }
-      ],
-      "realmRoles": ["receptionist_user", "basic_user"]
+      "realmRoles": ["basic_user"]
     }
   ]
 }

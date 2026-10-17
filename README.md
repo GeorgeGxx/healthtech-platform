@@ -13,12 +13,13 @@ Plataforma web hospitalaria y ambulatoria de grado productivo para México, desa
 | **Backend** | **NestJS 12** | TypeScript estricto, ECMAScript Modules (`"type": "module"`), OpenAPI / Swagger. |
 | **Base de Datos** | **PostgreSQL 18** | Exclusión GIST (`tstzrange`), campos `JSONB`, Full Text Search (FTS) en español. |
 | **Observabilidad** | **Elastic 9.5.5 & OpenTelemetry** | **Elasticsearch 9.5.5** (single-node), **Kibana 9.5.5**, **Elastic Agent 9.5.5** (APM & OTLP), Metrics, Logs ECS y Traces nativos. |
-| **Identidad & IAM** | **Keycloak 26** | Control de Acceso Basado en Roles (RBAC): `admin_user`, `doctor_user`, `nurse_user`, `receptionist_user`, `patient_user`. |
-| **Caché Distribuido** | **Redis 7** | Almacenamiento en caché de catálogos clínicos (Especialidades, Obras Sociales, Consultorios) con fallback resiliente. |
+| **Identidad & IAM** | **Keycloak 26.8.1 en Postgres 18** | Gestión de identidades conectada a PostgreSQL 18. Tres perfiles: `admin` (Keycloak master), `admin_user` (Gestión hospitalaria total y Panel Admin), `basic_user` (Portal Paciente). |
+| **Caché Distribuido** | **Redis 8.8.1-alpine** | Almacenamiento en caché de alta velocidad para catálogos médicos y sesiones con fallback resiliente en memoria. |
+| **API Gateway** | **Kong Gateway 3.14.0.16** | Gateway empresarial en modo **DB-less declarativo** (`kong.yml`) con Rate Limiting, CORS, Prometheus y ruteo unificado (:8000). |
 | **Normativa Clínica** | **HIPAA & NOM-024** | Auto-logout por inactividad a los 15 minutos, bitácora inmutable de acceso a PHI (`registro_auditoria`). |
-| **Arquitectura** | **DDD** | Bounded Contexts, Value Objects, Domain Services, Capas de Infraestructura y Aplicación. |
-| **Calidad / Pruebas** | **TDD & Vitest** | Pruebas unitarias automáticas para reglas de facturación, cobertura, solapamientos y auditoría (15 tests). |
-| **Proxy Inverso** | **Nginx** | Reverse Proxy para `/api/`, compresión Gzip, cabeceras de seguridad, Rate Limiting y SPA routing. |
+| **Arquitectura** | **DDD & Multistage** | Bounded Contexts, Value Objects, Domain Services, Dockerfiles multi-stage con imágenes seguras de producción. |
+| **Calidad / Pruebas** | **TDD & Vitest** | Pruebas unitarias automáticas para reglas de facturación, cobertura, solapamientos, auditoría y panel admin (18 tests). |
+| **Proxy Inverso** | **Nginx** | Servidor web para SPA Angular 21, compresión Gzip, cabeceras de seguridad y fallback SPA routing (:80). |
 
 ---
 
@@ -95,18 +96,28 @@ La plataforma implementa los 3 pilares de la observabilidad moderna mediante dep
 
 ## ⚡ Despliegue de la Plataforma Completa
 
-### 1. Iniciar con Docker Compose (PostgreSQL 18, Redis 7, Elastic 9.5.5, Kibana, Elastic Agent, Keycloak, NestJS y Nginx)
+### 1. Iniciar con Docker Compose (PostgreSQL 18, Redis 8.8.1, Keycloak 26.8.1, Kong 3.14, Elastic 9.5.5, Kibana, NestJS 12 y Nginx)
 ```powershell
 cd c:\Users\jorge\codegxx\healthtech-platform
 docker compose up -d --build
 ```
 
-### URLs de Acceso Rápido:
-* **Plataforma Web (Angular 21 + Nginx):** [http://localhost](http://localhost)
-* **Backend API (NestJS 12):** [http://localhost/api](http://localhost/api) o [http://localhost:3000/api](http://localhost:3000/api)
-* **Swagger OpenAPI Docs:** [http://localhost/api/docs](http://localhost/api/docs)
-* **Kibana (Dashboards y APM):** [http://localhost:5601](http://localhost:5601)
-* **Elasticsearch Engine (Single-Node):** [http://localhost:9200](http://localhost:9200)
-* **Elastic Agent (APM & OTLP Collector):** [http://localhost:8200](http://localhost:8200)
-* **Keycloak IAM:** [http://localhost:8080](http://localhost:8080) (Usuario: `admin` / Clave: `admin`)
-* **Redis Cache:** `localhost:6379`
+### 2. Aprovisionar Usuarios y Realm en Keycloak (Opcional si se requiere sincronización en caliente)
+```powershell
+.\scripts\bootstrap-keycloak.ps1
+```
+
+### 🌐 URLs y Puertos de la Topología:
+* **API Gateway Kong (DB-less):** [http://localhost:8000](http://localhost:8000) (Proxy unificado) y [http://localhost:8001](http://localhost:8001) (Admin API)
+* **Plataforma Web (Angular 21 + Nginx):** [http://localhost](http://localhost) (Puerto 80)
+* **Backend API (NestJS 12):** [http://localhost:3000/api](http://localhost:3000/api)
+* **Swagger OpenAPI Docs:** [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+* **Keycloak 26.8.1 IAM (en PostgreSQL 18):** [http://localhost:8080](http://localhost:8080)
+  - Master Admin: `admin` / `admin`
+  - App Admin: `admin_user` / `Admin123!` (Acceso total + Panel de Administración)
+  - Portal Paciente: `basic_user` / `User123!` (Mis Citas, Mi Historial y Mis Datos)
+* **Kibana 9.5.5 (Dashboards & Tracing):** [http://localhost:5601](http://localhost:5601)
+* **Elasticsearch Engine 9.5.5 (Single-Node):** [http://localhost:9200](http://localhost:9200)
+* **Elastic Agent 9.5.5 (APM & OTLP Collector):** [http://localhost:8200](http://localhost:8200)
+* **Redis 8.8.1-alpine:** `localhost:6379`
+* **PostgreSQL 18:** `localhost:5432` (`centromedico` y `keycloak`)

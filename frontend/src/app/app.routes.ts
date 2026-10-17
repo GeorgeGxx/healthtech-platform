@@ -54,6 +54,11 @@ export const routes: Routes = [
       import('./features/staff/staff.component').then((m) => m.StaffComponent),
   },
   {
+    path: 'admin',
+    loadComponent: () =>
+      import('./features/admin/admin.component').then((m) => m.AdminComponent),
+  },
+  {
     path: '**',
     redirectTo: 'dashboard',
   },

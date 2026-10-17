@@ -1,7 +1,8 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, signal, inject } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HipaaSessionModalComponent } from './core/components/hipaa-session-modal.component';
+import { AuthStateService } from './core/services/auth-state.service';
 
 @Component({
   imports: [
@@ -16,8 +17,21 @@ import { HipaaSessionModalComponent } from './core/components/hipaa-session-moda
   templateUrl: './app.html',
 })
 export class App {
+  readonly auth = inject(AuthStateService);
+  private router = inject(Router);
+
   readonly isDark = signal<boolean>(false);
   readonly isMobileMenuOpen = signal<boolean>(false);
+
+  switchUser(role: 'admin_user' | 'basic_user'): void {
+    if (role === 'admin_user') {
+      this.auth.switchToAdmin();
+      this.router.navigate(['/dashboard']);
+    } else {
+      this.auth.switchToBasicUser();
+      this.router.navigate(['/appointments']);
+    }
+  }
 
   toggleDarkMode(): void {
     this.isDark.update((v) => !v);
