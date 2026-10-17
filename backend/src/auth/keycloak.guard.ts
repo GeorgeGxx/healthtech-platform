@@ -39,14 +39,19 @@ export class KeycloakAuthGuard implements CanActivate {
       }
     }
 
-    // 2. Simulación para desarrollo local e integración ágil si no hay token Keycloak aún
+    const devAuthEnabled = process.env.DEV_AUTH_ENABLED === 'true';
+    if (!devAuthEnabled) {
+      throw new UnauthorizedException('Bearer token de Keycloak requerido');
+    }
+
+    // Desarrollo local únicamente. Desactívelo en entornos compartidos o productivos.
     const devRolesHeader = request.headers['x-user-roles'];
     const devUserHeader = request.headers['x-user-id'];
     const devNameHeader = request.headers['x-user-name'];
 
     const roles = devRolesHeader
       ? String(devRolesHeader).split(',').map((r) => r.trim())
-      : ['admin_user', 'doctor_user', 'basic_user']; // default permissive roles for seamless testing
+      : ['basic_user'];
 
     request.user = {
       id: (devUserHeader as string) || 'dr-medico-01',

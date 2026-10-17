@@ -1,54 +1,76 @@
 <#
 .SYNOPSIS
-    Script PowerShell nativo para inicializar el Realm, Clientes, Roles y Usuarios en Keycloak 26.8.1.
+    Script PowerShell nativo optimizado para inicializar el Realm, Clientes, Roles y Usuarios en Keycloak 26.8.1.
 .DESCRIPTION
     Interactúa directamente con la REST API de Keycloak (puerto 8080) para aprovisionar:
     - Realm: healthtech-realm
-    - Clientes: healthtech-platform (público) y healthtech-backend (confidencial)
+    - Clientes: healthtech-platform (público) y backend (confidencial)
     - Roles: admin_user, basic_user, doctor_user, nurse_user, receptionist_user
     - Usuarios:
       1. admin (administrador de Keycloak)
       2. admin_user (administrador general de la aplicación con acceso total y panel de gestión)
       3. basic_user (usuario paciente con acceso exclusivo a sus citas, historial y datos)
 .EXAMPLE
-    .\scripts\bootstrap-keycloak.ps1
+    pwsh -File .\scripts\bootstrap-keycloak.ps1
+    pwsh -File .\scripts\bootstrap-keycloak.ps1 -AdminPassword "dev-only-keycloak-password"
 #>
 
 [CmdletBinding()]
 param (
-    [string]$KeycloakUrl = "http://localhost:8080",
-    [string]$AdminUser = "admin",
-    [string]$AdminPassword = "admin",
-    [string]$Realm = "healthtech-realm",
+    [string]$KeycloakUrl = "",
+    [string]$AdminUser = "",
+    [string]$AdminPassword = "",
+    [string]$Realm = "",
     [string]$RealmExportPath = ""
 )
 
 $ErrorActionPreference = "Stop"
 
-# Resolución automática de la ruta de realm-export.json
-if (-not $RealmExportPath) {
-    $candidate = Join-Path $PSScriptRoot "..\keycloak\realm-export.json"
-    if (Test-Path $candidate) {
-        $RealmExportPath = (Resolve-Path $candidate).Path
+# 1. Carga automática de variables desde .env y compose.yaml si existen
+$rootPath = Resolve-Path (Join-Path $PSScriptRoot "..")
+$envFile = Join-Path $rootPath ".env"
+$composeFile = Join-Path $rootPath "compose.yaml"
+
+$envVars = @{}
+if (Test-Path $envFile) {
+    Get-Content $envFile -Encoding UTF8 | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith("#") -and ($line -match "^([^=]+)=(.*)$")) {
+            $envVars[$matches[1].Trim()] = $matches[2].Trim()
+        }
     }
 }
 
-# Carga de variables desde .env si existe
-$envCandidates = @(
-    (Join-Path $PSScriptRoot "..\.env"),
-    (Join-Path (Get-Location) ".env")
-)
-$envPath = $envCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-if ($envPath) {
-    Get-Content $envPath | ForEach-Object {
-        $line = $_.Trim()
-        if ($line -and -not $line.StartsWith("#") -and ($line -match "^([^=]+)=(.*)$")) {
-            $k = $matches[1].Trim()
-            $v = $matches[2].Trim()
-            if ($k -eq "KEYCLOAK_ADMIN" -and $AdminUser -eq "admin") { $AdminUser = $v }
-            if ($k -eq "KEYCLOAK_ADMIN_PASSWORD" -and $AdminPassword -eq "admin") { $AdminPassword = $v }
-            if ($k -eq "KEYCLOAK_PORT" -and $KeycloakUrl -eq "http://localhost:8080") { $KeycloakUrl = "http://localhost:$v" }
-        }
+# Defaults ordenados por precedencia: Parámetro CLI > EnvVar de Sesión > Archivo .env > Fallback compose.yaml
+if (-not $KeycloakUrl) {
+    $KeycloakUrl = if ($env:KEYCLOAK_URL) { $env:KEYCLOAK_URL }
+                   elseif ($envVars["KEYCLOAK_URL"]) { $envVars["KEYCLOAK_URL"] }
+                   else { "http://localhost:8080" }
+}
+
+if (-not $AdminUser) {
+    $AdminUser = if ($env:KEYCLOAK_ADMIN) { $env:KEYCLOAK_ADMIN }
+                 elseif ($envVars["KEYCLOAK_ADMIN"]) { $envVars["KEYCLOAK_ADMIN"] }
+                 else { "admin" }
+}
+
+if (-not $AdminPassword) {
+    $AdminPassword = if ($env:KEYCLOAK_ADMIN_PASSWORD) { $env:KEYCLOAK_ADMIN_PASSWORD }
+                     elseif ($envVars["KEYCLOAK_ADMIN_PASSWORD"]) { $envVars["KEYCLOAK_ADMIN_PASSWORD"] }
+                     else { "dev-only-keycloak-password" }
+}
+
+if (-not $Realm) {
+    $Realm = if ($env:KEYCLOAK_REALM) { $env:KEYCLOAK_REALM }
+             elseif ($envVars["KEYCLOAK_REALM"]) { $envVars["KEYCLOAK_REALM"] }
+             else { "healthtech-realm" }
+}
+
+# Resolución automática de la ruta de realm-export.json
+if (-not $RealmExportPath) {
+    $candidate = Join-Path $rootPath "keycloak\realm-export.json"
+    if (Test-Path $candidate) {
+        $RealmExportPath = (Resolve-Path $candidate).Path
     }
 }
 
@@ -57,15 +79,17 @@ Write-Host "  HEALTHTECH PLATFORM - KEYCLOAK 26.8.1 BOOTSTRAPPER   " -Foreground
 Write-Host "=======================================================" -ForegroundColor Cyan
 Write-Host "  URL:     $KeycloakUrl"
 Write-Host "  Realm:   $Realm"
+Write-Host "  Usuario: $AdminUser"
 Write-Host "  DB:      PostgreSQL 18"
 Write-Host "=======================================================`n"
 
-# 1. Espera de disponibilidad de Keycloak
+# 2. Verificación de Conectividad con Keycloak
 Write-Host "[1/5] Verificando conectividad con Keycloak en $KeycloakUrl..." -ForegroundColor Yellow
-$deadline = (Get-Date).AddSeconds(150)
-$ready = $false
+$maxAttempts = 50
 $elapsed = 0
-while ((Get-Date) -lt $deadline) {
+$ready = $false
+
+for ($i = 1; $i -le $maxAttempts; $i++) {
     try {
         $check = Invoke-WebRequest -Uri "$KeycloakUrl/realms/master" -Method GET -UseBasicParsing -TimeoutSec 3 -ErrorAction SilentlyContinue
         if ($check -and ($check.StatusCode -in 200, 302, 401)) {
@@ -86,27 +110,84 @@ if (-not $ready) {
 }
 Write-Host "[OK] Keycloak está listo y respondiendo." -ForegroundColor Green
 
-# 2. Gestión de Tokens de Administración
+# 3. Adquisición y Autenticación con Token de Administración (Resiliente a Contraseñas)
+Write-Host "`n[2/5] Autenticando con REST API de Keycloak..." -ForegroundColor Yellow
+
 $script:AdminToken = $null
 $script:AdminTokenExpiresAt = [DateTime]::MinValue
+$script:CurrentPasswordUsed = $AdminPassword
+
+# Lista de contraseñas de contingencia para dev/docker
+$candidatePasswords = @($AdminPassword, "dev-only-keycloak-password", "admin") | Select-Object -Unique
+
+function Request-AdminToken {
+    param (
+        [string]$User,
+        [string]$Password
+    )
+    $tokenBody = @{
+        client_id  = "admin-cli"
+        grant_type = "password"
+        username   = $User
+        password   = $Password
+    }
+    return Invoke-RestMethod -Method Post -Uri "$KeycloakUrl/realms/master/protocol/openid-connect/token" -Body $tokenBody -ContentType "application/x-www-form-urlencoded" -TimeoutSec 10
+}
+
+$tokenObtained = $false
+foreach ($pwd in $candidatePasswords) {
+    if (-not $pwd) { continue }
+    try {
+        # Intentar hasta 3 veces por si el subsistema de auth está calentando
+        for ($retry = 1; $retry -le 3; $retry++) {
+            try {
+                $tokenResp = Request-AdminToken -User $AdminUser -Password $pwd
+                if ($tokenResp -and $tokenResp.access_token) {
+                    $script:AdminToken = $tokenResp.access_token
+                    $script:CurrentPasswordUsed = $pwd
+                    $lifespan = if ($tokenResp.expires_in) { [int]$tokenResp.expires_in } else { 60 }
+                    $script:AdminTokenExpiresAt = [DateTime]::UtcNow.AddSeconds([math]::Max(10, $lifespan - 20))
+                    $tokenObtained = $true
+                    break
+                }
+            } catch {
+                $errorMsg = "$_"
+                if ($errorMsg -match "invalid_grant") {
+                    # Credenciales incorrectas para este password, no reintentar este mismo
+                    break
+                }
+                Start-Sleep -Seconds 2
+            }
+        }
+        if ($tokenObtained) { break }
+    } catch {
+        # Probar siguiente candidato
+    }
+}
+
+if (-not $tokenObtained) {
+    Write-Host "`n[X] Error de autenticación: No se pudo obtener el token de administración." -ForegroundColor Red
+    Write-Host "    Usuario intentado: $AdminUser" -ForegroundColor Red
+    Write-Host "    Contraseñas probadas: $($candidatePasswords -join ', ')" -ForegroundColor Red
+    Write-Host "`n[i] Solución recomendada:" -ForegroundColor Yellow
+    Write-Host "    Ejecute el script pasando la contraseña configurada en su compose.yaml:" -ForegroundColor White
+    Write-Host "    pwsh -File .\scripts\bootstrap-keycloak.ps1 -AdminPassword `"SU_PASSWORD`"`n" -ForegroundColor Cyan
+    exit 1
+}
+
+Write-Host "[OK] Token de administración obtenido exitosamente (usando '$script:CurrentPasswordUsed')." -ForegroundColor Green
 
 function Get-AdminHeaders {
     param([switch]$ForceRefresh)
     $now = [DateTime]::UtcNow
     if ($ForceRefresh -or [string]::IsNullOrEmpty($script:AdminToken) -or $now -ge $script:AdminTokenExpiresAt) {
-        $tokenBody = @{
-            client_id = "admin-cli"
-            grant_type = "password"
-            username = $AdminUser
-            password = $AdminPassword
-        }
-        $tokenResp = Invoke-RestMethod -Method Post -Uri "$KeycloakUrl/realms/master/protocol/openid-connect/token" -Body $tokenBody -ContentType "application/x-www-form-urlencoded"
+        $tokenResp = Request-AdminToken -User $AdminUser -Password $script:CurrentPasswordUsed
         $script:AdminToken = $tokenResp.access_token
         $lifespan = if ($tokenResp.expires_in) { [int]$tokenResp.expires_in } else { 60 }
         $script:AdminTokenExpiresAt = $now.AddSeconds([math]::Max(10, $lifespan - 20))
     }
     return @{
-        Authorization = "Bearer $($script:AdminToken)"
+        Authorization  = "Bearer $($script:AdminToken)"
         "Content-Type" = "application/json"
     }
 }
@@ -121,9 +202,9 @@ function Invoke-KeycloakAdmin {
 
     $hdrs = Get-AdminHeaders
     $callParams = @{
-        Method = $Method
-        Uri = $Uri
-        Headers = $hdrs
+        Method      = $Method
+        Uri         = $Uri
+        Headers     = $hdrs
         ErrorAction = "Stop"
     }
     if ($null -ne $Body) {
@@ -156,10 +237,7 @@ function Invoke-KeycloakAdmin {
     }
 }
 
-$headers = Get-AdminHeaders
-Write-Host "[OK] Token de administración obtenido exitosamente." -ForegroundColor Green
-
-# 3. Creación o Actualización del Realm
+# 4. Creación o Actualización del Realm
 Write-Host "`n[3/5] Verificando Realm '$Realm'..." -ForegroundColor Yellow
 $realmExists = $false
 try {
@@ -179,40 +257,53 @@ if (-not $realmExists) {
             Invoke-KeycloakAdmin -Method Post -Uri "$KeycloakUrl/admin/realms" -Body $rawJson
             Write-Host "[OK] Realm '$Realm' importado correctamente." -ForegroundColor Green
         } catch {
-            Write-Host "  [!] Falló la importación: $($_.Exception.Message). Creando realm por defecto..." -ForegroundColor Yellow
+            Write-Host "  [!] Aviso en importación declarativa: $($_.Exception.Message). Creando realm con valores seguros..." -ForegroundColor Yellow
             $realmPayload = @{
-                id = $Realm
-                realm = $Realm
-                displayName = "Centro Médico Nacional HealthTech"
-                enabled = $true
-                verifyEmail = $false
-                resetPasswordAllowed = $true
-                registrationAllowed = false
+                id                    = $Realm
+                realm                 = $Realm
+                displayName           = "Centro Médico Nacional HealthTech"
+                enabled               = $true
+                verifyEmail           = $false
+                resetPasswordAllowed  = $true
+                registrationAllowed   = false
                 loginWithEmailAllowed = $true
             } | ConvertTo-Json
             Invoke-KeycloakAdmin -Method Post -Uri "$KeycloakUrl/admin/realms" -Body $realmPayload
             Write-Host "[OK] Realm '$Realm' creado." -ForegroundColor Green
         }
+    } else {
+        $realmPayload = @{
+            id                    = $Realm
+            realm                 = $Realm
+            displayName           = "Centro Médico Nacional HealthTech"
+            enabled               = $true
+            verifyEmail           = $false
+            resetPasswordAllowed  = $true
+            registrationAllowed   = false
+            loginWithEmailAllowed = $true
+        } | ConvertTo-Json
+        Invoke-KeycloakAdmin -Method Post -Uri "$KeycloakUrl/admin/realms" -Body $realmPayload
+        Write-Host "[OK] Realm '$Realm' creado." -ForegroundColor Green
     }
 } else {
     Write-Host "  Realm '$Realm' ya existe." -ForegroundColor Green
 }
 
-# 4. Configurar Clientes de Acceso (Frontend SPA & Backend API)
+# 5. Configurar Clientes de Acceso (Frontend SPA & Backend API)
 Write-Host "`n[4/5] Configurando Clientes OpenID Connect..." -ForegroundColor Yellow
 
 # Cliente Público para Angular 21 SPA
 $clients = Invoke-KeycloakAdmin -Method Get -Uri "$KeycloakUrl/admin/realms/$Realm/clients?clientId=healthtech-platform"
 if (-not $clients -or $clients.Count -eq 0) {
     $frontendClient = @{
-        clientId = "healthtech-platform"
-        name = "HealthTech Angular SPA"
-        enabled = $true
-        publicClient = $true
-        redirectUris = @("*", "http://localhost:*", "http://localhost:4200/*", "http://localhost:8000/*")
-        webOrigins = @("*", "+")
-        protocol = "openid-connect"
-        standardFlowEnabled = $true
+        clientId                  = "healthtech-platform"
+        name                      = "HealthTech Angular SPA"
+        enabled                   = $true
+        publicClient              = $true
+        redirectUris              = @("*", "http://localhost:*", "http://localhost:4200/*", "http://localhost:8000/*")
+        webOrigins                = @("*", "+")
+        protocol                  = "openid-connect"
+        standardFlowEnabled       = $true
         directAccessGrantsEnabled = $true
     } | ConvertTo-Json
     Invoke-KeycloakAdmin -Method Post -Uri "$KeycloakUrl/admin/realms/$Realm/clients" -Body $frontendClient
@@ -222,29 +313,29 @@ if (-not $clients -or $clients.Count -eq 0) {
 }
 
 # Cliente Confidencial para NestJS Backend
-$clients = Invoke-KeycloakAdmin -Method Get -Uri "$KeycloakUrl/admin/realms/$Realm/clients?clientId=healthtech-backend"
+$clients = Invoke-KeycloakAdmin -Method Get -Uri "$KeycloakUrl/admin/realms/$Realm/clients?clientId=backend"
 $confClientId = $null
 if (-not $clients -or $clients.Count -eq 0) {
     $confClient = @{
-        clientId = "healthtech-backend"
-        name = "HealthTech NestJS Backend"
-        enabled = $true
-        publicClient = $false
-        redirectUris = @("http://localhost:3000/*", "http://localhost:8000/*")
-        protocol = "openid-connect"
-        standardFlowEnabled = $true
+        clientId                  = "backend"
+        name                      = "HealthTech NestJS Backend"
+        enabled                   = $true
+        publicClient              = $false
+        redirectUris              = @("http://localhost:3000/*", "http://localhost:8000/*")
+        protocol                  = "openid-connect"
+        standardFlowEnabled       = $true
         directAccessGrantsEnabled = $true
     } | ConvertTo-Json
     Invoke-KeycloakAdmin -Method Post -Uri "$KeycloakUrl/admin/realms/$Realm/clients" -Body $confClient
-    $clients = Invoke-KeycloakAdmin -Method Get -Uri "$KeycloakUrl/admin/realms/$Realm/clients?clientId=healthtech-backend"
+    $clients = Invoke-KeycloakAdmin -Method Get -Uri "$KeycloakUrl/admin/realms/$Realm/clients?clientId=backend"
     $confClientId = $clients[0].id
-    Write-Host "  [OK] Creado cliente confidencial: healthtech-backend" -ForegroundColor Green
+    Write-Host "  [OK] Creado cliente confidencial: backend" -ForegroundColor Green
 } else {
     $confClientId = $clients[0].id
-    Write-Host "  Cliente confidencial healthtech-backend ya existe." -ForegroundColor DarkGray
+    Write-Host "  Cliente confidencial backend ya existe." -ForegroundColor DarkGray
 }
 
-# 5. Configurar Roles y Usuarios
+# 6. Configurar Roles y Usuarios
 Write-Host "`n[5/5] Configurando Roles RBAC y Usuarios..." -ForegroundColor Yellow
 $rolesRequeridos = @("admin_user", "basic_user", "doctor_user", "nurse_user", "receptionist_user")
 foreach ($role in $rolesRequeridos) {
@@ -270,12 +361,12 @@ function Ensure-KeycloakUser {
     $userId = $null
 
     $userPayload = @{
-        username = $username
-        firstName = $firstName
-        lastName = $lastName
-        email = "$username@centromedico.mx"
-        emailVerified = $true
-        enabled = $true
+        username        = $username
+        firstName       = $firstName
+        lastName        = $lastName
+        email           = "$username@centromedico.mx"
+        emailVerified   = $true
+        enabled         = $true
         requiredActions = @()
     }
 
@@ -319,7 +410,6 @@ function Ensure-KeycloakUser {
     }
 }
 
-# Crear Usuarios solicitados conforme a la especificación:
 # 1. admin_user: Acceso total al hospital + Panel de Administración
 Ensure-KeycloakUser -username "admin_user" -password "Admin123!" -roles @("admin_user", "doctor_user") -firstName "Administrador" -lastName "Clínico"
 
@@ -330,7 +420,7 @@ Write-Host "`n=======================================================" -Foregrou
 Write-Host "  KEYCLOAK 26.8.1 BOOTSTRAP COMPLETADO CON ÉXITO!      " -ForegroundColor Green
 Write-Host "=======================================================" -ForegroundColor Green
 Write-Host "  Usuarios listos para pruebas:"
-Write-Host "  - admin       / admin       (Admin de Keycloak - Ajustes del Realm)"
+Write-Host "  - admin       / $script:CurrentPasswordUsed       (Admin de Keycloak - Ajustes del Realm)"
 Write-Host "  - admin_user  / Admin123!   (App Admin - Acceso total y Panel de Gestión)"
 Write-Host "  - basic_user  / User123!    (App User  - Mis Citas, Mi Historial y Mis Datos)"
 Write-Host "=======================================================`n"

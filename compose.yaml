@@ -2,18 +2,18 @@ services:
   # ============================================================================
   # 1. Base de Datos Relacional: PostgreSQL 18
   # ============================================================================
-  postgres-centromedico:
+  postgres:
     image: postgres:18-alpine
-    container_name: postgres-centromedico
+    container_name: postgres
     environment:
       POSTGRES_DB: centromedico
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       PGDATA: /var/lib/postgresql/data
     ports:
       - "5432:5432"
     volumes:
-      - pg_centromedico_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     healthcheck:
@@ -25,9 +25,9 @@ services:
   # ============================================================================
   # 2. Caché Distribuido y Sesiones: Redis 8.8.1-alpine
   # ============================================================================
-  redis-centromedico:
+  redis:
     image: redis:8.8.1-alpine
-    container_name: redis-centromedico
+    container_name: redis
     command: redis-server --appendonly yes
     ports:
       - "6379:6379"
@@ -45,10 +45,10 @@ services:
   # ============================================================================
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
-    container_name: elasticsearch-centromedico
+    container_name: elasticsearch
     environment:
       - node.name=elasticsearch-node1
-      - cluster.name=centromedico-cluster
+      - cluster.name=cluster
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
       - xpack.security.enabled=false
@@ -71,9 +71,9 @@ services:
   # ============================================================================
   kibana:
     image: docker.elastic.co/kibana/kibana:9.5.5
-    container_name: kibana-centromedico
+    container_name: kibana
     environment:
-      - SERVER_NAME=kibana.centromedico.local
+      - SERVER_NAME=kibana.local
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - ELASTICSEARCH_SSL_VERIFICATIONMODE=none
       - TELEMETRY_ENABLED=false
@@ -89,7 +89,7 @@ services:
   # ============================================================================
   elastic-agent:
     image: docker.elastic.co/elastic-agent/elastic-agent:9.5.5
-    container_name: elastic-agent-centromedico
+    container_name: elastic-agent
     user: root
     environment:
       - FLEET_STANDALONE=true
@@ -109,15 +109,15 @@ services:
   # ============================================================================
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
-    container_name: keycloak-centromedico
+    container_name: keycloak
     command: start-dev --import-realm
     environment:
       - KC_DB=postgres
-      - KC_DB_URL=jdbc:postgresql://postgres-centromedico:5432/keycloak
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak
       - KC_DB_USERNAME=postgres
-      - KC_DB_PASSWORD=postgres
-      - KEYCLOAK_ADMIN=admin
-      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN:-admin}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-dev-only-keycloak-password}
       - KC_HTTP_PORT=8080
       - KC_HEALTH_ENABLED=true
       - KC_METRICS_ENABLED=true
@@ -126,7 +126,7 @@ services:
     volumes:
       - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     depends_on:
-      postgres-centromedico:
+      postgres:
         condition: service_healthy
     restart: unless-stopped
 
@@ -135,7 +135,7 @@ services:
   # ============================================================================
   kong-gateway:
     image: kong/kong-gateway:3.14.0.16
-    container_name: kong-centromedico
+    container_name: kong
     environment:
       - KONG_DATABASE=off
       - KONG_DECLARATIVE_CONFIG=/etc/kong/kong.yml
@@ -152,38 +152,44 @@ services:
     volumes:
       - ./kong/kong.yml:/etc/kong/kong.yml:ro
     depends_on:
-      - healthtech-backend
-      - healthtech-nginx
+      - backend
+      - frontend
       - keycloak
     restart: unless-stopped
 
   # ============================================================================
   # 8. Backend: NestJS 12 (Multi-stage + OpenTelemetry + Keycloak RBAC)
   # ============================================================================
-  healthtech-backend:
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     image: georgegxx/backend:latest
-    container_name: healthtech-backend
+    container_name: backend
     environment:
       PORT: 3000
-      DB_HOST: postgres-centromedico
+      DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       DB_NAME: centromedico
-      REDIS_HOST: redis-centromedico
+      REDIS_HOST: redis
       REDIS_PORT: 6379
       OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
-      OTEL_SERVICE_NAME: healthtech-backend
-      LOG_LEVEL: info
+      OTEL_SERVICE_NAME: backend
+      DEV_AUTH_ENABLED: ${DEV_AUTH_ENABLED:-true}
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     depends_on:
-      postgres-centromedico:
+      postgres:
         condition: service_healthy
-      redis-centromedico:
+      redis:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
@@ -192,19 +198,26 @@ services:
   # ============================================================================
   # 9. Servidor Web & Reverse Proxy: Nginx + Angular 21 (Multi-stage)
   # ============================================================================
-  healthtech-nginx:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     image: georgegxx/frontend:latest
-    container_name: healthtech-nginx
+    container_name: frontend
     ports:
       - "80:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
-      - healthtech-backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  pg_centromedico_data:
+  pgdata:
   redis_data:
   elasticsearch_data:
