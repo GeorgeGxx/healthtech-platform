@@ -203,10 +203,41 @@
               </td>
             </tr>
           }
-        </tbody>
       </table>
     </div>
+
+    <!-- Paginación de Citas Médicas -->
+    @if (totalPages() > 1) {
+      <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+        <div class="text-xs text-slate-500 font-medium">
+          Mostrando página <span class="font-bold text-slate-800">{{ currentPage() }}</span> de <span class="font-bold text-slate-800">{{ totalPages() }}</span> (<span class="font-bold text-slate-800">{{ totalItems() }}</span> citas médicas)
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button
+            (click)="onPageChange(currentPage() - 1)"
+            [disabled]="currentPage() === 1"
+            class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+          >
+            &larr; Anterior
+          </button>
+
+          <span class="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 rounded-xl border border-slate-200">
+            Pág {{ currentPage() }} / {{ totalPages() }}
+          </span>
+
+          <button
+            (click)="onPageChange(currentPage() + 1)"
+            [disabled]="currentPage() === totalPages()"
+            class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
+          >
+            Siguiente &rarr;
+          </button>
+        </div>
+      </div>
+    }
   </div>
+
 
   <!-- Modal de Agendar/Solicitar Cita -->
   @if (showModal()) {

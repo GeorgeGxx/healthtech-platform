@@ -19,7 +19,7 @@ export class PatientsService {
     private readonly redis: RedisService,
   ) {}
 
-  async findAll(search?: string): Promise<any[]> {
+  async findAll(search?: string, page?: number, limit?: number): Promise<any> {
     const qb = this.patientRepo
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.obraSocial', 'os')
@@ -33,9 +33,15 @@ export class PatientsService {
       );
     }
 
+    const total = await qb.getCount();
+
+    if (page && limit) {
+      qb.skip((page - 1) * limit).take(limit);
+    }
+
     const patients = await qb.getMany();
 
-    return patients.map((p) => {
+    const mapped = patients.map((p) => {
       const birth = new Date(p.fechaNacimiento);
       const today = new Date();
       let age = today.getFullYear() - birth.getFullYear();
@@ -50,7 +56,20 @@ export class PatientsService {
         nombreCompleto: `${p.nombre} ${p.apellido}`,
       };
     });
+
+    if (page && limit) {
+      return {
+        data: mapped,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    }
+
+    return mapped;
   }
+
 
   async findOne(id: number): Promise<Paciente> {
     const patient = await this.patientRepo.findOne({

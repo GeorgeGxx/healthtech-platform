@@ -48,27 +48,54 @@ export class AppointmentsComponent implements OnInit {
     this.loadCatalogs();
   }
 
+  readonly currentPage = signal<number>(1);
+  readonly pageSize = signal<number>(6);
+  readonly totalItems = signal<number>(0);
+  readonly totalPages = signal<number>(1);
+
   loadAppointments(): void {
     const docId = this.selectedDoctorId > 0 ? this.selectedDoctorId : undefined;
     const date = this.selectedDate || undefined;
-    this.api.getAppointments(docId, date).subscribe({
-      next: (data) => {
+    const page = this.auth.isBasicUser() ? undefined : this.currentPage();
+    const limit = this.auth.isBasicUser() ? undefined : this.pageSize();
+
+    this.api.getAppointments(docId, date, page, limit).subscribe({
+      next: (res) => {
         if (this.auth.isBasicUser()) {
+          const raw = Array.isArray(res) ? res : (res.data || []);
           const user = this.auth.currentUser();
           const targetId = user.patientId || 1;
           const targetDni = user.dni || '28456123';
-          const filtered = (data || []).filter((item: any) => {
+          const filtered = raw.filter((item: any) => {
             const pId = item.idPaciente || item.paciente?.idPaciente;
             const pDni = item.paciente?.dni;
             return pId === targetId || pDni === targetDni;
           });
           this.appointments.set(filtered);
+          this.totalItems.set(filtered.length);
+          this.totalPages.set(1);
         } else {
-          this.appointments.set(data || []);
+          if (Array.isArray(res)) {
+            this.appointments.set(res);
+            this.totalItems.set(res.length);
+            this.totalPages.set(Math.max(1, Math.ceil(res.length / this.pageSize())));
+          } else {
+            this.appointments.set(res.data || []);
+            this.totalItems.set(res.total || 0);
+            this.totalPages.set(res.totalPages || 1);
+            this.currentPage.set(res.page || 1);
+          }
         }
       },
       error: (err) => console.error('Error al cargar citas médicas:', err),
     });
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+      this.loadAppointments();
+    }
   }
 
   loadCatalogs(): void {
@@ -81,8 +108,10 @@ export class AppointmentsComponent implements OnInit {
   resetFilters(): void {
     this.selectedDoctorId = 0;
     this.selectedDate = '';
+    this.currentPage.set(1);
     this.loadAppointments();
   }
+
 
   changeStatus(id: number, status: string): void {
     this.api.updateAppointmentStatus(id, status).subscribe({

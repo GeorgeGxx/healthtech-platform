@@ -27,16 +27,23 @@ export class AppointmentsController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar turnos médicos filtrados opcionalmente por médico y fecha' })
+  @ApiOperation({ summary: 'Listar turnos médicos filtrados opcionalmente por médico, fecha y con paginación' })
   @ApiQuery({ name: 'doctorId', required: false, type: Number })
   @ApiQuery({ name: 'date', required: false, type: String, description: 'YYYY-MM-DD' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página solicitada (ej. 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Cantidad por página (ej. 10)' })
   async findAll(
     @Query('doctorId') doctorId?: string,
     @Query('date') date?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     const docId = doctorId ? parseInt(doctorId, 10) : undefined;
-    return await this.appointmentsService.findAll(docId, date);
+    const pageNum = page ? parseInt(page, 10) : undefined;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return await this.appointmentsService.findAll(docId, date, pageNum, limitNum);
   }
+
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener detalle de un turno por ID' })

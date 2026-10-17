@@ -27,11 +27,20 @@ export class PatientsController {
   constructor(@Inject(PatientsService) private readonly patientsService: PatientsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos los pacientes o buscar por término' })
+  @ApiOperation({ summary: 'Listar todos los pacientes o buscar por término con soporte de paginación' })
   @ApiQuery({ name: 'search', required: false, description: 'Búsqueda por DNI, nombre, apellido o email' })
-  async findAll(@Query('search') search?: string) {
-    return await this.patientsService.findAll(search);
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Página solicitada (ej. 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Cantidad por página (ej. 10)' })
+  async findAll(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : undefined;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return await this.patientsService.findAll(search, pageNum, limitNum);
   }
+
 
   @Get('insurances')
   @ApiOperation({ summary: 'Listar obras sociales y coberturas' })

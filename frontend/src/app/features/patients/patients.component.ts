@@ -48,16 +48,24 @@ export class PatientsComponent implements OnInit {
     this.loadCatalogs();
   }
 
+  readonly currentPage = signal<number>(1);
+  readonly pageSize = signal<number>(6);
+  readonly totalItems = signal<number>(0);
+  readonly totalPages = signal<number>(1);
+
   loadPatients(): void {
     if (this.auth.isBasicUser()) {
       // Juan Pérez García solo ve su propia información
       this.api.getPatients('Juan').subscribe({
-        next: (data) => {
-          const personal = data.filter(
-            (p) => p.nombre?.toLowerCase().includes('juan') || p.idPaciente === 1
+        next: (res) => {
+          const raw = Array.isArray(res) ? res : (res.data || []);
+          const personal = raw.filter(
+            (p: any) => p.nombre?.toLowerCase().includes('juan') || p.idPaciente === 1,
           );
           if (personal.length > 0) {
             this.patients.set(personal);
+            this.totalItems.set(personal.length);
+            this.totalPages.set(1);
           } else {
             this.patients.set([
               {
@@ -73,6 +81,8 @@ export class PatientsComponent implements OnInit {
                 genero: 'M',
               },
             ]);
+            this.totalItems.set(1);
+            this.totalPages.set(1);
           }
         },
         error: () => {
@@ -90,14 +100,34 @@ export class PatientsComponent implements OnInit {
               genero: 'M',
             },
           ]);
+          this.totalItems.set(1);
+          this.totalPages.set(1);
         },
       });
     } else {
-      // Recepción ve el padrón completo
-      this.api.getPatients(this.searchQuery).subscribe({
-        next: (data) => this.patients.set(data),
+      // Recepción ve el padrón paginado
+      this.api.getPatients(this.searchQuery, this.currentPage(), this.pageSize()).subscribe({
+        next: (res) => {
+          if (Array.isArray(res)) {
+            this.patients.set(res);
+            this.totalItems.set(res.length);
+            this.totalPages.set(Math.max(1, Math.ceil(res.length / this.pageSize())));
+          } else {
+            this.patients.set(res.data || []);
+            this.totalItems.set(res.total || 0);
+            this.totalPages.set(res.totalPages || 1);
+            this.currentPage.set(res.page || 1);
+          }
+        },
         error: (err) => console.error('Error al cargar pacientes:', err),
       });
+    }
+  }
+
+  onPageChange(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+      this.loadPatients();
     }
   }
 
@@ -108,14 +138,17 @@ export class PatientsComponent implements OnInit {
 
   onSearch(): void {
     if (!this.auth.isBasicUser()) {
+      this.currentPage.set(1);
       this.loadPatients();
     }
   }
 
   clearSearch(): void {
     this.searchQuery = '';
+    this.currentPage.set(1);
     this.loadPatients();
   }
+
 
   openModal(): void {
     if (this.auth.isAdmin()) {

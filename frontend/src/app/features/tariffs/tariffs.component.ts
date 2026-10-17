@@ -25,6 +25,9 @@ export class TariffsComponent implements OnInit {
   readonly simServiceId = signal<string>('srv-card-02');
   readonly simInsuranceId = signal<number>(1); // GNP Seguros por defecto
 
+  readonly currentPage = signal<number>(1);
+  readonly pageSize = signal<number>(6);
+
   // Lista filtrada reactiva
   readonly filteredTariffs = computed(() => {
     const list = this.tariffs();
@@ -41,6 +44,43 @@ export class TariffsComponent implements OnInit {
       return matchCat && matchQuery;
     });
   });
+
+  readonly totalPages = computed(() => {
+    return Math.max(1, Math.ceil(this.filteredTariffs().length / this.pageSize()));
+  });
+
+  readonly pagedTariffs = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.filteredTariffs().slice(start, start + this.pageSize());
+  });
+
+  readonly startIndex = computed(() => {
+    return this.filteredTariffs().length === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1;
+  });
+
+  readonly endIndex = computed(() => {
+    return Math.min(this.currentPage() * this.pageSize(), this.filteredTariffs().length);
+  });
+
+
+  setPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.update((p) => p + 1);
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.update((p) => p - 1);
+    }
+  }
+
 
   // Cálculos del simulador de copago
   readonly selectedSimService = computed(() => {
@@ -85,7 +125,9 @@ export class TariffsComponent implements OnInit {
 
   setCategory(cat: string): void {
     this.selectedCategory.set(cat);
+    this.currentPage.set(1);
   }
+
 
   selectForSimulation(serviceId: string): void {
     this.simServiceId.set(serviceId);

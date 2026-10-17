@@ -22,7 +22,12 @@ export class AppointmentsService {
     private readonly metrics: MetricsService,
   ) {}
 
-  async findAll(doctorId?: number, date?: string): Promise<any[]> {
+  async findAll(
+    doctorId?: number,
+    date?: string,
+    page?: number,
+    limit?: number,
+  ): Promise<any> {
     const qb = this.appointmentRepo
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.paciente', 'p')
@@ -39,9 +44,15 @@ export class AppointmentsService {
       qb.andWhere('lower(t.horario_rango)::date = :date', { date });
     }
 
+    const total = await qb.getCount();
+
+    if (page && limit) {
+      qb.skip((page - 1) * limit).take(limit);
+    }
+
     const appointments = await qb.getMany();
 
-    return appointments.map((t) => {
+    const mapped = appointments.map((t) => {
       let inicio: string | null = null;
       let fin: string | null = null;
       if (t.horarioRango) {
@@ -64,7 +75,20 @@ export class AppointmentsService {
         fechaFin: fin,
       };
     });
+
+    if (page && limit) {
+      return {
+        data: mapped,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    }
+
+    return mapped;
   }
+
 
   async findOne(id: number): Promise<Turno> {
     const appointment = await this.appointmentRepo.findOne({

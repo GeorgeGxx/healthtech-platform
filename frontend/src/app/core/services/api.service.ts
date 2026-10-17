@@ -147,10 +147,12 @@ export class ApiService {
   }
 
   // --- Pacientes ---
-  getPatients(search?: string): Observable<any[]> {
+  getPatients(search?: string, page?: number, limit?: number): Observable<any> {
     const params: Record<string, string> = {};
     if (search) params['search'] = search;
-    return this.http.get<any[]>(`${this.baseUrl}/patients`, { params }).pipe(
+    if (page) params['page'] = page.toString();
+    if (limit) params['limit'] = limit.toString();
+    return this.http.get<any>(`${this.baseUrl}/patients`, { params }).pipe(
       tap(() => this.isConnected.set(true)),
       catchError(() => of([
         { idPaciente: 1, dni: '28456123', nombre: 'Juan', apellido: 'Pérez García', email: 'juan.perez@email.com', telefono: '+52 55 1234-5678', sexo: 'M', idObraSocial: 1, obraSocial: 'GNP Seguros (Póliza 88992)', numeroAfiliado: '88992' },
@@ -206,11 +208,13 @@ export class ApiService {
   }
 
   // --- Turnos y Agenda ---
-  getAppointments(doctorId?: number, date?: string): Observable<any[]> {
+  getAppointments(doctorId?: number, date?: string, page?: number, limit?: number): Observable<any> {
     const params: Record<string, string> = {};
     if (doctorId) params['doctorId'] = doctorId.toString();
     if (date) params['date'] = date;
-    return this.http.get<any[]>(`${this.baseUrl}/appointments`, { params }).pipe(
+    if (page) params['page'] = page.toString();
+    if (limit) params['limit'] = limit.toString();
+    return this.http.get<any>(`${this.baseUrl}/appointments`, { params }).pipe(
       catchError(() => of([
         { idTurno: 101, fechaHora: new Date(Date.now() + 3600000).toISOString(), paciente: 'Carlos Mendoza', medico: 'Dr/a. Gómez', especialidad: 'Dermatología', consultorio: 'C-302', estado: 'confirmado', motivoConsulta: 'Control de lunares' },
         { idTurno: 102, fechaHora: new Date(Date.now() + 7200000).toISOString(), paciente: 'Ana Torres', medico: 'Dr/a. Arévalo', especialidad: 'Traumatología', consultorio: 'C-202', estado: 'pendiente', motivoConsulta: 'Evaluación dolor rodilla' },
@@ -218,6 +222,7 @@ export class ApiService {
       ]))
     );
   }
+
 
   createAppointment(data: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/appointments`, data);
