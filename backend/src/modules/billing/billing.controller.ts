@@ -26,13 +26,13 @@ export class BillingController {
   }
 
   @Get('concepts')
-  @ApiOperation({ summary: 'Listar conceptos arancelarios y de cobro' })
+  @ApiOperation({ summary: 'Listar conceptos de cobro y tarifas' })
   async getConcepts() {
     return await this.billingService.getConcepts();
   }
 
   @Get('tariffs')
-  @ApiOperation({ summary: 'Listar catálogo arancelario oficial de servicios clínicos del centro médico' })
+  @ApiOperation({ summary: 'Listar catálogo oficial de servicios y costos clínicos del centro médico' })
   async getTariffs() {
     return await this.billingService.getHospitalTariffs();
   }
