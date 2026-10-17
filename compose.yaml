@@ -14,7 +14,7 @@ services:
       - "5432:5432"
     volumes:
       - pg_centromedico_data:/var/lib/postgresql/data
-      - ../docker-db/sqls-data/centromedico-pg18:/docker-entrypoint-initdb.d:ro
+      - ./database/init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d centromedico"]

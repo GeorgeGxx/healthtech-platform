@@ -48,15 +48,28 @@ healthtech-platform/
 │   │       ├── hospital-stay/              # Censo de Camas, Habitaciones e Internaciones
 │   │       ├── billing-and-claims/         # Facturación, Coaseguros y Liquidaciones
 │   │       ├── audit/                      # Trazabilidad y Bitácora de Acceso PHI (HIPAA)
+│   │       ├── admin/                      # Gestión de Infraestructura, Microservicios y Directorio
 │   │       └── analytics/                  # Tablero de Indicadores en tiempo real
-│   └── test/unit/                          # Pruebas TDD ejecutadas con Vitest (15 tests pasando)
+│   └── test/unit/                          # Pruebas TDD ejecutadas con Vitest (18 tests pasando)
 │
 ├── frontend/                               # Angular 21 (HTML y TS 100% desacoplados)
+│   ├── nginx.conf                          # Archivo ÚNICO Nginx con compresión GZIP y Rate Limiting
 │   └── src/app/
 │       ├── core/
 │       │   ├── services/hipaa-session.ts   # Escucha de inactividad según HIPAA § 164.312
+│       │   ├── services/auth-state.ts      # Selector reactivo de roles (admin_user vs basic_user)
 │       │   └── components/hipaa-modal/     # Modal y pantalla de bloqueo de sesión
 │       └── features/                       # Vistas modulares en TailwindCSS v4
+│
+├── database/
+│   └── init/                               # Inicialización autónoma de PostgreSQL 18
+│       ├── 00_init_keycloak_db.sql         # Creación de base de datos 'keycloak'
+│       ├── 01_schema_centromedico.sql      # DDL Centro Médico + Tabla registro_auditoria
+│       ├── 02_seed_centromedico.sql        # Población inicial de médicos, pacientes y camas
+│       └── 03_centromedico_practice_queries.sql
+│
+├── kong/
+│   └── kong.yml                            # Configuración declarativa DB-less de Kong Gateway 3.14
 │
 ├── observability/
 │   └── elastic-agent.yml                   # Configuración de Elastic Agent 9.5.5 con APM & OTLP
@@ -64,7 +77,8 @@ healthtech-platform/
 ├── keycloak/
 │   └── realm-export.json                   # Definición de Realm, Roles hospitalarios y Clientes
 │
-└── frontend/nginx.conf                     # Nginx Reverse Proxy, Rate Limiting y CSP
+└── scripts/
+    └── bootstrap-keycloak.ps1              # Script de aprovisionamiento de Keycloak 26.8.1
 ```
 
 ---
