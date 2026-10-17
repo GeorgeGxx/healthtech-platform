@@ -7,8 +7,8 @@ _format_version: "3.0"
 
 services:
   # 1. API Backend NestJS 12
-  - name: healthtech-backend
-    url: http://healthtech-backend:3000/api
+  - name: backend
+    url: http://backend:3000/api
     routes:
       - name: api-healthtech-route
         paths:
@@ -46,8 +46,8 @@ services:
         strip_path: false
 
   # 3. Aplicación Web Frontend Angular 21 (Nginx SPA)
-  - name: healthtech-frontend
-    url: http://healthtech-nginx:80
+  - name: frontend
+    url: http://frontend:80
     routes:
       - name: frontend-route
         paths:

@@ -69,14 +69,30 @@ export class ElasticEcsLogger implements LoggerService {
     });
   }
 
+  private formatMessage(message: any): string {
+    if (message instanceof Error) {
+      return message.stack || message.message;
+    }
+    if (typeof message === 'object') {
+      try {
+        return message.message || JSON.stringify(message);
+      } catch {
+        return String(message);
+      }
+    }
+    return String(message);
+  }
+
   log(message: any, context?: string) {
-    this.logger.info(typeof message === 'object' ? JSON.stringify(message) : message, { context });
+    this.logger.info(this.formatMessage(message), { context });
   }
 
   error(message: any, trace?: string, context?: string) {
-    this.logger.error(typeof message === 'object' ? JSON.stringify(message) : message, {
+    const formatted = this.formatMessage(message);
+    const stack = trace || (message instanceof Error ? message.stack : undefined);
+    this.logger.error(formatted, {
       context,
-      stack: trace,
+      stack,
     });
   }
 
