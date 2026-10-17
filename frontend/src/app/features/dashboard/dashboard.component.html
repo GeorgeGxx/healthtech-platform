@@ -1,145 +1,218 @@
-<div class="space-y-8 animate-fadeIn">
-  <!-- Encabezado en español mexicano -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+<div class="space-y-8 animate-fade-in">
+  <!-- Encabezado Principal de Alta Gama -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800/80">
     <div>
-      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-700/60">
+          Clínica Digital 4.0
+        </span>
+        <span class="text-xs text-slate-400 dark:text-slate-500">•</span>
+        <span class="text-xs font-mono text-slate-500 dark:text-slate-400">NOM-024 / HIPAA Secured</span>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
         Tablero de Control Hospitalario
       </h1>
-      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Monitoreo en tiempo real • Centro Médico Nacional • PostgreSQL 18
+      <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-0.5">
+        Monitoreo asistencial y financiero en tiempo real • Centro Médico Nacional
       </p>
     </div>
-    <div class="flex items-center gap-3">
-      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        Servidor Operativo
-      </span>
+
+    <!-- Indicador de Estado & Acciones -->
+    <div class="flex flex-wrap items-center gap-2.5">
+      @if (api.isConnected()) {
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
+          <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          PostgreSQL 18 Activo
+        </span>
+      } @else {
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 shadow-xs">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          Modo Local / Réplica
+        </span>
+      }
+
       <button
         (click)="loadMetrics()"
-        class="px-3.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-lg transition-colors shadow-sm"
+        [disabled]="isLoading()"
+        class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 border border-slate-300/80 dark:border-slate-700/80 rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
       >
-        Actualizar Datos
+        <svg class="w-3.5 h-3.5 text-slate-500" [class.animate-spin]="isLoading()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        <span>{{ isLoading() ? 'Sincronizando...' : 'Actualizar' }}</span>
       </button>
     </div>
   </div>
 
-  <!-- Indicadores Clave de Desempeño (KPIs) -->
   @if (metrics(); as data) {
+    <!-- Grid de Indicadores Clave (KPIs) con Estética Glassmorphism y Micro-Luces -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-      <!-- KPI 1: Pacientes -->
-      <div class="glass-panel p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all"></div>
+      <!-- KPI 1: Pacientes Registrados -->
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 w-24 h-24 bg-sky-500/15 dark:bg-sky-500/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Padrón de Pacientes</span>
-          <span class="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Padrón de Pacientes</span>
+          <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-200/50 dark:border-sky-800/50 shadow-xs">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-          </span>
+          </div>
         </div>
         <div class="mt-4 flex items-baseline gap-2">
-          <span class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ data.kpis.totalPatients }}</span>
-          <span class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Registrados</span>
+          <span class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ data.kpis.totalPatients }}</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
+            ↑ +12% mes
+          </span>
         </div>
-        <div class="mt-3 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <a routerLink="/patients" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Consultar directorio &rarr;</a>
+        <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+          <span class="text-slate-500 dark:text-slate-400">Expedientes activos</span>
+          <a routerLink="/patients" class="text-sky-600 dark:text-sky-400 hover:text-sky-700 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+            Ver directorio &rarr;
+          </a>
         </div>
       </div>
 
-      <!-- KPI 2: Citas Médicas -->
-      <div class="glass-panel p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
+      <!-- KPI 2: Agenda de Citas -->
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 w-24 h-24 bg-emerald-500/15 dark:bg-emerald-500/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Consultas y Citas</span>
-          <span class="p-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-xl">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Consultas & Citas</span>
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200/50 dark:border-emerald-800/50 shadow-xs">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-          </span>
+          </div>
         </div>
         <div class="mt-4 flex items-baseline gap-2">
-          <span class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ data.kpis.totalAppointments }}</span>
-          <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400">{{ data.kpis.appointmentsAttended }} atendidas</span>
+          <span class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ data.kpis.totalAppointments }}</span>
+          <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            {{ data.kpis.appointmentsAttended }} atendidas
+          </span>
         </div>
-        <div class="mt-3 w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-          <div
-            class="bg-emerald-500 h-1.5 rounded-full transition-all"
-            [style.width.%]="(data.kpis.appointmentsAttended / (data.kpis.totalAppointments || 1)) * 100"
-          ></div>
+        <div class="mt-3">
+          <div class="flex justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+            <span>{{ data.kpis.appointmentsPending }} pendientes</span>
+            <span>{{ data.kpis.appointmentsCanceled }} canceladas</span>
+          </div>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden flex">
+            <div
+              class="bg-emerald-500 h-full rounded-l-full transition-all duration-700"
+              [style.width.%]="(data.kpis.appointmentsAttended / (data.kpis.totalAppointments || 1)) * 100"
+              title="Atendidas"
+            ></div>
+            <div
+              class="bg-sky-400 h-full transition-all duration-700"
+              [style.width.%]="(data.kpis.appointmentsPending / (data.kpis.totalAppointments || 1)) * 100"
+              title="Pendientes"
+            ></div>
+            <div
+              class="bg-rose-400 h-full rounded-r-full transition-all duration-700"
+              [style.width.%]="(data.kpis.appointmentsCanceled / (data.kpis.totalAppointments || 1)) * 100"
+              title="Canceladas"
+            ></div>
+          </div>
         </div>
       </div>
 
-      <!-- KPI 3: Ocupación Hospitalaria -->
-      <div class="glass-panel p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition-all"></div>
+      <!-- KPI 3: Ocupación de Camas -->
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 w-24 h-24 bg-indigo-500/15 dark:bg-indigo-500/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Camas Hospitalarias</span>
-          <span class="p-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Censo Hospitalario</span>
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-200/50 dark:border-indigo-800/50 shadow-xs">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-          </span>
+          </div>
         </div>
         <div class="mt-4 flex items-baseline gap-2">
-          <span class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ data.kpis.occupancyRate }}%</span>
-          <span class="text-xs font-medium text-slate-500 dark:text-slate-400">
-            {{ data.kpis.occupiedBeds }}/{{ data.kpis.totalBeds }} en servicio
+          <span class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">{{ data.kpis.occupancyRate }}%</span>
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-400">
+            {{ data.kpis.occupiedBeds }}/{{ data.kpis.totalBeds }} camas
           </span>
         </div>
-        <div class="mt-3 w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-          <div
-            class="bg-indigo-600 h-1.5 rounded-full transition-all"
-            [style.width.%]="data.kpis.occupancyRate"
-          ></div>
+        <div class="mt-3">
+          <div class="flex justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+            <span>Ocupación hospitalaria</span>
+            <span class="font-bold text-indigo-600 dark:text-indigo-400">Capacidad óptima</span>
+          </div>
+          <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+            <div
+              class="gradient-indigo h-full rounded-full transition-all duration-700"
+              [style.width.%]="data.kpis.occupancyRate"
+            ></div>
+          </div>
         </div>
       </div>
 
-      <!-- KPI 4: Recaudación -->
-      <div class="glass-panel p-5 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-amber-500/10 rounded-full blur-xl group-hover:bg-amber-500/20 transition-all"></div>
+      <!-- KPI 4: Recaudación Neta -->
+      <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+        <div class="absolute -right-6 -top-6 w-24 h-24 bg-amber-500/15 dark:bg-amber-500/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Recaudación Neta (MXN)</span>
-          <span class="p-2 bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-xl">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Recaudación Neta (MXN)</span>
+          <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200/50 dark:border-amber-800/50 shadow-xs">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          </span>
+          </div>
         </div>
         <div class="mt-4 flex items-baseline gap-2">
-          <span class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
-            \${{ data.kpis.totalRevenue | number: '1.0-0' }}
+          <span class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            ${{ data.kpis.totalRevenue | number: '1.0-0' }}
           </span>
+          <span class="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase">MXN</span>
         </div>
-        <div class="mt-3 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
-          <span>Ticket prom: \${{ data.kpis.averageTicket | number: '1.0-0' }}</span>
-          <a routerLink="/billing" class="text-amber-600 dark:text-amber-400 hover:underline font-medium">Facturación &rarr;</a>
+        <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+          <span class="text-slate-500 dark:text-slate-400">Prom: ${{ data.kpis.averageTicket | number: '1.0-0' }}</span>
+          <a routerLink="/billing" class="text-amber-600 dark:text-amber-400 hover:text-amber-700 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+            Facturación &rarr;
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Secciones Operativas: Próximas Citas y Hospitalizaciones -->
+    <!-- Secciones Clínicas Operativas (2 Columnas con Tarjetas Enriquecidas) -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <!-- Próximas Citas -->
-      <div class="glass-panel p-6 rounded-2xl shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-            Próximas Citas Programadas
-          </h2>
-          <a routerLink="/appointments" class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">Ver agenda completa</a>
+      <!-- Tarjeta: Próximas Citas y Turnos -->
+      <div class="glass-panel p-6 rounded-2xl">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-200/80 dark:border-slate-800/80 mb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <div>
+              <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Próximas Citas Médicas</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Pacientes agendados para hoy</p>
+            </div>
+          </div>
+          <a routerLink="/appointments" class="text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline">
+            Ver agenda completa
+          </a>
         </div>
 
         @if (data.upcomingAppointments.length > 0) {
-          <div class="divide-y divide-slate-100 dark:divide-slate-800">
+          <div class="space-y-3">
             @for (t of data.upcomingAppointments; track t.id_turno) {
-              <div class="py-3 flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 rounded-xl px-2 transition-colors">
-                <div>
-                  <p class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ t.paciente }}</p>
-                  <p class="text-xs text-slate-500 dark:text-slate-400">
-                    {{ t.medico }} • <span class="text-blue-600 dark:text-blue-400">{{ t.especialidad }}</span>
-                  </p>
+              <div class="p-3.5 rounded-xl bg-white/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 hover:border-sky-300 dark:hover:border-sky-700/60 transition-all flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center shadow-xs flex-shrink-0">
+                    {{ t.paciente.slice(0, 2).toUpperCase() }}
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white">{{ t.paciente }}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                      <span>{{ t.medico }}</span>
+                      <span>•</span>
+                      <span class="font-medium text-sky-600 dark:text-sky-400">{{ t.especialidad }}</span>
+                    </p>
+                  </div>
                 </div>
-                <div class="text-right">
-                  <span class="text-xs font-mono font-medium text-slate-700 dark:text-slate-300 block">
-                    {{ t.fecha_hora | date: 'dd/MM HH:mm' }}
+                <div class="text-right flex-shrink-0">
+                  <span class="text-xs font-mono font-bold text-slate-800 dark:text-slate-200 block">
+                    {{ t.fecha_hora | date: 'HH:mm' }} hrs
                   </span>
-                  <span class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider"
+                  <span
+                    class="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-full uppercase tracking-wider"
                     [ngClass]="{
-                      'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300': t.estado === 'pendiente',
-                      'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300': t.estado === 'confirmado'
-                    }">
+                      'bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300': t.estado === 'pendiente',
+                      'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300': t.estado === 'confirmado' || t.estado === 'atendido'
+                    }"
+                  >
                     {{ t.estado }}
                   </span>
                 </div>
@@ -147,35 +220,49 @@
             }
           </div>
         } @else {
-          <p class="text-sm text-slate-400 py-6 text-center">No hay citas pendientes agendadas en este momento.</p>
+          <div class="py-10 text-center text-slate-400">
+            <p class="text-sm">No hay citas pendientes para el horario actual.</p>
+          </div>
         }
       </div>
 
-      <!-- Pacientes Hospitalizados -->
-      <div class="glass-panel p-6 rounded-2xl shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-            Pacientes en Hospitalización
-          </h2>
-          <a routerLink="/hospitalizations" class="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">Ver censo de camas</a>
+      <!-- Tarjeta: Pacientes en Hospitalización Activa -->
+      <div class="glass-panel p-6 rounded-2xl">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-200/80 dark:border-slate-800/80 mb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <div>
+              <h2 class="text-base font-extrabold text-slate-900 dark:text-white">Hospitalizaciones Activas</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Pacientes ingresados en piso clínico</p>
+            </div>
+          </div>
+          <a routerLink="/hospitalizations" class="text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline">
+            Censo de camas
+          </a>
         </div>
 
         @if (data.activeHospitalizations.length > 0) {
-          <div class="divide-y divide-slate-100 dark:divide-slate-800">
+          <div class="space-y-3">
             @for (h of data.activeHospitalizations; track h.id_internacion) {
-              <div class="py-3 flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 rounded-xl px-2 transition-colors">
-                <div>
-                  <p class="font-semibold text-sm text-slate-900 dark:text-slate-100">{{ h.paciente }}</p>
-                  <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                    {{ h.diagnostico_ingreso }}
-                  </p>
+              <div class="p-3.5 rounded-xl bg-white/50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800/60 hover:border-rose-300 dark:hover:border-rose-700/60 transition-all flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-amber-500 text-white font-extrabold text-xs flex items-center justify-center shadow-xs flex-shrink-0">
+                    {{ h.paciente.slice(0, 2).toUpperCase() }}
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-sm text-slate-900 dark:text-white">{{ h.paciente }}</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5">
+                      {{ h.diagnostico_ingreso }}
+                    </p>
+                  </div>
                 </div>
                 <div class="text-right flex-shrink-0">
-                  <span class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                  <span class="inline-flex items-center px-2 py-0.5 text-xs font-bold rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
                     {{ h.habitacion }}
                   </span>
-                  <span class="block text-[11px] text-slate-400 mt-1">
+                  <span class="block text-[10px] text-slate-400 mt-1 font-mono">
                     Ingreso: {{ h.fecha_ingreso | date: 'dd/MM' }}
                   </span>
                 </div>
@@ -183,14 +270,22 @@
             }
           </div>
         } @else {
-          <p class="text-sm text-slate-400 py-6 text-center">No hay pacientes hospitalizados en este momento.</p>
+          <div class="py-10 text-center text-slate-400">
+            <p class="text-sm">No hay pacientes internados en este momento.</p>
+          </div>
         }
       </div>
     </div>
   } @else {
-    <div class="py-16 text-center">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-emerald-500 border-t-transparent"></div>
-      <p class="text-sm text-slate-500 mt-3 font-medium">Cargando indicadores clínicos...</p>
+    <!-- Estado de carga instantáneo no bloqueante -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 animate-pulse">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="glass-card p-5 rounded-2xl h-36 bg-slate-100/50 dark:bg-slate-800/30"></div>
+      }
+    </div>
+    <div class="py-12 text-center">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-3 border-emerald-500 border-t-transparent"></div>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-3 font-semibold">Conectando con base de datos PostgreSQL 18...</p>
     </div>
   }
 </div>

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RegistroAuditoria } from '../../entities/registro-auditoria.entity.js';
@@ -22,8 +22,8 @@ export class AuditService {
   constructor(
     @InjectRepository(RegistroAuditoria)
     private readonly auditRepo: Repository<RegistroAuditoria>,
-    private readonly metricsService: MetricsService,
-    private readonly logger: ElasticEcsLogger,
+    @Inject(MetricsService) private readonly metricsService: MetricsService,
+    @Inject(ElasticEcsLogger) private readonly logger: ElasticEcsLogger,
   ) {}
 
   async registrarAcceso(dto: AuditLogDto): Promise<RegistroAuditoria> {

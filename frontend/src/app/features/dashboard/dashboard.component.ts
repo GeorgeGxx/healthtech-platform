@@ -10,17 +10,27 @@ import { ApiService, DashboardMetrics } from '../../core/services/api.service';
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
-  private readonly api = inject(ApiService);
+  readonly api = inject(ApiService);
   readonly metrics = signal<DashboardMetrics | null>(null);
+  readonly isLoading = signal<boolean>(false);
+  readonly lastUpdated = signal<Date>(new Date());
 
   ngOnInit(): void {
     this.loadMetrics();
   }
 
   loadMetrics(): void {
+    this.isLoading.set(true);
     this.api.getDashboardMetrics().subscribe({
-      next: (data) => this.metrics.set(data),
-      error: (err) => console.error('Error al cargar dashboard:', err),
+      next: (data) => {
+        this.metrics.set(data);
+        this.isLoading.set(false);
+        this.lastUpdated.set(new Date());
+      },
+      error: (err) => {
+        console.error('Error al sincronizar dashboard:', err);
+        this.isLoading.set(false);
+      },
     });
   }
 }

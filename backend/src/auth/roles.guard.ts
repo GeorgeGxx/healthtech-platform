@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   CanActivate,
   ExecutionContext,
   ForbiddenException,
@@ -10,7 +11,7 @@ import { UserContext } from './current-user.decorator.js';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(@Inject(Reflector) private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [

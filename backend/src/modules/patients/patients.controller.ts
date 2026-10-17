@@ -1,5 +1,6 @@
 import {
   Controller,
+  Inject,
   Get,
   Post,
   Body,
@@ -20,7 +21,7 @@ import { Roles } from '../../auth/roles.decorator.js';
 @UseInterceptors(PhiAuditInterceptor)
 @Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 export class PatientsController {
-  constructor(private readonly patientsService: PatientsService) {}
+  constructor(@Inject(PatientsService) private readonly patientsService: PatientsService) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar todos los pacientes o buscar por término' })

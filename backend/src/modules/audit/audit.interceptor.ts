@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Inject,
   NestInterceptor,
   ExecutionContext,
   CallHandler,
@@ -10,7 +11,7 @@ import { AuditService } from './audit.service.js';
 
 @Injectable()
 export class PhiAuditInterceptor implements NestInterceptor {
-  constructor(private readonly auditService: AuditService) {}
+  constructor(@Inject(AuditService) private readonly auditService: AuditService) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const req = context.switchToHttp().getRequest();

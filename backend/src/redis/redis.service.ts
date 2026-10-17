@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
 import { ElasticEcsLogger } from '../telemetry/logger.service.js';
@@ -10,8 +10,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   private readonly memoryFallback = new Map<string, { value: any; expiry: number }>();
 
   constructor(
-    private readonly config: ConfigService,
-    private readonly logger: ElasticEcsLogger,
+    @Inject(ConfigService) private readonly config: ConfigService,
+    @Inject(ElasticEcsLogger) private readonly logger: ElasticEcsLogger,
   ) {}
 
   onModuleInit() {
