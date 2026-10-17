@@ -6,7 +6,7 @@
 
   <!-- Sidebar de Navegación Principal (Clean Light Theme) -->
   <aside
-    class="fixed inset-y-0 left-0 z-40 w-64 glass-panel border-r border-slate-200/90 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-sm"
+    class="fixed inset-y-0 left-0 z-40 w-64 glass-panel border-r border-slate-200/90 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0 shadow-xs"
     [class.-translate-x-full]="!isMobileMenuOpen()"
   >
     <div class="flex-1 overflow-y-auto">
@@ -258,20 +258,6 @@
         }
       </nav>
     </div>
-
-    <!-- Pie del Sidebar: Normativa de Privacidad y Calidad Médica -->
-    <div class="p-4 border-t border-slate-200/80 bg-white/70">
-      <div class="p-3.5 rounded-xl bg-slate-100/90 border border-slate-200 text-xs text-slate-600 shadow-xs">
-        <div class="font-bold text-slate-800 flex items-center justify-between">
-          <span>Resguardo de Privacidad</span>
-          <span class="inline-flex items-center gap-1.5 text-xs text-emerald-600 font-bold">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Certificado
-          </span>
-        </div>
-        <p class="mt-1 text-xs text-slate-500">Norma Oficial Mexicana NOM-004-SSA3</p>
-      </div>
-    </div>
   </aside>
 
   <!-- Overlay móvil -->
@@ -282,10 +268,10 @@
     ></div>
   }
 
-  <!-- Contenido Principal con Header Sticky -->
+  <!-- Contenido Principal con Header Sticky Semitransparente -->
   <div class="flex-1 lg:pl-64 flex flex-col min-h-screen">
-    <!-- Barra Superior (Header Hospitalario) -->
-    <header class="h-20 glass-panel sticky top-0 z-20 border-b border-slate-200/90 flex items-center justify-between px-4 sm:px-8">
+    <!-- Barra Superior (Header Hospitalario Semitransparente) -->
+    <header class="h-20 sticky top-0 z-20 bg-white/70 backdrop-blur-md border-b border-slate-200/70 flex items-center justify-between px-4 sm:px-8 shadow-xs transition-colors">
       <div class="flex items-center gap-3">
         <button
           (click)="toggleMobileMenu()"
