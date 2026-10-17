@@ -88,7 +88,7 @@ services:
   # 5. Observabilidad: Elastic Agent 9.5.5 (APM & OTLP Collector)
   # ============================================================================
   elastic-agent:
-    image: docker.elastic.co/beats/elastic-agent:9.5.5
+    image: docker.elastic.co/elastic-agent/elastic-agent:9.5.5
     container_name: elastic-agent-centromedico
     user: root
     environment:
@@ -134,7 +134,7 @@ services:
   # 7. API Gateway: Kong Gateway 3.14.0.16 (DB-less mode)
   # ============================================================================
   kong-gateway:
-    image: kong:3.14.0.16
+    image: kong/kong-gateway:3.14.0.16
     container_name: kong-centromedico
     environment:
       - KONG_DATABASE=off
