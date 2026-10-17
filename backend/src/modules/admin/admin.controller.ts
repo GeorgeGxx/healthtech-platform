@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Inject, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminService } from './admin.service.js';
 import { Roles } from '../../auth/roles.decorator.js';
@@ -8,7 +8,10 @@ import { Roles } from '../../auth/roles.decorator.js';
 @Controller('admin')
 @Roles('admin_user')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    @Inject(AdminService)
+    private readonly adminService: AdminService,
+  ) {}
 
   @Get('system-status')
   @ApiOperation({

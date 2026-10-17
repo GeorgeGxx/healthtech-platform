@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Inject, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { AuditService } from './audit.service.js';
 import { Roles } from '../../auth/roles.decorator.js';
@@ -8,7 +8,7 @@ import { Roles } from '../../auth/roles.decorator.js';
 @Controller('audit')
 @Roles('admin_user')
 export class AuditController {
-  constructor(private readonly auditService: AuditService) {}
+  constructor(@Inject(AuditService) private readonly auditService: AuditService) {}
 
   @Get()
   @ApiOperation({

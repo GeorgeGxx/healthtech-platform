@@ -8,7 +8,7 @@ import {
 import type { Relation } from 'typeorm';
 import type { Paciente } from './paciente.entity.js';
 import { Medico } from './medico.entity.js';
-import { Habitacion } from './habitacion.entity.js';
+import type { Habitacion } from './habitacion.entity.js';
 
 @Entity('internacion')
 export class Internacion {
@@ -32,9 +32,9 @@ export class Internacion {
   @Column({ name: 'id_habitacion', type: 'int' })
   idHabitacion!: number;
 
-  @ManyToOne(() => Habitacion, (habitacion) => habitacion.internaciones)
+  @ManyToOne('Habitacion', 'internaciones')
   @JoinColumn({ name: 'id_habitacion' })
-  habitacion!: Habitacion;
+  habitacion!: Relation<Habitacion>;
 
   @Column({
     name: 'fecha_ingreso',

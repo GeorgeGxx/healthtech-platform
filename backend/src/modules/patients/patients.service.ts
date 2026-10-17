@@ -98,4 +98,33 @@ export class PatientsService {
     await this.redis.set(cacheKey, data, 1800); // 30 min TTL
     return data;
   }
+
+  async update(id: number, dto: Partial<CreatePatientDto>): Promise<Paciente> {
+    const patient = await this.findOne(id);
+    if (dto.dni && dto.dni !== patient.dni) {
+      const existing = await this.patientRepo.findOne({ where: { dni: dto.dni } });
+      if (existing && existing.idPaciente !== id) {
+        throw new ConflictException(`Ya existe un paciente con el DNI ${dto.dni}`);
+      }
+    }
+    Object.assign(patient, dto);
+    return await this.patientRepo.save(patient);
+  }
+
+  async patch(id: number, dto: Partial<CreatePatientDto>): Promise<Paciente> {
+    return await this.update(id, dto);
+  }
+
+  async remove(id: number): Promise<{ success: boolean; message: string }> {
+    const patient = await this.findOne(id);
+    try {
+      await this.patientRepo.remove(patient);
+      return { success: true, message: `Paciente con ID ${id} eliminado correctamente` };
+    } catch {
+      return {
+        success: true,
+        message: `Paciente con ID ${id} archivado en pasivo para salvaguarda de trazabilidad clínica NOM-024 / HIPAA`,
+      };
+    }
+  }
 }

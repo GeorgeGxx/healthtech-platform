@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { Paciente } from './paciente.entity.js';
+import type { Relation } from 'typeorm';
+import type { Paciente } from './paciente.entity.js';
 
 @Entity('obra_social')
 export class ObraSocial {
@@ -27,6 +28,6 @@ export class ObraSocial {
   @Column({ name: 'activo', type: 'boolean', default: true })
   activo!: boolean;
 
-  @OneToMany(() => Paciente, (paciente) => paciente.obraSocial)
-  pacientes!: Paciente[];
+  @OneToMany('Paciente', 'obraSocial')
+  pacientes!: Relation<Paciente>[];
 }

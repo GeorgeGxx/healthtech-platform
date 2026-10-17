@@ -1,5 +1,6 @@
 import {
   Controller,
+  Inject,
   Get,
   Post,
   Body,
@@ -13,7 +14,10 @@ import { CreatePaymentDto } from './dto/create-payment.dto.js';
 @ApiTags('Facturación y Cobranzas (Billing & Claims)')
 @Controller('billing')
 export class BillingController {
-  constructor(private readonly billingService: BillingService) {}
+  constructor(
+    @Inject(BillingService)
+    private readonly billingService: BillingService,
+  ) {}
 
   @Get('summary')
   @ApiOperation({ summary: 'Obtener desglose y resumen de recaudación por método de pago' })

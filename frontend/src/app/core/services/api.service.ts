@@ -170,6 +170,18 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/patients`, data);
   }
 
+  updatePatient(id: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/patients/${id}`, data);
+  }
+
+  patchPatient(id: number, data: any): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/patients/${id}`, data);
+  }
+
+  deletePatient(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/patients/${id}`);
+  }
+
   getInsurances(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/patients/insurances`).pipe(
       catchError(() => of([
@@ -213,6 +225,14 @@ export class ApiService {
 
   updateAppointmentStatus(id: number, estado: string): Observable<any> {
     return this.http.patch<any>(`${this.baseUrl}/appointments/${id}/status`, { estado });
+  }
+
+  updateAppointment(id: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/appointments/${id}`, data);
+  }
+
+  deleteAppointment(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.baseUrl}/appointments/${id}`);
   }
 
   // --- Médicos y Staff ---

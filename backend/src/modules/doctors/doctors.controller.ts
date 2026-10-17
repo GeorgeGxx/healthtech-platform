@@ -1,11 +1,14 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Inject, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DoctorsService } from './doctors.service.js';
 
 @ApiTags('Médicos y Especialidades (Clinical Staff)')
 @Controller('doctors')
 export class DoctorsController {
-  constructor(private readonly doctorsService: DoctorsService) {}
+  constructor(
+    @Inject(DoctorsService)
+    private readonly doctorsService: DoctorsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar médicos en actividad con sus especialidades' })

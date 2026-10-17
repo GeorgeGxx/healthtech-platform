@@ -1,5 +1,6 @@
 import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
-import { Paciente } from './paciente.entity.js';
+import type { Relation } from 'typeorm';
+import type { Paciente } from './paciente.entity.js';
 
 @Entity('pais')
 export class Pais {
@@ -12,6 +13,6 @@ export class Pais {
   @Column({ name: 'nacionalidad', type: 'varchar', length: 60, nullable: true })
   nacionalidad?: string;
 
-  @OneToMany(() => Paciente, (paciente) => paciente.pais)
-  pacientes!: Paciente[];
+  @OneToMany('Paciente', 'pais')
+  pacientes!: Relation<Paciente>[];
 }

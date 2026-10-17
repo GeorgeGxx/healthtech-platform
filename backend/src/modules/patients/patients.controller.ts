@@ -3,6 +3,9 @@ import {
   Inject,
   Get,
   Post,
+  Put,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -52,5 +55,29 @@ export class PatientsController {
   @ApiOperation({ summary: 'Registrar un nuevo paciente' })
   async create(@Body() dto: CreatePatientDto) {
     return await this.patientsService.create(dto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Actualizar expediente general del paciente' })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Partial<CreatePatientDto>,
+  ) {
+    return await this.patientsService.update(id, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualización parcial de datos del paciente' })
+  async patch(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Partial<CreatePatientDto>,
+  ) {
+    return await this.patientsService.patch(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Eliminar o dar de baja registro de paciente' })
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return await this.patientsService.remove(id);
   }
 }

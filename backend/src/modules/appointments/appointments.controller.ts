@@ -1,8 +1,11 @@
 import {
   Controller,
+  Inject,
   Get,
   Post,
+  Put,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -18,7 +21,10 @@ import {
 @ApiTags('Turnos y Agenda (Clinical Scheduling)')
 @Controller('appointments')
 export class AppointmentsController {
-  constructor(private readonly appointmentsService: AppointmentsService) {}
+  constructor(
+    @Inject(AppointmentsService)
+    private readonly appointmentsService: AppointmentsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar turnos médicos filtrados opcionalmente por médico y fecha' })
@@ -45,11 +51,26 @@ export class AppointmentsController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Actualizar el estado del turno (atendido, cancelado, etc.)' })
+  @ApiOperation({ summary: 'Actualizar el estado del turno (confirmado, atendido, cancelado)' })
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAppointmentStatusDto,
   ) {
     return await this.appointmentsService.updateStatus(id, dto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Actualizar o reprogramar una cita médica existente' })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: any,
+  ) {
+    return await this.appointmentsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Cancelar o dar de baja una cita médica' })
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return await this.appointmentsService.remove(id);
   }
 }

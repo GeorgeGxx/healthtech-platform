@@ -6,11 +6,12 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { Pais } from './pais.entity.js';
-import { ObraSocial } from './obra-social.entity.js';
-import { Turno } from './turno.entity.js';
-import { HistoriaClinica } from './historia-clinica.entity.js';
-import { Internacion } from './internacion.entity.js';
+import type { Relation } from 'typeorm';
+import type { Pais } from './pais.entity.js';
+import type { ObraSocial } from './obra-social.entity.js';
+import type { Turno } from './turno.entity.js';
+import type { HistoriaClinica } from './historia-clinica.entity.js';
+import type { Internacion } from './internacion.entity.js';
 
 export type Genero = 'M' | 'F' | 'Otro';
 
@@ -41,16 +42,16 @@ export class Paciente {
   @Column({ name: 'id_pais', type: 'char', length: 3, default: 'ARG' })
   idPais!: string;
 
-  @ManyToOne(() => Pais, (pais) => pais.pacientes)
+  @ManyToOne('Pais', 'pacientes')
   @JoinColumn({ name: 'id_pais' })
-  pais?: Pais;
+  pais?: Relation<Pais>;
 
   @Column({ name: 'id_obra_social', type: 'int', nullable: true })
   idObraSocial?: number | null;
 
-  @ManyToOne(() => ObraSocial, (os) => os.pacientes, { nullable: true })
+  @ManyToOne('ObraSocial', 'pacientes', { nullable: true })
   @JoinColumn({ name: 'id_obra_social' })
-  obraSocial?: ObraSocial | null;
+  obraSocial?: Relation<ObraSocial> | null;
 
   @Column({ name: 'numero_afiliado', type: 'varchar', length: 30, nullable: true })
   numeroAfiliado?: string;
@@ -71,12 +72,13 @@ export class Paciente {
   })
   fechaRegistro!: Date;
 
-  @OneToMany(() => Turno, (turno) => turno.paciente)
-  turnos!: Turno[];
+  @OneToMany('Turno', 'paciente')
+  turnos!: Relation<Turno>[];
 
-  @OneToMany(() => HistoriaClinica, (hc) => hc.paciente)
-  historiasClinicas!: HistoriaClinica[];
+  @OneToMany('HistoriaClinica', 'paciente')
+  historiasClinicas!: Relation<HistoriaClinica>[];
 
-  @OneToMany(() => Internacion, (internacion) => internacion.paciente)
-  internaciones!: Internacion[];
+  @OneToMany('Internacion', 'paciente')
+  internaciones!: Relation<Internacion>[];
 }
+

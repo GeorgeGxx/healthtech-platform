@@ -1,5 +1,6 @@
 import {
   Controller,
+  Inject,
   Get,
   Post,
   Patch,
@@ -19,6 +20,7 @@ import {
 @Controller('hospitalizations')
 export class HospitalizationsController {
   constructor(
+    @Inject(HospitalizationsService)
     private readonly hospitalizationsService: HospitalizationsService,
   ) {}
 

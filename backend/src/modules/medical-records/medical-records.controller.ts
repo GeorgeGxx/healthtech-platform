@@ -1,5 +1,6 @@
 import {
   Controller,
+  Inject,
   Get,
   Post,
   Body,
@@ -20,7 +21,10 @@ import { Roles } from '../../auth/roles.decorator.js';
 @UseInterceptors(PhiAuditInterceptor)
 @Roles('doctor_user', 'admin_user', 'nurse_user')
 export class MedicalRecordsController {
-  constructor(private readonly recordsService: MedicalRecordsService) {}
+  constructor(
+    @Inject(MedicalRecordsService)
+    private readonly recordsService: MedicalRecordsService,
+  ) {}
 
   @Get('patient/:patientId')
   @ApiOperation({ summary: 'Obtener historial clínico de un paciente' })
