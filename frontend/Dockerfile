@@ -1,0 +1,14 @@
+# Etapa 1: Build de Angular 21
+FROM node:24-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Etapa 2: Servidor Web Nginx
+FROM nginx:alpine
+COPY --from=builder /app/dist/frontend/browser /usr/share/nginx/html
+COPY ../nginx/nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

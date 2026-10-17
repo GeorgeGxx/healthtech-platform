@@ -1,0 +1,56 @@
+services:
+  # Base de Datos Relacional: PostgreSQL 18
+  postgres-centromedico:
+    image: postgres:18-alpine
+    container_name: postgres-centromedico
+    environment:
+      POSTGRES_DB: centromedico
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_centromedico_data:/var/lib/postgresql/data
+      - ../docker-db/sqls-data/centromedico-pg18:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d centromedico"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend: NestJS 12 + TypeScript (DDD + TypeORM)
+  healthtech-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: healthtech-backend
+    environment:
+      PORT: 3000
+      DB_HOST: postgres-centromedico
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: centromedico
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-centromedico:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Reverse Proxy y Servidor Web: Nginx + Angular 21 + TailwindCSS v4
+  healthtech-nginx:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: healthtech-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - healthtech-backend
+    restart: unless-stopped
+
+volumes:
+  pg_centromedico_data:
