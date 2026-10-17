@@ -5,6 +5,7 @@ import { Paciente } from '../../entities/paciente.entity.js';
 import { ObraSocial } from '../../entities/obra-social.entity.js';
 import { Pais } from '../../entities/pais.entity.js';
 import { CreatePatientDto } from './dto/create-patient.dto.js';
+import { RedisService } from '../../redis/redis.service.js';
 
 @Injectable()
 export class PatientsService {
@@ -15,6 +16,7 @@ export class PatientsService {
     private readonly insuranceRepo: Repository<ObraSocial>,
     @InjectRepository(Pais)
     private readonly countryRepo: Repository<Pais>,
+    private readonly redis: RedisService,
   ) {}
 
   async findAll(search?: string): Promise<any[]> {
@@ -78,10 +80,22 @@ export class PatientsService {
   }
 
   async getInsurances(): Promise<ObraSocial[]> {
-    return await this.insuranceRepo.find({ where: { activo: true }, order: { nombre: 'ASC' } });
+    const cacheKey = 'catalogo:obras_sociales';
+    const cached = await this.redis.get<ObraSocial[]>(cacheKey);
+    if (cached) return cached;
+
+    const data = await this.insuranceRepo.find({ where: { activo: true }, order: { nombre: 'ASC' } });
+    await this.redis.set(cacheKey, data, 600); // 10 min TTL
+    return data;
   }
 
   async getCountries(): Promise<Pais[]> {
-    return await this.countryRepo.find({ order: { nombre: 'ASC' } });
+    const cacheKey = 'catalogo:paises';
+    const cached = await this.redis.get<Pais[]>(cacheKey);
+    if (cached) return cached;
+
+    const data = await this.countryRepo.find({ order: { nombre: 'ASC' } });
+    await this.redis.set(cacheKey, data, 1800); // 30 min TTL
+    return data;
   }
 }

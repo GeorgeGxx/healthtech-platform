@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Medico } from '../../entities/medico.entity.js';
 import { Especialidad } from '../../entities/especialidad.entity.js';
 import { Consultorio } from '../../entities/consultorio.entity.js';
+import { RedisService } from '../../redis/redis.service.js';
 
 @Injectable()
 export class DoctorsService {
@@ -14,6 +15,7 @@ export class DoctorsService {
     private readonly specialtyRepo: Repository<Especialidad>,
     @InjectRepository(Consultorio)
     private readonly officeRepo: Repository<Consultorio>,
+    private readonly redis: RedisService,
   ) {}
 
   async findAll(): Promise<Medico[]> {
@@ -43,11 +45,23 @@ export class DoctorsService {
   }
 
   async getSpecialties(): Promise<Especialidad[]> {
-    return await this.specialtyRepo.find({ order: { nombre: 'ASC' } });
+    const cacheKey = 'catalogo:especialidades';
+    const cached = await this.redis.get<Especialidad[]>(cacheKey);
+    if (cached) return cached;
+
+    const data = await this.specialtyRepo.find({ order: { nombre: 'ASC' } });
+    await this.redis.set(cacheKey, data, 1800);
+    return data;
   }
 
   async getOffices(): Promise<Consultorio[]> {
-    return await this.officeRepo.find({ order: { piso: 'ASC', codigo: 'ASC' } });
+    const cacheKey = 'catalogo:consultorios';
+    const cached = await this.redis.get<Consultorio[]>(cacheKey);
+    if (cached) return cached;
+
+    const data = await this.officeRepo.find({ order: { piso: 'ASC', codigo: 'ASC' } });
+    await this.redis.set(cacheKey, data, 1800);
+    return data;
   }
 
   async getHierarchyTree(): Promise<any[]> {

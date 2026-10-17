@@ -18,7 +18,14 @@ import {
   Internacion,
   ConceptoPago,
   Pago,
+  RegistroAuditoria,
 } from './entities/index.js';
+
+// Módulos Transversales: Observabilidad, Seguridad, Caché y Auditoría
+import { TelemetryModule } from './telemetry/telemetry.module.js';
+import { RedisModule } from './redis/redis.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { AuditModule } from './modules/audit/audit.module.js';
 
 // Módulos DDD
 import { PatientsModule } from './modules/patients/patients.module.js';
@@ -35,6 +42,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
       isGlobal: true,
       envFilePath: ['../.env', '.env'],
     }),
+    TelemetryModule,
+    RedisModule,
+    AuthModule,
+    AuditModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -58,6 +69,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
           Internacion,
           ConceptoPago,
           Pago,
+          RegistroAuditoria,
         ],
         synchronize: false, // Schema gestionado por 01_schema_centromedico.sql
         logging: false,

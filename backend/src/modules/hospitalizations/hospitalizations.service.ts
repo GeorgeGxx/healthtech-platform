@@ -11,6 +11,7 @@ import {
   CreateHospitalizationDto,
   DischargePatientDto,
 } from './dto/create-hospitalization.dto.js';
+import { MetricsService } from '../../telemetry/metrics.service.js';
 
 @Injectable()
 export class HospitalizationsService {
@@ -19,6 +20,7 @@ export class HospitalizationsService {
     private readonly hospitalizationRepo: Repository<Internacion>,
     @InjectRepository(Habitacion)
     private readonly roomRepo: Repository<Habitacion>,
+    private readonly metrics: MetricsService,
   ) {}
 
   async getBedCensus(): Promise<any[]> {
@@ -107,6 +109,7 @@ export class HospitalizationsService {
     });
 
     const saved = await this.hospitalizationRepo.save(hospitalization);
+    this.metrics.recordHospitalization('ingreso');
     return await this.findOne(saved.idInternacion);
   }
 
@@ -130,6 +133,7 @@ export class HospitalizationsService {
     stay.costoTotalEstimado = Number(stay.habitacion.costoDia) * diffDays;
 
     await this.hospitalizationRepo.save(stay);
+    this.metrics.recordHospitalization('alta', stay.habitacion?.tipo);
     return await this.findOne(id);
   }
 }

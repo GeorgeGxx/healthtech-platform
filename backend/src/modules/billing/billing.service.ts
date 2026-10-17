@@ -6,6 +6,7 @@ import { Paciente } from '../../entities/paciente.entity.js';
 import { ConceptoPago } from '../../entities/concepto-pago.entity.js';
 import { BillingCalculatorDomainService } from '../../domain/services/billing-calculator.domain-service.js';
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
+import { MetricsService } from '../../telemetry/metrics.service.js';
 
 @Injectable()
 export class BillingService {
@@ -16,6 +17,7 @@ export class BillingService {
     private readonly patientRepo: Repository<Paciente>,
     @InjectRepository(ConceptoPago)
     private readonly conceptRepo: Repository<ConceptoPago>,
+    private readonly metrics: MetricsService,
   ) {}
 
   async findAll(): Promise<Pago[]> {
@@ -89,6 +91,10 @@ export class BillingService {
     });
 
     const saved = await this.paymentRepo.save(payment);
+    this.metrics.recordBilling(
+      Number(calculation.basePrice),
+      patient.obraSocial?.nombre ?? 'Particular',
+    );
     return await this.findOne(saved.idPago);
   }
 

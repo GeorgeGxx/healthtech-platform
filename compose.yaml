@@ -1,5 +1,7 @@
 services:
-  # Base de Datos Relacional: PostgreSQL 18
+  # ============================================================================
+  # 1. Base de Datos Relacional: PostgreSQL 18
+  # ============================================================================
   postgres-centromedico:
     image: postgres:18-alpine
     container_name: postgres-centromedico
@@ -20,7 +22,108 @@ services:
       timeout: 5s
       retries: 5
 
-  # Backend: NestJS 12 + TypeScript (DDD + TypeORM)
+  # ============================================================================
+  # 2. Caché Distribuido y Sesiones: Redis 7
+  # ============================================================================
+  redis-centromedico:
+    image: redis:7-alpine
+    container_name: redis-centromedico
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================================
+  # 3. Observabilidad: Elasticsearch 9.5.5 (Single-Node)
+  # ============================================================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    container_name: elasticsearch-centromedico
+    environment:
+      - node.name=elasticsearch-node1
+      - cluster.name=centromedico-cluster
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ============================================================================
+  # 4. Observabilidad: Kibana 9.5.5
+  # ============================================================================
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.5.5
+    container_name: kibana-centromedico
+    environment:
+      - SERVER_NAME=kibana.centromedico.local
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=none
+      - TELEMETRY_ENABLED=false
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================================================
+  # 5. Observabilidad: Elastic Agent 9.5.5 (APM & OTLP Collector)
+  # ============================================================================
+  elastic-agent:
+    image: docker.elastic.co/beats/elastic-agent:9.5.5
+    container_name: elastic-agent-centromedico
+    user: root
+    environment:
+      - FLEET_STANDALONE=true
+    volumes:
+      - ./observability/elastic-agent.yml:/etc/elastic-agent/elastic-agent.yml:ro
+    ports:
+      - "8200:8200" # Elastic APM Server & OTLP HTTP
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================================================
+  # 6. IAM y Autenticación RBAC: Keycloak 26.1
+  # ============================================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1
+    container_name: keycloak-centromedico
+    command: start-dev --import-realm
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HTTP_PORT=8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    restart: unless-stopped
+
+  # ============================================================================
+  # 7. Backend: NestJS 12 + TypeScript (DDD + OpenTelemetry OTLP + ECS Logs)
+  # ============================================================================
   healthtech-backend:
     build:
       context: ./backend
@@ -33,14 +136,25 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: centromedico
+      REDIS_HOST: redis-centromedico
+      REDIS_PORT: 6379
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
+      OTEL_SERVICE_NAME: healthtech-backend
+      LOG_LEVEL: info
     ports:
       - "3000:3000"
     depends_on:
       postgres-centromedico:
         condition: service_healthy
+      redis-centromedico:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     restart: unless-stopped
 
-  # Reverse Proxy y Servidor Web: Nginx + Angular 21 + TailwindCSS v4
+  # ============================================================================
+  # 8. Reverse Proxy y Servidor Web: Nginx + Angular 21 + TailwindCSS v4
+  # ============================================================================
   healthtech-nginx:
     build:
       context: ./frontend
@@ -54,3 +168,5 @@ services:
 
 volumes:
   pg_centromedico_data:
+  redis_data:
+  elasticsearch_data:

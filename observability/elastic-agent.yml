@@ -1,0 +1,28 @@
+id: healthtech-elastic-agent
+outputs:
+  default:
+    type: elasticsearch
+    hosts: ['http://elasticsearch:9200']
+
+inputs:
+  - id: apm-otlp-collector
+    type: apm
+    use_output: default
+    host: '0.0.0.0:8200'
+    rum:
+      enabled: true
+    otlp:
+      enabled: true
+      grpc:
+        enabled: true
+        host: '0.0.0.0:4317'
+      http:
+        enabled: true
+        host: '0.0.0.0:4318'
+
+  - id: system-metrics
+    type: system/metrics
+    use_output: default
+    data_stream:
+      dataset: system.cpu
+    period: 10s

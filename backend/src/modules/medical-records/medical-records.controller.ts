@@ -6,13 +6,19 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { MedicalRecordsService } from './medical-records.service.js';
 import { CreateMedicalRecordDto } from './dto/create-medical-record.dto.js';
+import { PhiAuditInterceptor } from '../audit/audit.interceptor.js';
+import { Roles } from '../../auth/roles.decorator.js';
 
 @ApiTags('Historias Clínicas (Medical Records & EHR)')
+@ApiBearerAuth('KeycloakAuth')
 @Controller('medical-records')
+@UseInterceptors(PhiAuditInterceptor)
+@Roles('doctor_user', 'admin_user', 'nurse_user')
 export class MedicalRecordsController {
   constructor(private readonly recordsService: MedicalRecordsService) {}
 

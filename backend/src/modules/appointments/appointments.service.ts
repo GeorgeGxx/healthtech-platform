@@ -12,12 +12,14 @@ import {
   CreateAppointmentDto,
   UpdateAppointmentStatusDto,
 } from './dto/create-appointment.dto.js';
+import { MetricsService } from '../../telemetry/metrics.service.js';
 
 @Injectable()
 export class AppointmentsService {
   constructor(
     @InjectRepository(Turno)
     private readonly appointmentRepo: Repository<Turno>,
+    private readonly metrics: MetricsService,
   ) {}
 
   async findAll(doctorId?: number, date?: string): Promise<any[]> {
@@ -127,7 +129,9 @@ export class AppointmentsService {
     );
 
     const newId = result[0].id_turno;
-    return await this.findOne(newId);
+    const created = await this.findOne(newId);
+    this.metrics.recordAppointment('pendiente', dto.idEspecialidad);
+    return created;
   }
 
   async updateStatus(
@@ -137,6 +141,7 @@ export class AppointmentsService {
     const appointment = await this.findOne(id);
     appointment.estado = dto.estado as EstadoTurno;
     await this.appointmentRepo.save(appointment);
+    this.metrics.recordAppointment(dto.estado, appointment.idEspecialidad);
     return await this.findOne(id);
   }
 }

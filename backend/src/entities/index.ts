@@ -10,3 +10,4 @@ export * from './habitacion.entity.js';
 export * from './internacion.entity.js';
 export * from './concepto-pago.entity.js';
 export * from './pago.entity.js';
+export * from './registro-auditoria.entity.js';

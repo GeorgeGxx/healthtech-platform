@@ -6,13 +6,19 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { PatientsService } from './patients.service.js';
 import { CreatePatientDto } from './dto/create-patient.dto.js';
+import { PhiAuditInterceptor } from '../audit/audit.interceptor.js';
+import { Roles } from '../../auth/roles.decorator.js';
 
 @ApiTags('Pacientes (Patient Care)')
+@ApiBearerAuth('KeycloakAuth')
 @Controller('patients')
+@UseInterceptors(PhiAuditInterceptor)
+@Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
