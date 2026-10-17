@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService, DashboardMetrics } from '../../core/services/api.service';
+import { AuthStateService } from '../../core/services/auth-state.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -11,6 +12,8 @@ import { ApiService, DashboardMetrics } from '../../core/services/api.service';
 })
 export class DashboardComponent implements OnInit {
   readonly api = inject(ApiService);
+  readonly auth = inject(AuthStateService);
+
   readonly metrics = signal<DashboardMetrics | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly lastUpdated = signal<Date>(new Date());

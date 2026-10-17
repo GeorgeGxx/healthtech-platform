@@ -104,7 +104,7 @@ INSERT INTO medico_especialidad (id_medico, id_especialidad, es_principal) VALUE
 -- 6. Pacientes (Diversidad de edades, obras sociales y países)
 -- ----------------------------------------------------------------------------
 INSERT INTO paciente (dni, nombre, apellido, genero, fecha_nacimiento, id_pais, id_obra_social, numero_afiliado, domicilio, telefono, email) VALUES
-    ('458256965', 'Jorge',    'Ramírez',  'M', '2019-01-18', 'COL', 1, 'OSDE-88210',  'Calle 23 #1512',      '+57 300 1234567', 'jramirez@gmail.com'),
+    ('28456123',  'Juan',     'Pérez García', 'M', '1985-05-14', 'MEX', 1, 'OSDE-88992',  'Av. Insurgentes Sur 1450, CDMX', '+52 55 1234-5678', 'juan.perez@email.com'),
     ('584585658', 'Carlos',   'López',    'M', '2002-02-19', 'MEX', 2, 'SM-99412',    'Av. Reforma 402',     '+52 55 43219876', 'clopez.mex@yahoo.com'),
     ('27854236',  'Claudio',  'López',    'M', '1980-04-12', 'ARG', 3, 'GAL-11204',   'Piedras 2056, CABA',  '+54 11 4455-6677', 'clopez@gmail.com'),
     ('30251236',  'Carlos',   'Ramírez',  'M', '1982-07-05', 'ARG', 1, 'OSDE-77432',  'Cerro Negro 452',     '+54 11 3322-1100', 'cramirez@gmail.com'),

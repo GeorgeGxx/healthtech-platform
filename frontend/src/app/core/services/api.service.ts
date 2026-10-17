@@ -139,7 +139,7 @@ export class ApiService {
     return this.http.get<any[]>(`${this.baseUrl}/patients`, { params }).pipe(
       tap(() => this.isConnected.set(true)),
       catchError(() => of([
-        { idPaciente: 1, dni: '28456123', nombre: 'Carlos', apellido: 'Mendoza', email: 'cmendoza@email.com', telefono: '+52 55 1234-5678', sexo: 'M', idObraSocial: 1, obraSocial: 'OSDE 310' },
+        { idPaciente: 1, dni: '28456123', nombre: 'Juan', apellido: 'Pérez García', email: 'juan.perez@email.com', telefono: '+52 55 1234-5678', sexo: 'M', idObraSocial: 1, obraSocial: 'OSDE 310 (Póliza 88992)', numeroAfiliado: '88992' },
         { idPaciente: 2, dni: '32198745', nombre: 'Mariana', apellido: 'Gómez', email: 'mgomez@email.com', telefono: '+52 55 2345-6789', sexo: 'F', idObraSocial: 2, obraSocial: 'Swiss Medical' },
         { idPaciente: 3, dni: '25632147', nombre: 'Roberto', apellido: 'Castro', email: 'rcastro@email.com', telefono: '+52 55 3456-7890', sexo: 'M', idObraSocial: 3, obraSocial: 'Galeno Oro' },
         { idPaciente: 4, dni: '34852963', nombre: 'Lucía', apellido: 'Fernández', email: 'lfernandez@email.com', telefono: '+52 55 4567-8901', sexo: 'F', idObraSocial: 4, obraSocial: 'PAMI Jubilados' },

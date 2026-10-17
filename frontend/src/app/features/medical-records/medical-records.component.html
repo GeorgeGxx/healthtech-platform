@@ -1,24 +1,55 @@
 <div class="space-y-6 animate-fade-in">
-  <!-- Encabezado -->
+  <!-- Encabezado contextual según rol -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
     <div>
-      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-        Expediente Clínico Electrónico (NOM-004-SSA3-2012)
-      </h1>
-      <p class="text-sm text-slate-500 mt-1">
-        Signos vitales y recetas en JSONB • Motor de búsqueda clínica en texto completo (FTS PostgreSQL)
-      </p>
+      @if (auth.isBasicUser()) {
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          Mi Historial Clínico y Recetas Médicas
+        </h1>
+        <p class="text-sm text-slate-600 mt-1">
+          Consulta tus notas de evolución médica, diagnósticos, constantes vitales y prescripciones farmacológicas.
+        </p>
+      } @else {
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          Expediente Clínico Electrónico (ECE)
+        </h1>
+        <p class="text-sm text-slate-600 mt-1">
+          Notas de evolución médica, constantes vitales y prescripción de fármacos conforme a normativa clínica.
+        </p>
+      }
     </div>
-    <button
-      (click)="openModal()"
-      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-500/20"
-    >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Nueva Nota de Evolución
-    </button>
+
+    <!-- Botón de nueva nota sólo para personal médico/recepción -->
+    @if (auth.isAdmin()) {
+      <button
+        (click)="openModal()"
+        class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-500/20"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nueva Nota de Evolución
+      </button>
+    }
   </div>
 
-  <!-- Buscador Clínico Full Text Search -->
+  <!-- Ficha de identidad fija para Juan Pérez García -->
+  @if (auth.isBasicUser()) {
+    <div class="glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-l-indigo-600">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+          JP
+        </div>
+        <div>
+          <h2 class="font-bold text-slate-900 text-sm">Juan Pérez García</h2>
+          <p class="text-xs text-slate-500">DNI: 28456123 • Cobertura: OSDE 310 (Afiliado 88992) • Grupo Sanguíneo: O+</p>
+        </div>
+      </div>
+      <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
+        Expediente Activo
+      </span>
+    </div>
+  }
+
+  <!-- Buscador Clínico -->
   <div class="glass-panel p-4 rounded-xl flex flex-wrap items-center gap-4">
     <div class="flex-1 min-w-[260px] flex items-center gap-2">
       <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -26,35 +57,37 @@
         type="text"
         [(ngModel)]="ftsQuery"
         (keyup.enter)="searchFts()"
-        placeholder="Búsqueda clínica en español (ej: hipertensión, bronquial, lumbago, diabetes)..."
+        [placeholder]="auth.isBasicUser() ? 'Buscar en mis diagnósticos o tratamientos...' : 'Buscar notas clínicas por diagnóstico, síntoma o tratamiento (ej: hipertensión, lumbago)...'"
         class="flex-1 bg-transparent border-none focus:outline-none text-sm text-slate-800"
       />
     </div>
     <button
       (click)="searchFts()"
-      class="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm"
+      class="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition"
     >
-      Búsqueda FTS
+      Buscar en Expediente
     </button>
-    <button
-      (click)="clearSearch()"
-      class="text-xs text-slate-400 hover:text-slate-600:text-slate-300"
-    >
-      Ver por Paciente
-    </button>
+    @if (ftsQuery) {
+      <button
+        (click)="clearSearch()"
+        class="text-xs text-slate-500 hover:text-slate-800 underline transition"
+      >
+        Limpiar búsqueda
+      </button>
+    }
   </div>
 
-  <!-- Selector de Paciente si no está en modo FTS -->
-  @if (!isFtsMode()) {
+  <!-- Selector de Paciente sólo visible para Recepción -->
+  @if (auth.isAdmin() && !isFtsMode()) {
     <div class="flex items-center gap-3">
-      <label class="text-xs font-bold text-slate-500 uppercase">Seleccionar Paciente:</label>
+      <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">Seleccionar Paciente:</label>
       <select
         [(ngModel)]="selectedPatientId"
         (change)="loadPatientRecords()"
-        class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm"
+        class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
       >
         @for (p of patients(); track p.idPaciente) {
-          <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (CURP/ID: {{ p.dni }})</option>
+          <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (DNI: {{ p.dni }})</option>
         }
       </select>
     </div>
@@ -64,10 +97,10 @@
   <div class="space-y-6">
     @for (r of records(); track r.id_historia || r.idHistoria) {
       <div class="glass-panel p-6 rounded-2xl shadow-sm border border-slate-200 relative">
-        <!-- Encabezado de la evolución -->
+        <!-- Encabezado de la nota -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
           <div class="flex items-center gap-3">
-            <span class="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <span class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             </span>
             <div>
@@ -75,8 +108,8 @@
                 {{ r.diagnostico_descripcion || r.diagnosticoDescripcion }}
               </h3>
               <p class="text-xs text-slate-500">
-                Médico tratante: <span class="font-medium text-slate-700">{{ r.medico?.nombre || r.medico }} {{ r.medico?.apellido }}</span>
-                @if (r.paciente?.nombre) {
+                Médico tratante: <span class="font-medium text-slate-700">Dr/a. {{ r.medico?.nombre || r.medico }} {{ r.medico?.apellido }}</span>
+                @if (auth.isAdmin() && r.paciente?.nombre) {
                   • Paciente: <span class="font-medium text-slate-700">{{ r.paciente.nombre }} {{ r.paciente.apellido }}</span>
                 }
               </p>
@@ -88,44 +121,44 @@
                 CIE-10: {{ r.diagnostico_codigo_cie || r.diagnosticoCodigoCie }}
               </span>
             }
-            <span class="text-xs font-mono text-slate-400">
-              {{ (r.fecha_atencion || r.fechaAtencion) | date: 'dd/MM/yyyy HH:mm' }}
+            <span class="text-xs font-medium text-slate-500">
+              {{ (r.fecha_atencion || r.fechaAtencion) | date: 'dd/MM/yyyy HH:mm' }} hrs
             </span>
           </div>
         </div>
 
-        <!-- Signos Vitales (JSONB) -->
+        <!-- Constantes y Signos Vitales -->
         @if (r.signos_vitales || r.signosVitales; as sv) {
           <div class="mt-4">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Signos Vitales Clínicos (JSONB)</span>
-            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Signos y Constantes Vitales</span>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
               @if (sv.presion_arterial) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-bold text-slate-400 uppercase font-bold block">Tensión Arterial</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Tensión Arterial</span>
                   <span class="font-bold text-sm text-slate-800">{{ sv.presion_arterial }} mmHg</span>
                 </div>
               }
               @if (sv.frecuencia_cardiaca_lpm) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-bold text-slate-400 uppercase font-bold block">Frecuencia C.</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Frecuencia Cardíaca</span>
                   <span class="font-bold text-sm text-rose-600">{{ sv.frecuencia_cardiaca_lpm }} lpm</span>
                 </div>
               }
               @if (sv.temperatura_c) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-bold text-slate-400 uppercase font-bold block">Temperatura</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Temperatura</span>
                   <span class="font-bold text-sm text-amber-600">{{ sv.temperatura_c }} °C</span>
                 </div>
               }
               @if (sv.peso_kg) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-bold text-slate-400 uppercase font-bold block">Peso Corporal</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Peso Corporal</span>
                   <span class="font-bold text-sm text-blue-600">{{ sv.peso_kg }} kg</span>
                 </div>
               }
               @if (sv.oxigeno_pct) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-bold text-slate-400 uppercase font-bold block">Oximetría SpO2</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Oximetría SpO2</span>
                   <span class="font-bold text-sm text-emerald-600">{{ sv.oxigeno_pct }}%</span>
                 </div>
               }
@@ -133,26 +166,26 @@
           </div>
         }
 
-        <!-- Tratamiento y conducta médica -->
+        <!-- Plan de tratamiento e indicaciones -->
         @if (r.tratamiento) {
           <div class="mt-4 text-xs text-slate-600">
-            <span class="font-bold text-slate-500 uppercase block mb-1">Plan de Tratamiento e Indicaciones:</span>
-            <p class="p-3 bg-slate-50 rounded-xl leading-relaxed">
+            <span class="font-bold text-slate-600 uppercase block mb-1">Plan de Tratamiento e Indicaciones Médicas:</span>
+            <p class="p-3 bg-slate-50/80 rounded-xl leading-relaxed text-slate-700 border border-slate-100">
               {{ r.tratamiento }}
             </p>
           </div>
         }
 
-        <!-- Receta Médica (JSONB Array) -->
+        <!-- Medicamentos Prescritos -->
         @if (r.receta_medicamentos || r.recetaMedicamentos; as recetas) {
           @if (recetas.length > 0) {
             <div class="mt-4">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Receta Farmacéutica Electrónica</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Prescripción y Medicamentos</span>
               <div class="flex flex-wrap gap-2">
                 @for (m of recetas; track m.medicamento) {
-                  <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    <svg class="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/></svg>
-                    <strong>{{ m.medicamento }}</strong> ({{ m.dosis }}) • {{ m.frecuencia }} • {{ m.dias }} días
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/></svg>
+                    <strong>{{ m.medicamento }}</strong> ({{ m.dosis }}) • Toma: {{ m.frecuencia }} • Duración: {{ m.dias }} días
                   </span>
                 }
               </div>
@@ -161,31 +194,35 @@
         }
       </div>
     } @empty {
-      <div class="py-12 text-center text-slate-400">
-        No hay notas de evolución registradas en el expediente clínico.
+      <div class="glass-panel py-12 text-center text-slate-500 rounded-2xl">
+        <p class="font-medium text-slate-700">No hay notas de evolución registradas</p>
+        <p class="text-xs text-slate-400 mt-1">
+          {{ auth.isBasicUser() ? 'Aún no cuentas con registros de consulta en tu expediente médico.' : 'No se encontraron notas clínicas con los criterios indicados.' }}
+        </p>
       </div>
     }
   </div>
 
-  <!-- Modal de Nueva Nota de Evolución -->
-  @if (showModal()) {
+  <!-- Modal de Nueva Nota de Evolución (Sólo para personal médico/recepción) -->
+  @if (showModal() && auth.isAdmin()) {
     <div class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
       <div class="bg-white border border-slate-200 rounded-2xl max-w-xl w-full p-6 shadow-2xl animate-fade-in my-8">
-        <h2 class="text-xl font-bold text-slate-900 mb-4">Nueva Nota Médica de Evolución</h2>
+        <h2 class="text-xl font-bold text-slate-900 mb-1">Nueva Nota Médica de Evolución</h2>
+        <p class="text-xs text-slate-500 mb-4">Registro clínico para el expediente del paciente.</p>
         
         <form (submit)="submitRecord($event)" class="space-y-4">
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold mb-1">Paciente</label>
-              <select [(ngModel)]="newRecord.idPaciente" name="idPaciente" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Paciente</label>
+              <select [(ngModel)]="newRecord.idPaciente" name="idPaciente" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
                 @for (p of patients(); track p.idPaciente) {
-                  <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }}</option>
+                  <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (DNI: {{ p.dni }})</option>
                 }
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold mb-1">Médico Responsable</label>
-              <select [(ngModel)]="newRecord.idMedico" name="idMedico" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Médico Tratante</label>
+              <select [(ngModel)]="newRecord.idMedico" name="idMedico" required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
                 @for (d of doctors(); track d.idMedico) {
                   <option [value]="d.idMedico">Dr/a. {{ d.nombre }} {{ d.apellido }}</option>
                 }
@@ -195,56 +232,56 @@
 
           <div class="grid grid-cols-3 gap-3">
             <div class="col-span-1">
-              <label class="block text-xs font-semibold mb-1">CIE-10</label>
-              <input type="text" [(ngModel)]="newRecord.diagnosticoCodigoCie" name="diagnosticoCodigoCie" placeholder="Ej: E11.9" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm" />
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Código CIE-10</label>
+              <input type="text" [(ngModel)]="newRecord.diagnosticoCodigoCie" name="diagnosticoCodigoCie" placeholder="Ej: I10, E11.9" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none" />
             </div>
             <div class="col-span-2">
-              <label class="block text-xs font-semibold mb-1">Diagnóstico Médico</label>
-              <input type="text" [(ngModel)]="newRecord.diagnosticoDescripcion" name="diagnosticoDescripcion" required placeholder="Descripción de acuerdo a NOM-004" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm" />
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Diagnóstico Clínico</label>
+              <input type="text" [(ngModel)]="newRecord.diagnosticoDescripcion" name="diagnosticoDescripcion" required placeholder="Descripción médica del diagnóstico" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none" />
             </div>
           </div>
 
-          <!-- Signos Vitales en JSONB -->
+          <!-- Signos Vitales -->
           <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <span class="text-xs font-bold text-slate-700 block mb-2">Somatometría y Signos Vitales (JSONB)</span>
+            <span class="text-xs font-bold text-slate-700 block mb-2">Constantes y Signos Vitales</span>
             <div class="grid grid-cols-3 gap-2">
               <div>
-                <label class="text-xs font-bold text-slate-400">Tensión (mmHg)</label>
-                <input type="text" [(ngModel)]="newRecord.signosVitales.presion_arterial" name="pa" placeholder="120/80" class="w-full bg-white border rounded px-2 py-1 text-xs" />
+                <label class="text-xs font-medium text-slate-500">Tensión (mmHg)</label>
+                <input type="text" [(ngModel)]="newRecord.signosVitales.presion_arterial" name="pa" placeholder="120/80" class="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-800" />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400">Pulso (lpm)</label>
-                <input type="number" [(ngModel)]="newRecord.signosVitales.frecuencia_cardiaca_lpm" name="fc" placeholder="72" class="w-full bg-white border rounded px-2 py-1 text-xs" />
+                <label class="text-xs font-medium text-slate-500">Pulso (lpm)</label>
+                <input type="number" [(ngModel)]="newRecord.signosVitales.frecuencia_cardiaca_lpm" name="fc" placeholder="72" class="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-800" />
               </div>
               <div>
-                <label class="text-xs font-bold text-slate-400">Temp (°C)</label>
-                <input type="number" step="0.1" [(ngModel)]="newRecord.signosVitales.temperatura_c" name="temp" placeholder="36.5" class="w-full bg-white border rounded px-2 py-1 text-xs" />
+                <label class="text-xs font-medium text-slate-500">Temp (°C)</label>
+                <input type="number" step="0.1" [(ngModel)]="newRecord.signosVitales.temperatura_c" name="temp" placeholder="36.5" class="w-full bg-white border border-slate-200 rounded px-2 py-1.5 text-xs text-slate-800" />
               </div>
             </div>
           </div>
 
           <div>
-            <label class="block text-xs font-semibold mb-1">Indicaciones y Plan Terapéutico</label>
-            <textarea [(ngModel)]="newRecord.tratamiento" name="tratamiento" rows="2" placeholder="Plan de manejo terapéutico..." class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm"></textarea>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Indicaciones y Plan Terapéutico</label>
+            <textarea [(ngModel)]="newRecord.tratamiento" name="tratamiento" rows="2" placeholder="Indicaciones para el paciente, cuidados y seguimiento..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none"></textarea>
           </div>
 
-          <!-- Receta dinámica -->
+          <!-- Prescripción médica -->
           <div>
-            <label class="block text-xs font-semibold mb-1">Prescripción de Medicamentos (JSONB)</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Prescripción de Fármaco (Opcional)</label>
             <div class="grid grid-cols-4 gap-2">
-              <input type="text" [(ngModel)]="drugName" placeholder="Fármaco" class="bg-slate-50 border rounded px-2 py-1 text-xs" />
-              <input type="text" [(ngModel)]="drugDose" placeholder="Dosis (500mg)" class="bg-slate-50 border rounded px-2 py-1 text-xs" />
-              <input type="text" [(ngModel)]="drugFreq" placeholder="Frecuencia (c/8h)" class="bg-slate-50 border rounded px-2 py-1 text-xs" />
-              <input type="number" [(ngModel)]="drugDays" placeholder="Días (7)" class="bg-slate-50 border rounded px-2 py-1 text-xs" />
+              <input type="text" [(ngModel)]="drugName" placeholder="Medicamento" class="bg-slate-50 border border-slate-200 rounded px-2 py-1.5 text-xs" />
+              <input type="text" [(ngModel)]="drugDose" placeholder="Dosis (500mg)" class="bg-slate-50 border border-slate-200 rounded px-2 py-1.5 text-xs" />
+              <input type="text" [(ngModel)]="drugFreq" placeholder="Frecuencia (c/12h)" class="bg-slate-50 border border-slate-200 rounded px-2 py-1.5 text-xs" />
+              <input type="number" [(ngModel)]="drugDays" placeholder="Días (30)" class="bg-slate-50 border border-slate-200 rounded px-2 py-1.5 text-xs" />
             </div>
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-3">
-            <button type="button" (click)="closeModal()" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900">
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <button type="button" (click)="closeModal()" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900 transition">
               Cancelar
             </button>
-            <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md">
-              Firmar Nota Médica
+            <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-md transition">
+              Guardar en Expediente
             </button>
           </div>
         </form>

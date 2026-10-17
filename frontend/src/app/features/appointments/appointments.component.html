@@ -1,95 +1,152 @@
 <div class="space-y-6 animate-fade-in">
-  <!-- Encabezado -->
+  <!-- Encabezado contextual según rol (Recepción vs Paciente) -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
     <div>
-      <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-        Agenda de Citas y Consultas Médicas
-      </h1>
-      <p class="text-sm text-slate-500 mt-1">
-        Programación clínica con control de solapamiento en tiempo real (PostgreSQL 18 GIST)
-      </p>
+      @if (auth.isBasicUser()) {
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          Mis Citas Médicas
+        </h1>
+        <p class="text-sm text-slate-600 mt-1">
+          Consulta tus citas programadas, el médico especialista asignado y solicita nuevas valoraciones.
+        </p>
+      } @else {
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+          Agenda y Asignación de Consultas Médicas
+        </h1>
+        <p class="text-sm text-slate-600 mt-1">
+          Coordinación de citas hospitalarias, asignación de médicos especialistas y consultorios.
+        </p>
+      }
     </div>
-    <button
-      (click)="openModal()"
-      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20"
-    >
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Agendar Cita Médica
-    </button>
-  </div>
 
-  <!-- Filtros de búsqueda -->
-  <div class="glass-panel p-4 rounded-xl flex flex-wrap items-center gap-4">
-    <div class="flex-1 min-w-[200px]">
-      <label class="block text-xs font-semibold text-slate-500 mb-1">Filtrar por Médico Tratante</label>
-      <select
-        [(ngModel)]="selectedDoctorId"
-        (change)="loadAppointments()"
-        class="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm"
-      >
-        <option [value]="0">Todos los Médicos</option>
-        @for (doc of doctors(); track doc.idMedico) {
-          <option [value]="doc.idMedico">Dr/a. {{ doc.nombre }} {{ doc.apellido }}</option>
-        }
-      </select>
-    </div>
-    <div class="w-full sm:w-auto">
-      <label class="block text-xs font-semibold text-slate-500 mb-1">Filtrar por Fecha</label>
-      <input
-        type="date"
-        [(ngModel)]="selectedDate"
-        (change)="loadAppointments()"
-        class="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm"
-      />
-    </div>
-    <div class="pt-5">
-      <button
-        (click)="resetFilters()"
-        class="px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900:text-white"
-      >
-        Restablecer filtros
-      </button>
+    <div>
+      @if (auth.isBasicUser()) {
+        <button
+          (click)="openModal()"
+          class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Solicitar Nueva Cita
+        </button>
+      } @else {
+        <button
+          (click)="openModal()"
+          class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Agendar Cita de Paciente
+        </button>
+      }
     </div>
   </div>
 
-  <!-- Tabla de Citas -->
+  <!-- Nota de flujo clínico para Recepción: enfermeras rotativas/comodín -->
+  @if (auth.isAdmin()) {
+    <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3 text-xs text-blue-900">
+      <span class="text-blue-600 mt-0.5">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </span>
+      <div>
+        <span class="font-bold">Guía de asignación clínica:</span> Como recepcionista, programas la cita vinculando al paciente directamente con el <strong>Médico Especialista</strong> y el <strong>Consultorio</strong>. El cuerpo de enfermería no requiere asignación fija de agenda ya que rota como comodín y brinda soporte según la demanda en el piso hospitalario.
+      </div>
+    </div>
+  }
+
+  <!-- Filtros de búsqueda para Recepción -->
+  @if (auth.isAdmin()) {
+    <div class="glass-panel p-4 rounded-xl flex flex-wrap items-center gap-4">
+      <div class="flex-1 min-w-[220px]">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Filtrar por Médico Especialista</label>
+        <select
+          [(ngModel)]="selectedDoctorId"
+          (change)="loadAppointments()"
+          class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        >
+          <option [value]="0">Todos los Médicos Especialistas</option>
+          @for (doc of doctors(); track doc.idMedico) {
+            <option [value]="doc.idMedico">Dr/a. {{ doc.nombre }} {{ doc.apellido }} ({{ doc.especialidad }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="w-full sm:w-auto">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Filtrar por Fecha</label>
+        <input
+          type="date"
+          [(ngModel)]="selectedDate"
+          (change)="loadAppointments()"
+          class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+        />
+      </div>
+
+      <div class="pt-5">
+        <button
+          (click)="resetFilters()"
+          class="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg transition"
+        >
+          Limpiar filtros
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- Tabla de Citas Médicas -->
   <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
     <div class="overflow-x-auto">
       <table class="w-full text-left text-sm text-slate-600">
-        <thead class="bg-slate-50/80 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
+        <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
           <tr>
-            <th class="px-5 py-3">Fecha y Hora</th>
-            <th class="px-5 py-3">Paciente</th>
-            <th class="px-5 py-3">Médico</th>
-            <th class="px-5 py-3">Especialidad</th>
-            <th class="px-5 py-3">Consultorio</th>
-            <th class="px-5 py-3">Estatus</th>
-            <th class="px-5 py-3 text-right">Acciones</th>
+            <th class="px-5 py-3.5">Fecha y Horario</th>
+            @if (auth.isAdmin()) {
+              <th class="px-5 py-3.5">Paciente</th>
+            }
+            <th class="px-5 py-3.5">Médico Tratante</th>
+            <th class="px-5 py-3.5">Especialidad</th>
+            <th class="px-5 py-3.5">Consultorio</th>
+            <th class="px-5 py-3.5">Motivo de Consulta</th>
+            <th class="px-5 py-3.5">Estado</th>
+            <th class="px-5 py-3.5 text-right">Acciones</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
           @for (t of appointments(); track t.idTurno) {
-            <tr class="hover:bg-slate-50/50:bg-slate-800/40 transition-colors">
-              <td class="px-5 py-3.5 font-mono text-xs">
-                {{ t.fechaInicio ? (t.fechaInicio | date: 'dd/MM/yyyy HH:mm') : 'Por programar' }}
-              </td>
-              <td class="px-5 py-3.5 font-semibold text-slate-900">
-                {{ t.paciente?.nombre }} {{ t.paciente?.apellido }}
-                <span class="block text-xs font-normal text-slate-400">CURP/ID: {{ t.paciente?.dni }}</span>
-              </td>
-              <td class="px-5 py-3.5">
-                Dr/a. {{ t.medico?.nombre }} {{ t.medico?.apellido }}
-              </td>
-              <td class="px-5 py-3.5">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                  {{ t.especialidad?.nombre }}
+            <tr class="hover:bg-slate-50/70 transition-colors">
+              <td class="px-5 py-3.5 font-medium text-xs text-slate-800">
+                <span class="block font-semibold text-slate-900">
+                  {{ t.fechaInicio ? (t.fechaInicio | date: 'dd/MM/yyyy') : 'Fecha por confirmar' }}
+                </span>
+                <span class="text-slate-500">
+                  {{ t.fechaInicio ? (t.fechaInicio | date: 'HH:mm') : '--:--' }} hrs
                 </span>
               </td>
-              <td class="px-5 py-3.5 text-xs text-slate-500">
-                {{ t.consultorio?.codigo || 'Sin asignar' }}
+
+              @if (auth.isAdmin()) {
+                <td class="px-5 py-3.5 font-semibold text-slate-900">
+                  {{ t.paciente?.nombre || t.paciente }} {{ t.paciente?.apellido }}
+                  <span class="block text-xs font-normal text-slate-500">DNI: {{ t.paciente?.dni || 'N/A' }}</span>
+                </td>
+              }
+
+              <td class="px-5 py-3.5 text-slate-800 font-medium">
+                Dr/a. {{ t.medico?.nombre || t.medico }} {{ t.medico?.apellido }}
               </td>
+
               <td class="px-5 py-3.5">
-                <span class="inline-block px-2.5 py-1 text-xs font-medium font-bold rounded-full uppercase tracking-wider"
+                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200/50">
+                  {{ t.especialidad?.nombre || t.especialidad || 'Consulta General' }}
+                </span>
+              </td>
+
+              <td class="px-5 py-3.5 text-xs text-slate-600">
+                {{ t.consultorio?.codigo || t.consultorio || 'Asignación en recepción' }}
+              </td>
+
+              <td class="px-5 py-3.5 text-xs text-slate-600 max-w-xs truncate">
+                {{ t.motivoConsulta || 'Consulta médica de control' }}
+              </td>
+
+              <td class="px-5 py-3.5">
+                <span class="inline-block px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider"
                   [ngClass]="{
                     'bg-emerald-100 text-emerald-800': t.estado === 'atendido',
                     'bg-blue-100 text-blue-800': t.estado === 'confirmado',
@@ -100,29 +157,49 @@
                   {{ t.estado }}
                 </span>
               </td>
+
               <td class="px-5 py-3.5 text-right space-x-1">
-                @if (t.estado !== 'atendido' && t.estado !== 'cancelado') {
-                  <button
-                    (click)="changeStatus(t.idTurno, 'atendido')"
-                    class="px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded"
-                    title="Marcar como Atendido"
-                  >
-                    Atendido
-                  </button>
-                  <button
-                    (click)="changeStatus(t.idTurno, 'cancelado')"
-                    class="px-2 py-1 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 rounded"
-                    title="Cancelar Cita"
-                  >
-                    Cancelar
-                  </button>
+                @if (auth.isAdmin()) {
+                  @if (t.estado !== 'atendido' && t.estado !== 'cancelado') {
+                    <button
+                      (click)="changeStatus(t.idTurno, 'atendido')"
+                      class="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition"
+                      title="Marcar como Atendido en Consulta"
+                    >
+                      Atendido
+                    </button>
+                    <button
+                      (click)="changeStatus(t.idTurno, 'cancelado')"
+                      class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                      title="Cancelar Cita"
+                    >
+                      Cancelar
+                    </button>
+                  }
+                } @else {
+                  @if (t.estado === 'pendiente') {
+                    <button
+                      (click)="cancelMyAppointment(t.idTurno)"
+                      class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                      title="Cancelar mi cita"
+                    >
+                      Cancelar cita
+                    </button>
+                  } @else {
+                    <span class="text-xs text-slate-400">Sin acciones</span>
+                  }
                 }
               </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="px-5 py-8 text-center text-slate-400">
-                No se encontraron citas médicas con los criterios especificados.
+              <td [attr.colspan]="auth.isAdmin() ? 8 : 7" class="px-5 py-10 text-center text-slate-500">
+                <div class="max-w-sm mx-auto space-y-1">
+                  <p class="font-medium text-slate-700">No hay citas médicas para mostrar</p>
+                  <p class="text-xs text-slate-400">
+                    {{ auth.isBasicUser() ? 'Actualmente no tienes citas programadas. Puedes solicitar una cita pulsando el botón superior.' : 'No se encontraron turnos con los filtros seleccionados.' }}
+                  </p>
+                </div>
               </td>
             </tr>
           }
@@ -131,40 +208,70 @@
     </div>
   </div>
 
-  <!-- Modal de Agendar Cita -->
+  <!-- Modal de Agendar/Solicitar Cita -->
   @if (showModal()) {
     <div class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-fade-in">
-        <h2 class="text-xl font-bold text-slate-900 mb-4">Agendar Cita Médica</h2>
+        <h2 class="text-xl font-bold text-slate-900 mb-2">
+          {{ auth.isBasicUser() ? 'Solicitar Cita Médica' : 'Agendar Cita Médica de Paciente' }}
+        </h2>
+        <p class="text-xs text-slate-500 mb-4">
+          {{ auth.isBasicUser() ? 'Selecciona la especialidad médica y horario deseado para tu valoración clínica.' : 'Selecciona el paciente, asigna al médico especialista y confirma el consultorio físico.' }}
+        </p>
         
         @if (errorMessage()) {
-          <div class="mb-4 p-3 rounded-lg bg-rose-50 text-rose-700 text-xs">
+          <div class="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
             {{ errorMessage() }}
           </div>
         }
 
         <form (submit)="submitAppointment($event)" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold mb-1">Paciente</label>
-            <select [(ngModel)]="newApp.idPaciente" name="idPaciente" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
-              @for (p of patients(); track p.idPaciente) {
-                <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (ID: {{ p.dni }})</option>
-              }
-            </select>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
+          <!-- Campo Paciente -->
+          @if (auth.isBasicUser()) {
+            <div class="p-3 bg-blue-50/60 border border-blue-200/80 rounded-xl text-xs text-blue-900">
+              <span class="block font-bold text-blue-800">Paciente Solicitante:</span>
+              <span class="text-sm font-semibold text-slate-800">Juan Pérez García</span>
+              <span class="block text-slate-500 mt-0.5">DNI: 28456123 • Cobertura: OSDE 310 (Póliza 88992)</span>
+            </div>
+          } @else {
             <div>
-              <label class="block text-xs font-semibold mb-1">Médico Especialista</label>
-              <select [(ngModel)]="newApp.idMedico" name="idMedico" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Paciente</label>
+              <select
+                [(ngModel)]="newApp.idPaciente"
+                name="idPaciente"
+                required
+                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                @for (p of patients(); track p.idPaciente) {
+                  <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (DNI: {{ p.dni }})</option>
+                }
+              </select>
+            </div>
+          }
+
+          <!-- Especialista y Especialidad -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Médico Especialista</label>
+              <select
+                [(ngModel)]="newApp.idMedico"
+                name="idMedico"
+                required
+                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
                 @for (d of doctors(); track d.idMedico) {
                   <option [value]="d.idMedico">Dr/a. {{ d.nombre }} {{ d.apellido }}</option>
                 }
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold mb-1">Especialidad</label>
-              <select [(ngModel)]="newApp.idEspecialidad" name="idEspecialidad" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Especialidad Clínica</label>
+              <select
+                [(ngModel)]="newApp.idEspecialidad"
+                name="idEspecialidad"
+                required
+                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
                 @for (e of specialties(); track e.idEspecialidad) {
                   <option [value]="e.idEspecialidad">{{ e.nombre }}</option>
                 }
@@ -172,38 +279,72 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <!-- Horario de Cita -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-semibold mb-1">Inicio de Consulta</label>
-              <input type="datetime-local" [(ngModel)]="newApp.inicio" name="inicio" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm" />
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha y Hora de Inicio</label>
+              <input
+                type="datetime-local"
+                [(ngModel)]="newApp.inicio"
+                name="inicio"
+                required
+                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
             </div>
             <div>
-              <label class="block text-xs font-semibold mb-1">Fin Estimado</label>
-              <input type="datetime-local" [(ngModel)]="newApp.fin" name="fin" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm" />
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Fin Estimado</label>
+              <input
+                type="datetime-local"
+                [(ngModel)]="newApp.fin"
+                name="fin"
+                required
+                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
             </div>
           </div>
 
+          <!-- Consultorio (para Recepción) o Asignación automática para Paciente -->
+          @if (auth.isAdmin()) {
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Consultorio Físico Asignado</label>
+              <select
+                [(ngModel)]="newApp.idConsultorio"
+                name="idConsultorio"
+                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option [ngValue]="null">Asignación automática de consultorio</option>
+                @for (c of offices(); track c.idConsultorio) {
+                  <option [value]="c.idConsultorio">{{ c.codigo }} - Piso {{ c.piso }} ({{ c.descripcion }})</option>
+                }
+              </select>
+            </div>
+          }
+
+          <!-- Motivo de consulta -->
           <div>
-            <label class="block text-xs font-semibold mb-1">Consultorio Físico</label>
-            <select [(ngModel)]="newApp.idConsultorio" name="idConsultorio" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
-              <option [ngValue]="null">Asignación automática de consultorio</option>
-              @for (c of offices(); track c.idConsultorio) {
-                <option [value]="c.idConsultorio">{{ c.codigo }} - Piso {{ c.piso }}</option>
-              }
-            </select>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Motivo de Consulta Médica</label>
+            <input
+              type="text"
+              [(ngModel)]="newApp.motivoConsulta"
+              name="motivoConsulta"
+              placeholder="Ej: Control de presión arterial, valoración cardiológica, revisión general"
+              class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
           </div>
 
-          <div>
-            <label class="block text-xs font-semibold mb-1">Motivo de Consulta Médica</label>
-            <input type="text" [(ngModel)]="newApp.motivoConsulta" name="motivoConsulta" placeholder="Ej: Valoración preoperatoria, control de hipertensión" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm" />
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-3">
-            <button type="button" (click)="closeModal()" class="px-4 py-2 text-sm text-slate-600 hover:text-slate-900">
+          <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              (click)="closeModal()"
+              class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 transition"
+            >
               Cancelar
             </button>
-            <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md">
-              Confirmar Cita
+            <button
+              type="submit"
+              class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition"
+            >
+              {{ auth.isBasicUser() ? 'Confirmar Solicitud de Cita' : 'Registrar Cita Médica' }}
             </button>
           </div>
         </form>

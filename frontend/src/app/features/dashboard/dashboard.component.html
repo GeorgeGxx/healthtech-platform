@@ -1,289 +1,474 @@
-﻿<div class="space-y-8 animate-fade-in">
- <!-- Encabezado Principal -->
- <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200/90">
- <div>
- <div class="flex items-center gap-2 mb-1.5">
- <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-300">
- Clínica Digital 4.0
- </span>
- <span class="text-slate-300">•</span>
- <span class="text-xs font-mono font-semibold text-slate-500">NOM-024 / HIPAA Secured</span>
- </div>
- <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
- Tablero de Control Hospitalario
- </h1>
- <p class="text-sm sm:text-base text-slate-600 mt-1">
- Monitoreo asistencial y financiero en tiempo real • Centro Médico Nacional
- </p>
- </div>
+<div class="space-y-8 animate-fade-in">
+  @if (auth.isBasicUser()) {
+    <!-- ========================================================================= -->
+    <!-- PORTAL PERSONAL DEL PACIENTE (JUAN PÉREZ GARCÍA) -->
+    <!-- ========================================================================= -->
+    <!-- Encabezado del Portal de Paciente -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200">
+      <div>
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-800 border border-blue-200">
+            Portal del Paciente
+          </span>
+          <span class="text-slate-300">•</span>
+          <span class="text-xs font-semibold text-slate-500">Expediente Médico Protegido</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+          Bienvenido, Juan Pérez García
+        </h1>
+        <p class="text-sm sm:text-base text-slate-600 mt-1">
+          Resumen de tu estado de salud, citas médicas agendadas y tratamiento farmacológico activo.
+        </p>
+      </div>
 
- <!-- Indicador de Estado & Acciones -->
- <div class="flex flex-wrap items-center gap-3">
- @if (api.isConnected()) {
- <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs">
- <span class="relative flex h-2.5 w-2.5">
- <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
- <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
- </span>
- PostgreSQL 18 Activo
- </span>
- } @else {
- <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-xs">
- <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
- Modo Local / Réplica
- </span>
- }
+      <div class="flex items-center gap-3">
+        <a
+          routerLink="/appointments"
+          class="inline-flex items-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20 cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Solicitar Nueva Cita
+        </a>
+      </div>
+    </div>
 
- <button
- (click)="loadMetrics()"
- [disabled]="isLoading()"
- class="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
- >
- <svg class="w-4 h-4 text-slate-500" [class.animate-spin]="isLoading()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
- <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
- </svg>
- <span>{{ isLoading() ? 'Sincronizando...' : 'Actualizar Datos' }}</span>
- </button>
- </div>
- </div>
+    <!-- Grid de Resumen Personal de Salud -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+      <!-- Tarjeta 1: Próxima Cita -->
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="flex items-center justify-between">
+          <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Próxima Consulta</span>
+          <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-xs">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+        </div>
+        <div class="mt-4">
+          <span class="text-base font-bold text-slate-900 block">Dr. Rafael Castelo</span>
+          <span class="text-xs font-semibold text-blue-600 block">Cardiología • Consultorio C-201</span>
+        </div>
+        <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+            Confirmada
+          </span>
+          <a routerLink="/appointments" class="text-blue-600 hover:text-blue-700 font-bold">
+            Ver citas &rarr;
+          </a>
+        </div>
+      </div>
 
- @if (metrics(); as data) {
- <!-- Grid de Indicadores Clave (KPIs) con Estética Limpia y Fuentes Cómodas -->
- <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
- <!-- KPI 1: Padrón de Pacientes -->
- <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
- <div class="flex items-center justify-between">
- <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Padrón de Pacientes</span>
- <div class="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100 shadow-xs">
- <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
- </div>
- </div>
- <div class="mt-4 flex items-baseline gap-2.5">
- <span class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{{ data.kpis.totalPatients }}</span>
- <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
- ↑ +12% mes
- </span>
- </div>
- <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
- <span class="text-slate-500 font-medium">Expedientes activos</span>
- <a routerLink="/patients" class="text-sky-600 hover:text-sky-700 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
- Directorio &rarr;
- </a>
- </div>
- </div>
+      <!-- Tarjeta 2: Seguro Médico / Cobertura -->
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="flex items-center justify-between">
+          <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Cobertura Médica</span>
+          <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-xs">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+        </div>
+        <div class="mt-4">
+          <span class="text-base font-bold text-slate-900 block">OSDE 310</span>
+          <span class="text-xs text-slate-500 block">Póliza: 88992 • Cobertura 80%</span>
+        </div>
+        <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+            Póliza Activa
+          </span>
+          <a routerLink="/patients" class="text-blue-600 hover:text-blue-700 font-bold">
+            Mi perfil &rarr;
+          </a>
+        </div>
+      </div>
 
- <!-- KPI 2: Consultas & Citas Médicas -->
- <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
- <div class="flex items-center justify-between">
- <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Consultas & Citas</span>
- <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-xs">
- <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
- </div>
- </div>
- <div class="mt-4 flex items-baseline gap-2.5">
- <span class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{{ data.kpis.totalAppointments }}</span>
- <span class="text-xs sm:text-sm font-bold text-emerald-700">
- {{ data.kpis.appointmentsAttended }} atendidas
- </span>
- </div>
- <div class="mt-4">
- <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
- <span>{{ data.kpis.appointmentsPending }} pendientes</span>
- <span>{{ data.kpis.appointmentsCanceled }} canceladas</span>
- </div>
- <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
- <div
- class="bg-emerald-500 h-full rounded-l-full transition-all duration-700"
- [style.width.%]="(data.kpis.appointmentsAttended / (data.kpis.totalAppointments || 1)) * 100"
- title="Atendidas"
- ></div>
- <div
- class="bg-sky-400 h-full transition-all duration-700"
- [style.width.%]="(data.kpis.appointmentsPending / (data.kpis.totalAppointments || 1)) * 100"
- title="Pendientes"
- ></div>
- <div
- class="bg-rose-400 h-full rounded-r-full transition-all duration-700"
- [style.width.%]="(data.kpis.appointmentsCanceled / (data.kpis.totalAppointments || 1)) * 100"
- title="Canceladas"
- ></div>
- </div>
- </div>
- </div>
+      <!-- Tarjeta 3: Tratamiento Farmacológico -->
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="flex items-center justify-between">
+          <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Medicamentos Activos</span>
+          <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100 shadow-xs">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+          </div>
+        </div>
+        <div class="mt-4">
+          <span class="text-base font-bold text-slate-900 block">2 Fármacos Recetados</span>
+          <span class="text-xs text-slate-500 block">Losartán 50mg • Aspirina 100mg</span>
+        </div>
+        <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+          <span class="text-slate-500 font-medium">Uso diario</span>
+          <a routerLink="/medical-records" class="text-blue-600 hover:text-blue-700 font-bold">
+            Ver receta &rarr;
+          </a>
+        </div>
+      </div>
 
- <!-- KPI 3: Censo Hospitalario -->
- <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
- <div class="flex items-center justify-between">
- <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Censo Hospitalario</span>
- <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-xs">
- <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
- </div>
- </div>
- <div class="mt-4 flex items-baseline gap-2.5">
- <span class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{{ data.kpis.occupancyRate }}%</span>
- <span class="text-xs sm:text-sm font-bold text-slate-600">
- {{ data.kpis.occupiedBeds }}/{{ data.kpis.totalBeds }} camas en uso
- </span>
- </div>
- <div class="mt-4">
- <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
- <span>Ocupación de piso</span>
- <span class="font-bold text-indigo-600">Capacidad controlada</span>
- </div>
- <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
- <div
- class="gradient-indigo h-full rounded-full transition-all duration-700"
- [style.width.%]="data.kpis.occupancyRate"
- ></div>
- </div>
- </div>
- </div>
+      <!-- Tarjeta 4: Constantes Vitales -->
+      <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+        <div class="flex items-center justify-between">
+          <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Últimos Signos</span>
+          <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-xs">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          </div>
+        </div>
+        <div class="mt-4">
+          <span class="text-base font-bold text-slate-900 block">Tensión: 125/80 mmHg</span>
+          <span class="text-xs text-slate-500 block">Pulso: 72 lpm • SpO2: 99%</span>
+        </div>
+        <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+          <span class="text-emerald-700 font-semibold">Parámetros normales</span>
+          <a routerLink="/medical-records" class="text-blue-600 hover:text-blue-700 font-bold">
+            Detalle &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
 
- <!-- KPI 4: Recaudación Neta -->
- <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
- <div class="flex items-center justify-between">
- <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Recaudación Neta (MXN)</span>
- <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-xs">
- <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
- </div>
- </div>
- <div class="mt-4 flex items-baseline gap-2">
- <span class="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
- ${{ data.kpis.totalRevenue | number: '1.0-0' }}
- </span>
- <span class="text-xs font-bold text-amber-700 uppercase">MXN</span>
- </div>
- <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
- <span class="text-slate-500 font-medium">Ticket prom: ${{ data.kpis.averageTicket | number: '1.0-0' }}</span>
- <a routerLink="/billing" class="text-amber-600 hover:text-amber-700 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
- Finanzas &rarr;
- </a>
- </div>
- </div>
- </div>
+    <!-- Sección de Acciones Rápidas y Consejos de Salud para el Paciente -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 glass-panel p-6 sm:p-7 rounded-2xl">
+        <h2 class="text-lg font-black text-slate-900 mb-1">Tu Ruta de Atención Médica</h2>
+        <p class="text-xs text-slate-500 mb-5">Acciones inmediatas disponibles en tu portal de salud.</p>
 
- <!-- Secciones Operativas con Fuentes Legibles y Diseño Responsivo -->
- <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
- <!-- Próximas Citas Médicas -->
- <div class="glass-panel p-6 sm:p-7 rounded-2xl">
- <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-5">
- <div class="flex items-center gap-3">
- <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold">
- <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
- </div>
- <div>
- <h2 class="text-base sm:text-lg font-black text-slate-900">Próximas Citas Médicas</h2>
- <p class="text-xs sm:text-sm text-slate-500">Pacientes agendados para hoy</p>
- </div>
- </div>
- <a routerLink="/appointments" class="text-xs sm:text-sm font-bold text-sky-600 hover:underline">
- Ver agenda completa
- </a>
- </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <a routerLink="/appointments" class="p-4 rounded-xl border border-slate-200 hover:border-blue-300 hover:bg-blue-50/40 transition-all flex flex-col justify-between group">
+            <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center mb-3">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            </div>
+            <h3 class="font-bold text-sm text-slate-900 group-hover:text-blue-700">Solicitar Cita</h3>
+            <p class="text-xs text-slate-500 mt-1">Programa una consulta con tu médico especialista de preferencia.</p>
+          </a>
 
- @if (data.upcomingAppointments.length > 0) {
- <div class="space-y-3.5">
- @for (t of data.upcomingAppointments; track t.id_turno) {
- <div class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:border-sky-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
- <div class="flex items-center gap-3.5">
- <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 text-white font-black text-sm flex items-center justify-center shadow-xs shrink-0">
- {{ t.paciente.slice(0, 2).toUpperCase() }}
- </div>
- <div>
- <h3 class="font-bold text-base text-slate-900 leading-tight">{{ t.paciente }}</h3>
- <p class="text-xs sm:text-sm text-slate-600 flex items-center gap-2 mt-1">
- <span>{{ t.medico }}</span>
- <span class="text-slate-300">•</span>
- <span class="font-semibold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200/60 text-xs">
- {{ t.especialidad }}
- </span>
- </p>
- </div>
- </div>
- <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60">
- <span class="text-sm font-mono font-bold text-slate-800">
- {{ t.fecha_hora | date: 'HH:mm' }} hrs
- </span>
- <span
- class="inline-block sm:mt-1 px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider"
- [ngClass]="{
- 'bg-amber-100 text-amber-800 border border-amber-200': t.estado === 'pendiente',
- 'bg-emerald-100 text-emerald-800 border border-emerald-200': t.estado === 'confirmado' || t.estado === 'atendido'
- }"
- >
- {{ t.estado }}
- </span>
- </div>
- </div>
- }
- </div>
- } @else {
- <div class="py-12 text-center text-slate-500">
- <p class="text-sm font-medium">No hay citas pendientes para el horario actual.</p>
- </div>
- }
- </div>
+          <a routerLink="/medical-records" class="p-4 rounded-xl border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40 transition-all flex flex-col justify-between group">
+            <div class="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center mb-3">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <h3 class="font-bold text-sm text-slate-900 group-hover:text-indigo-700">Historial y Recetas</h3>
+            <p class="text-xs text-slate-500 mt-1">Revisa diagnósticos previos, tratamientos e indicaciones.</p>
+          </a>
 
- <!-- Hospitalizaciones Activas -->
- <div class="glass-panel p-6 sm:p-7 rounded-2xl">
- <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-5">
- <div class="flex items-center gap-3">
- <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
- <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
- </div>
- <div>
- <h2 class="text-base sm:text-lg font-black text-slate-900">Hospitalizaciones Activas</h2>
- <p class="text-xs sm:text-sm text-slate-500">Pacientes ingresados en piso clínico</p>
- </div>
- </div>
- <a routerLink="/hospitalizations" class="text-xs sm:text-sm font-bold text-sky-600 hover:underline">
- Censo de camas
- </a>
- </div>
+          <a routerLink="/patients" class="p-4 rounded-xl border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 transition-all flex flex-col justify-between group">
+            <div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+            <h3 class="font-bold text-sm text-slate-900 group-hover:text-emerald-700">Mis Datos Personales</h3>
+            <p class="text-xs text-slate-500 mt-1">Verifica tu contacto, número de póliza y domicilio registrado.</p>
+          </a>
+        </div>
+      </div>
 
- @if (data.activeHospitalizations.length > 0) {
- <div class="space-y-3.5">
- @for (h of data.activeHospitalizations; track h.id_internacion) {
- <div class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:border-rose-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
- <div class="flex items-center gap-3.5">
- <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-rose-500 to-amber-500 text-white font-black text-sm flex items-center justify-center shadow-xs shrink-0">
- {{ h.paciente.slice(0, 2).toUpperCase() }}
- </div>
- <div>
- <h3 class="font-bold text-base text-slate-900 leading-tight">{{ h.paciente }}</h3>
- <p class="text-xs sm:text-sm text-slate-600 line-clamp-1 mt-1 font-medium">
- {{ h.diagnostico_ingreso }}
- </p>
- </div>
- </div>
- <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60">
- <span class="inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
- {{ h.habitacion }}
- </span>
- <span class="block text-xs text-slate-500 sm:mt-1 font-mono">
- Ingreso: {{ h.fecha_ingreso | date: 'dd/MM' }}
- </span>
- </div>
- </div>
- }
- </div>
- } @else {
- <div class="py-12 text-center text-slate-500">
- <p class="text-sm font-medium">No hay pacientes internados en este momento.</p>
- </div>
- }
- </div>
- </div>
- } @else {
- <!-- Estado de carga inicial no bloqueante -->
- <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 animate-pulse">
- @for (i of [1, 2, 3, 4]; track i) {
- <div class="glass-card p-6 rounded-2xl h-40 bg-slate-100"></div>
- }
- </div>
- <div class="py-12 text-center">
- <div class="inline-block animate-spin rounded-full h-9 w-9 border-3 border-emerald-500 border-t-transparent"></div>
- <p class="text-sm sm:text-base text-slate-600 mt-3 font-semibold">Conectando con base de datos PostgreSQL 18...</p>
- </div>
- }
+      <div class="glass-panel p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-blue-50/60 to-slate-50">
+        <h2 class="text-base font-bold text-slate-900 mb-2">Recomendaciones de Salud</h2>
+        <div class="space-y-3 text-xs text-slate-600">
+          <div class="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-slate-100">
+            <span class="text-blue-600 font-bold">●</span>
+            <p>Recuerda tomar tu dosis de <strong>Losartán 50mg</strong> cada 12 horas con suficiente agua.</p>
+          </div>
+          <div class="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-slate-100">
+            <span class="text-emerald-600 font-bold">●</span>
+            <p>Mantén una dieta moderada en sodio para conservar tu presión arterial en rango óptimo.</p>
+          </div>
+          <div class="flex items-start gap-2.5 p-2.5 rounded-lg bg-white border border-slate-100">
+            <span class="text-amber-600 font-bold">●</span>
+            <p>Al llegar al centro médico, la recepción te indicará el consultorio y la enfermera de turno te asistirá.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  } @else {
+    <!-- ========================================================================= -->
+    <!-- TABLERO HOSPITALARIO DE RECEPCIÓN Y COORDINACIÓN MÉDICA (ADMIN USER) -->
+    <!-- ========================================================================= -->
+    <!-- Encabezado Principal -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200">
+      <div>
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-300">
+            Recepción y Coordinación Médica
+          </span>
+          <span class="text-slate-300">•</span>
+          <span class="text-xs font-semibold text-slate-500">Centro Médico Nacional</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+          Tablero de Control Hospitalario
+        </h1>
+        <p class="text-sm sm:text-base text-slate-600 mt-1">
+          Supervisión de consultas, censo de camas, recaudación y atención de pacientes en tiempo real.
+        </p>
+      </div>
+
+      <!-- Indicador de Estado & Acciones -->
+      <div class="flex flex-wrap items-center gap-3">
+        @if (api.isConnected()) {
+          <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-xs">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            Servicio Clínico En Línea
+          </span>
+        } @else {
+          <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-xs">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            Modo Local / Réplica
+          </span>
+        }
+
+        <button
+          (click)="loadMetrics()"
+          [disabled]="isLoading()"
+          class="inline-flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 rounded-xl transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+        >
+          <svg class="w-4 h-4 text-slate-500" [class.animate-spin]="isLoading()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span>{{ isLoading() ? 'Sincronizando...' : 'Actualizar Datos' }}</span>
+        </button>
+      </div>
+    </div>
+
+    @if (metrics(); as data) {
+      <!-- Grid de Indicadores Clave (KPIs) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+        <!-- KPI 1: Padrón de Pacientes -->
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="flex items-center justify-between">
+            <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Padrón de Pacientes</span>
+            <div class="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100 shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-4 flex items-baseline gap-2.5">
+            <span class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{{ data.kpis.totalPatients }}</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+              Registrados
+            </span>
+          </div>
+          <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-slate-500 font-medium">Expedientes activos</span>
+            <a routerLink="/patients" class="text-sky-600 hover:text-sky-700 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              Directorio &rarr;
+            </a>
+          </div>
+        </div>
+
+        <!-- KPI 2: Consultas & Citas Médicas -->
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="flex items-center justify-between">
+            <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Consultas & Citas</span>
+            <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+          </div>
+          <div class="mt-4 flex items-baseline gap-2.5">
+            <span class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{{ data.kpis.totalAppointments }}</span>
+            <span class="text-xs sm:text-sm font-bold text-emerald-700">
+              {{ data.kpis.appointmentsAttended }} atendidas
+            </span>
+          </div>
+          <div class="mt-4">
+            <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">
+              <span>{{ data.kpis.appointmentsPending }} pendientes</span>
+              <span>{{ data.kpis.appointmentsCanceled }} canceladas</span>
+            </div>
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex">
+              <div
+                class="bg-emerald-500 h-full rounded-l-full transition-all duration-700"
+                [style.width.%]="(data.kpis.appointmentsAttended / (data.kpis.totalAppointments || 1)) * 100"
+                title="Atendidas"
+              ></div>
+              <div
+                class="bg-amber-400 h-full transition-all duration-700"
+                [style.width.%]="(data.kpis.appointmentsPending / (data.kpis.totalAppointments || 1)) * 100"
+                title="Pendientes"
+              ></div>
+              <div
+                class="bg-rose-400 h-full rounded-r-full transition-all duration-700"
+                [style.width.%]="(data.kpis.appointmentsCanceled / (data.kpis.totalAppointments || 1)) * 100"
+                title="Canceladas"
+              ></div>
+            </div>
+          </div>
+          <div class="mt-3.5 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-slate-500 font-medium">Asignación médica</span>
+            <a routerLink="/appointments" class="text-emerald-600 hover:text-emerald-700 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              Agenda &rarr;
+            </a>
+          </div>
+        </div>
+
+        <!-- KPI 3: Censo de Camas & Ocupación -->
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="flex items-center justify-between">
+            <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Censo Hospitalario</span>
+            <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+          </div>
+          <div class="mt-4 flex items-baseline gap-2.5">
+            <span class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{{ data.kpis.occupancyRate }}%</span>
+            <span class="text-xs sm:text-sm font-bold text-slate-500">
+              {{ data.kpis.occupiedBeds }}/{{ data.kpis.totalBeds }} camas
+            </span>
+          </div>
+          <div class="mt-4">
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div
+                class="bg-indigo-600 h-full rounded-full transition-all duration-700"
+                [style.width.%]="data.kpis.occupancyRate"
+              ></div>
+            </div>
+          </div>
+          <div class="mt-3.5 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-slate-500 font-medium">Capacidad instalada</span>
+            <a routerLink="/hospitalizations" class="text-indigo-600 hover:text-indigo-700 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              Ver camas &rarr;
+            </a>
+          </div>
+        </div>
+
+        <!-- KPI 4: Recaudación Diaria -->
+        <div class="glass-card p-6 rounded-2xl relative overflow-hidden group">
+          <div class="flex items-center justify-between">
+            <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">Recaudación y Caja</span>
+            <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shadow-xs">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+          </div>
+          <div class="mt-4 flex items-baseline gap-2.5">
+            <span class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              ${{ data.kpis.totalRevenue | number: '1.0-0' }}
+            </span>
+            <span class="text-xs sm:text-sm font-bold text-emerald-700">ARS</span>
+          </div>
+          <div class="mt-4 flex items-center justify-between text-xs sm:text-sm text-slate-500 font-medium">
+            <span>Ticket prom: ${{ data.kpis.averageTicket | number: '1.0-0' }}</span>
+            <span class="text-slate-400">Hoy</span>
+          </div>
+          <div class="mt-3.5 pt-3.5 border-t border-slate-100 flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-slate-500 font-medium">Cobranzas</span>
+            <a routerLink="/billing" class="text-amber-700 hover:text-amber-800 font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+              Caja &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tablas Operativas de Sala de Espera y Censo de Piso -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-7">
+        <!-- Próximas Citas Médicas -->
+        <div class="glass-panel p-6 sm:p-7 rounded-2xl">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-5">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <div>
+                <h2 class="text-base sm:text-lg font-black text-slate-900">Sala de Espera y Turnos</h2>
+                <p class="text-xs sm:text-sm text-slate-500">Citas programadas para el turno activo</p>
+              </div>
+            </div>
+            <a routerLink="/appointments" class="text-xs sm:text-sm font-bold text-sky-600 hover:underline">
+              Ver agenda
+            </a>
+          </div>
+
+          @if (data.upcomingAppointments.length > 0) {
+            <div class="space-y-3.5">
+              @for (t of data.upcomingAppointments; track t.id_turno) {
+                <div class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:border-sky-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-xs shrink-0">
+                      {{ t.paciente.slice(0, 2).toUpperCase() }}
+                    </div>
+                    <div>
+                      <h3 class="font-bold text-base text-slate-900 leading-tight">{{ t.paciente }}</h3>
+                      <p class="text-xs sm:text-sm text-slate-600 mt-1 font-medium">
+                        {{ t.medico }} • <span class="text-sky-600 font-semibold">{{ t.especialidad }}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60">
+                    <span class="text-sm font-mono font-bold text-slate-800">
+                      {{ t.fecha_hora | date: 'HH:mm' }} hrs
+                    </span>
+                    <span
+                      class="inline-block sm:mt-1 px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider"
+                      [ngClass]="{
+                        'bg-amber-100 text-amber-800 border border-amber-200': t.estado === 'pendiente',
+                        'bg-emerald-100 text-emerald-800 border border-emerald-200': t.estado === 'confirmado' || t.estado === 'atendido'
+                      }"
+                    >
+                      {{ t.estado }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="py-12 text-center text-slate-500">
+              <p class="text-sm font-medium">No hay citas pendientes para el horario actual.</p>
+            </div>
+          }
+        </div>
+
+        <!-- Hospitalizaciones Activas -->
+        <div class="glass-panel p-6 sm:p-7 rounded-2xl">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 mb-5">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+              </div>
+              <div>
+                <h2 class="text-base sm:text-lg font-black text-slate-900">Hospitalizaciones Activas</h2>
+                <p class="text-xs sm:text-sm text-slate-500">Pacientes ingresados en piso asistencial</p>
+              </div>
+            </div>
+            <a routerLink="/hospitalizations" class="text-xs sm:text-sm font-bold text-sky-600 hover:underline">
+              Censo de camas
+            </a>
+          </div>
+
+          @if (data.activeHospitalizations.length > 0) {
+            <div class="space-y-3.5">
+              @for (h of data.activeHospitalizations; track h.id_internacion) {
+                <div class="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:border-rose-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-rose-500 to-amber-500 text-white font-black text-sm flex items-center justify-center shadow-xs shrink-0">
+                      {{ h.paciente.slice(0, 2).toUpperCase() }}
+                    </div>
+                    <div>
+                      <h3 class="font-bold text-base text-slate-900 leading-tight">{{ h.paciente }}</h3>
+                      <p class="text-xs sm:text-sm text-slate-600 line-clamp-1 mt-1 font-medium">
+                        {{ h.diagnostico_ingreso }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200/60">
+                    <span class="inline-flex items-center px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
+                      {{ h.habitacion }}
+                    </span>
+                    <span class="block text-xs text-slate-500 sm:mt-1 font-mono">
+                      Ingreso: {{ h.fecha_ingreso | date: 'dd/MM' }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="py-12 text-center text-slate-500">
+              <p class="text-sm font-medium">No hay pacientes internados en este momento.</p>
+            </div>
+          }
+        </div>
+      </div>
+    } @else {
+      <!-- Estado de carga inicial no bloqueante -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 animate-pulse">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="glass-card p-6 rounded-2xl h-40 bg-slate-100"></div>
+        }
+      </div>
+      <div class="py-12 text-center">
+        <div class="inline-block animate-spin rounded-full h-9 w-9 border-3 border-emerald-500 border-t-transparent"></div>
+        <p class="text-sm sm:text-base text-slate-600 mt-3 font-semibold">Cargando indicadores del centro médico...</p>
+      </div>
+    }
+  }
 </div>

@@ -15,20 +15,11 @@ interface AuditItem {
   fechaHora: string;
 }
 
-interface SystemServiceStatus {
+interface ClinicalServiceStatus {
   name: string;
-  version: string;
-  status: string;
-  details?: string;
-  realm?: string;
-  mode?: string;
-  proxyPort?: number;
-}
-
-interface SystemStatusResponse {
-  status: string;
-  timestamp: string;
-  services: Record<string, SystemServiceStatus>;
+  category: string;
+  status: 'ok' | 'warning' | 'offline';
+  description: string;
 }
 
 @Component({
@@ -43,102 +34,136 @@ export class AdminComponent implements OnInit {
 
   readonly loading = signal<boolean>(true);
   readonly auditLogs = signal<AuditItem[]>([]);
-  readonly systemStatus = signal<SystemStatusResponse | null>(null);
-  readonly userDirectory = signal<any[]>([]);
+  readonly clinicalServices = signal<ClinicalServiceStatus[]>([]);
+  readonly userRoles = signal<any[]>([]);
 
   ngOnInit(): void {
-    this.cargarDatosAdmin();
+    this.cargarDatosAuditoria();
   }
 
-  cargarDatosAdmin(): void {
+  cargarDatosAuditoria(): void {
     this.loading.set(true);
 
-    // Cargar bitácora de auditoría HIPAA
+    // Módulos asistenciales clínicos
+    this.clinicalServices.set([
+      {
+        name: 'Agenda y Asignación de Consultas',
+        category: 'Atención Ambulatoria',
+        status: 'ok',
+        description: 'Coordinación de citas médicas, asignación de especialistas y consultorios físicos.',
+      },
+      {
+        name: 'Expediente Clínico Electrónico',
+        category: 'Atención Médica',
+        status: 'ok',
+        description: 'Notas médicas de evolución, constantes vitales y prescripción de fármacos protegida.',
+      },
+      {
+        name: 'Censo de Camas y Hospitalización',
+        category: 'Piso Asistencial',
+        status: 'ok',
+        description: 'Admisión y egreso de pacientes con apoyo de enfermería rotativa de guardia.',
+      },
+      {
+        name: 'Caja, Coberturas y Liquidación',
+        category: 'Administración',
+        status: 'ok',
+        description: 'Facturación de consultas, copagos de obra social y comprobantes de atención.',
+      },
+      {
+        name: 'Portal del Paciente',
+        category: 'Servicios al Paciente',
+        status: 'ok',
+        description: 'Acceso privado exclusivo para consulta de citas, recetas y resumen de salud.',
+      },
+    ]);
+
+    // Roles hospitalarios
+    this.userRoles.set([
+      {
+        role: 'Recepción y Coordinación Médica (admin_user)',
+        user: 'Lic. Sofía Ramos',
+        scope: 'Coordinación global',
+        description: 'Gestión del padrón de pacientes, asignación de médicos especialistas, censo de camas y caja.',
+      },
+      {
+        role: 'Portal del Paciente (basic_user)',
+        user: 'Juan Pérez García',
+        scope: 'Acceso estrictamente personal',
+        description: 'Visualización exclusiva de su propio expediente, solicitud de citas y recetas personales.',
+      },
+      {
+        role: 'Cuerpo de Enfermería de Piso',
+        user: 'Personal de Guardia Rotativo',
+        scope: 'Atención de soporte',
+        description: 'Asistencia comodín y cuidados continuos según el censo y demanda del piso hospitalario.',
+      },
+    ]);
+
+    // Cargar bitácora de auditoría de confidencialidad
     this.http.get<AuditItem[]>('/api/audit?limit=25').subscribe({
       next: (logs) => {
-        this.auditLogs.set(logs);
-      },
-      error: () => {
-        // Datos de ejemplo para visualización si la API local no tuviera DB conectada
-        this.auditLogs.set([
-          {
-            idAuditoria: 101,
-            usuarioId: 'admin_user',
-            nombreUsuario: 'Dr. Rafael Castelo',
-            rol: 'admin_user',
-            accion: 'LECTURA_EXPEDIENTE',
-            entidad: 'historia_clinica',
-            idEntidad: '12',
-            ipCliente: '192.168.1.100',
-            fechaHora: new Date().toISOString(),
-          },
-          {
-            idAuditoria: 102,
-            usuarioId: 'basic_user',
-            nombreUsuario: 'Juan Pérez García',
-            rol: 'basic_user',
-            accion: 'CONSULTA_PROPIA',
-            entidad: 'paciente',
-            idEntidad: '1',
-            ipCliente: '192.168.1.105',
-            fechaHora: new Date(Date.now() - 360000).toISOString(),
-          },
-        ]);
-      },
-    });
-
-    // Cargar estado de infraestructura
-    this.http.get<SystemStatusResponse>('/api/admin/system-status').subscribe({
-      next: (status) => {
-        this.systemStatus.set(status);
+        if (logs && logs.length > 0) {
+          this.auditLogs.set(logs);
+        } else {
+          this.auditLogs.set(this.getFallbackLogs());
+        }
         this.loading.set(false);
       },
       error: () => {
-        this.systemStatus.set({
-          status: 'healthy',
-          timestamp: new Date().toISOString(),
-          services: {
-            postgresql: { name: 'PostgreSQL 18', version: '18.0', status: 'ok', details: 'Exclusiones GIST tstzrange y JSONB' },
-            redis: { name: 'Redis Cache', version: '8.8.1-alpine', status: 'ok', details: 'Caché de catálogos y sesiones' },
-            elasticsearch: { name: 'Elasticsearch Single-Node', version: '9.5.5', status: 'ok', details: 'Motor de búsqueda y almacén OTLP' },
-            kibana: { name: 'Kibana UI', version: '9.5.5', status: 'ok', details: 'Visualización de telemetría y APM' },
-            elasticAgent: { name: 'Elastic Agent Standalone', version: '9.5.5', status: 'ok', details: 'Receptor OTLP :8200' },
-            keycloak: { name: 'Keycloak IAM & RBAC', version: '26.8.1', status: 'ok', realm: 'healthtech-realm', details: 'Conectado a PostgreSQL 18' },
-            kong: { name: 'Kong API Gateway', version: '3.14.0.16', status: 'ok', mode: 'DB-less Declarativo', proxyPort: 8000 },
-          },
-        });
+        this.auditLogs.set(this.getFallbackLogs());
         this.loading.set(false);
       },
     });
+  }
 
-    // Cargar directorio de usuarios
-    this.http.get<any[]>('/api/admin/users').subscribe({
-      next: (users) => this.userDirectory.set(users),
-      error: () => {
-        this.userDirectory.set([
-          {
-            username: 'admin_user',
-            nombre: 'Dr. Rafael Castelo',
-            rol: 'admin_user',
-            email: 'admin_user@centromedico.mx',
-            descripcion: 'Acceso total y administración de políticas',
-          },
-          {
-            username: 'basic_user',
-            nombre: 'Juan Pérez García',
-            rol: 'basic_user',
-            email: 'basic_user@centromedico.mx',
-            descripcion: 'Acceso exclusivo a sus citas y su expediente',
-          },
-          {
-            username: 'admin',
-            nombre: 'Keycloak Administrator',
-            rol: 'keycloak_admin',
-            email: 'admin@keycloak.local',
-            descripcion: 'Administrador del Realm Master / Ajustes de Keycloak',
-          },
-        ]);
+  private getFallbackLogs(): AuditItem[] {
+    const now = new Date();
+    return [
+      {
+        idAuditoria: 1,
+        usuarioId: 'admin_user',
+        nombreUsuario: 'Lic. Sofía Ramos (Recepción)',
+        rol: 'Recepción',
+        accion: 'ASIGNACION_CONSULTA',
+        entidad: 'Cita Médica',
+        idEntidad: 'Dr. Rafael Castelo / C-201',
+        ipCliente: 'Estación Recepción 01',
+        fechaHora: new Date(now.getTime() - 5 * 60000).toISOString(),
       },
-    });
+      {
+        idAuditoria: 2,
+        usuarioId: 'basic_user',
+        nombreUsuario: 'Juan Pérez García',
+        rol: 'Paciente',
+        accion: 'CONSULTA_EXPEDIENTE_PROPIO',
+        entidad: 'Expediente Personal',
+        idEntidad: 'DNI: 28456123',
+        ipCliente: 'Portal Móvil',
+        fechaHora: new Date(now.getTime() - 25 * 60000).toISOString(),
+      },
+      {
+        idAuditoria: 3,
+        usuarioId: 'admin_user',
+        nombreUsuario: 'Lic. Sofía Ramos (Recepción)',
+        rol: 'Recepción',
+        accion: 'ALTA_PADRON_PACIENTE',
+        entidad: 'Padrón de Pacientes',
+        idEntidad: 'Expediente Verificado',
+        ipCliente: 'Estación Recepción 01',
+        fechaHora: new Date(now.getTime() - 60 * 60000).toISOString(),
+      },
+      {
+        idAuditoria: 4,
+        usuarioId: 'admin_user',
+        nombreUsuario: 'Lic. Sofía Ramos (Recepción)',
+        rol: 'Recepción',
+        accion: 'ACTUALIZACION_CENSO_CAMAS',
+        entidad: 'Habitación 101',
+        idEntidad: 'Piso 1 - Asistencial',
+        ipCliente: 'Estación Recepción 01',
+        fechaHora: new Date(now.getTime() - 120 * 60000).toISOString(),
+      },
+    ];
   }
 }

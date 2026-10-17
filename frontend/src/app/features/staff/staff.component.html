@@ -1,31 +1,56 @@
 <div class="space-y-8 animate-fade-in">
-  <!-- Encabezado -->
+  <!-- Encabezado Clínico -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
     <div>
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-        Cuerpo Médico y Estructura Organizacional
+        Cuerpo Médico y Estructura Asistencial
       </h1>
-      <p class="text-sm text-slate-500 mt-1">
-        Cédulas profesionales • Árbol jerárquico recursivo de PostgreSQL 18 • Especialidades autorizadas
+      <p class="text-sm text-slate-600 mt-1">
+        Directorio de especialistas, cédulas profesionales, jefaturas de servicio y personal clínico.
       </p>
     </div>
   </div>
 
-  <!-- Organigrama Jerárquico (WITH RECURSIVE de PostgreSQL) -->
-  <div class="glass-panel p-6 rounded-2xl shadow-sm border border-slate-200">
-    <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-      <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-      Organigrama Jerárquico Hospitalario (WITH RECURSIVE)
-    </h2>
+  <!-- Banner Informativo del Flujo Clínico: Médicos Asignados y Enfermería Comodín -->
+  <div class="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div class="flex items-start gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+      </div>
+      <div>
+        <h2 class="text-sm font-bold text-slate-900">Estructura Operativa del Personal de Salud</h2>
+        <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+          Los <strong>médicos especialistas</strong> cuentan con consultorios asignados y agenda programada para consultas y cirugías. 
+          El <strong>personal de enfermería</strong> actúa como equipo comodín de guardia y rotación asistencial según el censo y demanda de cada piso clínico.
+        </p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-100 text-emerald-800">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        Enfermería de Guardia Activa
+      </span>
+    </div>
+  </div>
 
-    <div class="space-y-3 font-mono text-xs">
+  <!-- Organigrama de Jefaturas Médicas -->
+  <div class="glass-panel p-6 rounded-2xl shadow-sm border border-slate-200">
+    <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+      Organigrama de Jefaturas y Dependencias Médicas
+    </h2>
+    <p class="text-xs text-slate-500 mb-5">
+      Jerarquía asistencial hospitalaria y líneas de reporte clínico institucional.
+    </p>
+
+    <div class="space-y-3 text-xs">
       @for (node of hierarchy(); track node.id_medico) {
         <div
-          class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50:bg-slate-800/40 transition-colors"
+          class="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100"
           [style.margin-left.rem]="(node.nivel_jerarquico - 1) * 1.5"
         >
-          <span class="text-slate-400">└─</span>
-          <span class="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs"
+          <span class="text-slate-400 font-mono">└─</span>
+          <span class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0"
             [ngClass]="{
               'bg-purple-100 text-purple-700': node.nivel_jerarquico === 1,
               'bg-blue-100 text-blue-700': node.nivel_jerarquico === 2,
@@ -34,22 +59,22 @@
             }">
             N{{ node.nivel_jerarquico }}
           </span>
-          <div class="flex-1 font-sans">
+          <div class="flex-1">
             <p class="font-bold text-sm text-slate-900">{{ node.medico }}</p>
-            <p class="text-xs text-slate-400 font-mono">Cédula: {{ node.matricula }} • {{ node.email }}</p>
+            <p class="text-xs text-slate-500">Cédula Profesional: {{ node.matricula }} • Correo: {{ node.email }}</p>
           </div>
           <span class="text-xs font-medium text-slate-400 italic hidden sm:inline">
-            {{ node.camino_reporte }}
+            Línea de reporte: {{ node.camino_reporte }}
           </span>
         </div>
       }
     </div>
   </div>
 
-  <!-- Tarjetas de Médicos de Planta y Especialidades -->
+  <!-- Plantilla de Médicos Especialistas -->
   <div>
     <h2 class="text-lg font-bold text-slate-900 mb-4">
-      Médicos Especialistas en Servicio Activo
+      Directorio de Médicos Especialistas en Servicio
     </h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -57,20 +82,20 @@
         <div class="glass-panel p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
           <div>
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+              <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
                 {{ doc.nombre.charAt(0) }}{{ doc.apellido.charAt(0) }}
               </div>
               <div>
                 <h3 class="font-bold text-slate-900">
                   Dr/a. {{ doc.nombre }} {{ doc.apellido }}
                 </h3>
-                <p class="text-xs font-mono text-slate-400">Cédula Prof: {{ doc.matricula }}</p>
+                <p class="text-xs font-medium text-slate-500">Cédula Profesional: {{ doc.matricula }}</p>
               </div>
             </div>
 
             <!-- Especialidades -->
             <div class="mt-4">
-              <span class="text-xs font-medium font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Especialidades Médicas</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Especialidades Acreditadas</span>
               <div class="flex flex-wrap gap-1.5">
                 @for (esp of doc.especialidades; track esp.idEspecialidad) {
                   <span class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -82,16 +107,19 @@
 
             <!-- Jefe Directo -->
             <div class="mt-4 text-xs text-slate-500">
-              <span>Reporta a: </span>
+              <span>Coordinación: </span>
               <strong class="text-slate-700">
                 {{ doc.jefeDirecto ? ('Dr/a. ' + doc.jefeDirecto.nombre + ' ' + doc.jefeDirecto.apellido) : 'Dirección Médica General' }}
               </strong>
             </div>
           </div>
 
-          <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400 flex items-center justify-between">
-            <span>Fecha de Adscripción: {{ doc.fechaIngreso }}</span>
-            <span class="text-emerald-600 font-semibold">● En Servicio</span>
+          <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+            <span>Adscripción: {{ doc.fechaIngreso || 'Planta Titular' }}</span>
+            <span class="text-emerald-600 font-semibold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              En Servicio Activo
+            </span>
           </div>
         </div>
       }

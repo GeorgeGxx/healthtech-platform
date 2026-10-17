@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { AuthStateService } from '../../core/services/auth-state.service';
 
 @Component({
   selector: 'app-appointments',
@@ -11,6 +12,7 @@ import { ApiService } from '../../core/services/api.service';
 })
 export class AppointmentsComponent implements OnInit {
   private readonly api = inject(ApiService);
+  readonly auth = inject(AuthStateService);
 
   readonly appointments = signal<any[]>([]);
   readonly doctors = signal<any[]>([]);
@@ -33,6 +35,14 @@ export class AppointmentsComponent implements OnInit {
     motivoConsulta: '',
   };
 
+  constructor() {
+    effect(() => {
+      // Reacciona automáticamente si se conmuta entre Recepción y Paciente Juan Pérez
+      const user = this.auth.currentUser();
+      this.loadAppointments();
+    });
+  }
+
   ngOnInit(): void {
     this.loadAppointments();
     this.loadCatalogs();
@@ -42,7 +52,21 @@ export class AppointmentsComponent implements OnInit {
     const docId = this.selectedDoctorId > 0 ? this.selectedDoctorId : undefined;
     const date = this.selectedDate || undefined;
     this.api.getAppointments(docId, date).subscribe({
-      next: (data) => this.appointments.set(data),
+      next: (data) => {
+        if (this.auth.isBasicUser()) {
+          const user = this.auth.currentUser();
+          const targetId = user.patientId || 1;
+          const targetDni = user.dni || '28456123';
+          const filtered = (data || []).filter((item: any) => {
+            const pId = item.idPaciente || item.paciente?.idPaciente;
+            const pDni = item.paciente?.dni;
+            return pId === targetId || pDni === targetDni;
+          });
+          this.appointments.set(filtered);
+        } else {
+          this.appointments.set(data || []);
+        }
+      },
       error: (err) => console.error('Error al cargar citas médicas:', err),
     });
   }
@@ -67,8 +91,21 @@ export class AppointmentsComponent implements OnInit {
     });
   }
 
+  cancelMyAppointment(id: number): void {
+    if (confirm('¿Desea solicitar la cancelación de esta cita médica programada?')) {
+      this.api.updateAppointmentStatus(id, 'cancelado').subscribe({
+        next: () => this.loadAppointments(),
+        error: (err) => alert('No se pudo cancelar la cita: ' + err.message),
+      });
+    }
+  }
+
   openModal(): void {
     this.errorMessage.set(null);
+    if (this.auth.isBasicUser()) {
+      this.newApp.idPaciente = this.auth.currentUser().patientId || 1;
+    }
+
     const now = new Date();
     now.setHours(now.getHours() + 1, 0, 0, 0);
     const end = new Date(now.getTime() + 30 * 60000);
@@ -90,6 +127,10 @@ export class AppointmentsComponent implements OnInit {
     event.preventDefault();
     this.errorMessage.set(null);
 
+    if (this.auth.isBasicUser()) {
+      this.newApp.idPaciente = this.auth.currentUser().patientId || 1;
+    }
+
     const payload = {
       ...this.newApp,
       inicio: new Date(this.newApp.inicio).toISOString(),
@@ -104,7 +145,7 @@ export class AppointmentsComponent implements OnInit {
       error: (err) => {
         this.errorMessage.set(
           err.error?.message ||
-            'Conflicto de horario: El médico ya tiene una consulta agendada en ese rango.',
+            'Conflicto de horario: El médico ya tiene una consulta agendada en ese rango o consultorio ocupado.',
         );
       },
     });
