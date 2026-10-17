@@ -95,55 +95,79 @@
 
   <!-- Modal de Registro de Pago -->
   @if (showModal()) {
-    <div class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
-        <h2 class="text-xl font-bold text-slate-900 mb-4">Registrar Cobro Hospitalario</h2>
-
-        <form (submit)="submitPayment($event)" class="space-y-4">
+    <div
+      (click)="closeModal()"
+      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 transition-all duration-300 ease-out animate-fade-in"
+    >
+      <div
+        (click)="$event.stopPropagation()"
+        class="bg-white border border-slate-200 rounded-2xl max-w-md w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden transition-all transform duration-300 ease-out animate-modal-pop"
+      >
+        <div class="flex items-center justify-between p-5 pb-4 border-b border-slate-100 bg-white shrink-0">
           <div>
-            <label class="block text-xs font-semibold mb-1">Paciente</label>
-            <select [(ngModel)]="newPayment.idPaciente" name="idPaciente" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
-              @for (p of patients(); track p.idPaciente) {
-                <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (CURP/ID: {{ p.dni }})</option>
-              }
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold mb-1">Concepto de Honorarios / Servicio</label>
-            <select [(ngModel)]="newPayment.idConcepto" name="idConcepto" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
-              @for (c of concepts(); track c.idConcepto) {
-                <option [value]="c.idConcepto">{{ c.nombre }}</option>
-              }
-            </select>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-semibold mb-1">Subtotal (\$) </label>
-              <input type="number" step="0.01" [(ngModel)]="newPayment.montoBruto" name="montoBruto" required class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm" />
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-amber-600"></span>
+              <h2 class="text-lg sm:text-xl font-bold text-slate-900">Registrar Cobro Hospitalario</h2>
             </div>
+            <p class="text-xs text-slate-500 mt-1">Emisión de recibo y aplicación de copago de aseguradora en MXN.</p>
+          </div>
+          <button
+            type="button"
+            (click)="closeModal()"
+            class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
+            aria-label="Cerrar modal"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <form (submit)="submitPayment($event)" class="flex-1 flex flex-col min-h-0">
+          <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
             <div>
-              <label class="block text-xs font-semibold mb-1">Forma de Pago</label>
-              <select [(ngModel)]="newPayment.metodoPago" name="metodoPago" class="w-full bg-slate-50 border rounded-lg px-3 py-2 text-sm">
-                <option value="efectivo">Efectivo</option>
-                <option value="tarjeta_debito">Tarjeta de Débito</option>
-                <option value="tarjeta_credito">Tarjeta de Crédito</option>
-                <option value="transferencia">Transferencia SPEI</option>
-                <option value="obra_social">Seguro / GMM (Directo)</option>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Paciente</label>
+              <select [(ngModel)]="newPayment.idPaciente" name="idPaciente" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                @for (p of patients(); track p.idPaciente) {
+                  <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (CURP/ID: {{ p.dni }})</option>
+                }
               </select>
             </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Concepto de Honorarios / Servicio</label>
+              <select [(ngModel)]="newPayment.idConcepto" name="idConcepto" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                @for (c of concepts(); track c.idConcepto) {
+                  <option [value]="c.idConcepto">{{ c.nombre }}</option>
+                }
+              </select>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Subtotal ($ MXN)</label>
+                <input type="number" step="0.01" [(ngModel)]="newPayment.montoBruto" name="montoBruto" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Forma de Pago</label>
+                <select [(ngModel)]="newPayment.metodoPago" name="metodoPago" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
+                  <option value="efectivo">Efectivo</option>
+                  <option value="tarjeta_debito">Tarjeta de Débito</option>
+                  <option value="tarjeta_credito">Tarjeta de Crédito</option>
+                  <option value="transferencia">Transferencia SPEI</option>
+                  <option value="obra_social">Seguro / GMM (Directo)</option>
+                </select>
+              </div>
+            </div>
+
+            <p class="text-xs font-medium text-amber-900 bg-amber-50/80 p-3 rounded-xl border border-amber-200/80 leading-relaxed">
+              💡 El sistema aplicará automáticamente la regla de dominio de cobertura y deducible según la póliza de la aseguradora del paciente.
+            </p>
           </div>
 
-          <p class="text-xs font-medium text-slate-500 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-            💡 El sistema aplicará automáticamente la regla de dominio de cobertura y deducible según la póliza de la aseguradora del paciente.
-          </p>
-
-          <div class="flex items-center justify-end gap-3 pt-2">
-            <button type="button" (click)="closeModal()" class="px-4 py-2 text-sm text-slate-600">
+          <div class="flex items-center justify-end gap-3 p-4 sm:p-5 bg-slate-50/90 backdrop-blur-xs border-t border-slate-100 shrink-0">
+            <button type="button" (click)="closeModal()" class="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-xl transition cursor-pointer">
               Cancelar
             </button>
-            <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl shadow-md">
+            <button type="submit" class="px-5 py-2.5 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 rounded-xl shadow-md shadow-amber-500/20 transition-all cursor-pointer">
               Emitir Comprobante
             </button>
           </div>

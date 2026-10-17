@@ -140,10 +140,10 @@ export class TariffsComponent implements OnInit {
 
   bookService(service: ClinicalServiceTariff): void {
     if (this.auth.isAuthenticated()) {
-      this.router.navigate(['/appointments']);
+      this.router.navigate(['/appointments'], { queryParams: { openModal: 'true' } });
     } else {
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/appointments', service: service.nombre },
+        queryParams: { returnUrl: '/appointments?openModal=true', service: service?.nombre || 'Consulta' },
       });
     }
   }

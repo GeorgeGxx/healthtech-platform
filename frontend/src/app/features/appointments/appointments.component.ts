@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStateService } from '../../core/services/auth-state.service';
 
@@ -12,6 +13,7 @@ import { AuthStateService } from '../../core/services/auth-state.service';
 })
 export class AppointmentsComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly route = inject(ActivatedRoute);
   readonly auth = inject(AuthStateService);
 
   readonly appointments = signal<any[]>([]);
@@ -46,6 +48,9 @@ export class AppointmentsComponent implements OnInit {
   ngOnInit(): void {
     this.loadAppointments();
     this.loadCatalogs();
+    if (this.route.snapshot.queryParams['openModal'] === 'true') {
+      setTimeout(() => this.openModal(), 100);
+    }
   }
 
   readonly currentPage = signal<number>(1);
