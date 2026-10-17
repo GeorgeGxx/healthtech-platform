@@ -13,12 +13,14 @@ export const routes: Routes = [
   },
   {
     path: 'servicios-y-costos',
-    redirectTo: '',
-    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/tariffs/tariffs.component').then(
+        (m) => m.TariffsComponent,
+      ),
   },
   {
     path: 'tariffs',
-    redirectTo: '',
+    redirectTo: 'servicios-y-costos',
     pathMatch: 'full',
   },
   {

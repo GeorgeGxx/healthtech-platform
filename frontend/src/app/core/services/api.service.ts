@@ -23,7 +23,7 @@ export interface DashboardMetrics {
 
 export interface ClinicalServiceTariff {
   id: string;
-  categoria: 'consulta' | 'internacion' | 'estudio' | 'cirugia';
+  categoria: 'consulta' | 'internacion' | 'estudio' | 'cirugia' | 'laboratorio' | 'pediatria' | string;
   categoriaNombre: string;
   nombre: string;
   descripcion: string;
@@ -261,7 +261,8 @@ export class ApiService {
   }
 
   getHospitalTariffs(): Observable<ClinicalServiceTariff[]> {
-    return of([
+    return this.http.get<ClinicalServiceTariff[]>(`${this.baseUrl}/billing/tariffs`).pipe(
+      catchError(() => of([
       {
         id: 'srv-cg-01',
         categoria: 'consulta',
@@ -443,9 +444,11 @@ export class ApiService {
         tiempoEstimado: '20 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/surgery.jpg',
-      },
-    ]);
-  }
+      }
+    ]))
+  );
+}
+
 
   getOffices(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/doctors/offices`).pipe(

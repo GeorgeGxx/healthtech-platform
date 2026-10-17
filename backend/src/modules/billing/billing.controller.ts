@@ -31,6 +31,12 @@ export class BillingController {
     return await this.billingService.getConcepts();
   }
 
+  @Get('tariffs')
+  @ApiOperation({ summary: 'Listar catálogo arancelario oficial de servicios clínicos del centro médico' })
+  async getTariffs() {
+    return await this.billingService.getHospitalTariffs();
+  }
+
   @Get()
   @ApiOperation({ summary: 'Listar todos los pagos y liquidaciones registradas' })
   async findAll() {
