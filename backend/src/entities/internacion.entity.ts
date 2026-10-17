@@ -5,7 +5,8 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Paciente } from './paciente.entity.js';
+import type { Relation } from 'typeorm';
+import type { Paciente } from './paciente.entity.js';
 import { Medico } from './medico.entity.js';
 import { Habitacion } from './habitacion.entity.js';
 
@@ -17,9 +18,9 @@ export class Internacion {
   @Column({ name: 'id_paciente', type: 'int' })
   idPaciente!: number;
 
-  @ManyToOne(() => Paciente, (paciente) => paciente.internaciones)
+  @ManyToOne('Paciente')
   @JoinColumn({ name: 'id_paciente' })
-  paciente!: Paciente;
+  paciente!: Relation<Paciente>;
 
   @Column({ name: 'id_medico_responsable', type: 'int' })
   idMedicoResponsable!: number;

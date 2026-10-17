@@ -164,6 +164,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: georgegxx/backend:latest
     container_name: healthtech-backend
     environment:
       PORT: 3000
@@ -195,6 +196,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    image: georgegxx/frontend:latest
     container_name: healthtech-nginx
     ports:
       - "80:80"
