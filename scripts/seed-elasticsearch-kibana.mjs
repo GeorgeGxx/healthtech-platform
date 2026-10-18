@@ -374,7 +374,7 @@ async function main() {
   }
 
   // 6. Poblar Auditoría de Seguridad HIPAA (Pilar 1)
-  console.log('\n🛡️ Indexando bitácora de seguridad y auditoría HIPAA desde PostgreSQL...');
+  console.log('\n🛡️ Indexando bitácora de seguridad y auditoría HIPAA desde PostgreSQL y estándares NOM-024 / HIPAA...');
   let auditData = [];
   try {
     const auditRes = await fetch('http://localhost/api/audit?limit=100', {
@@ -386,9 +386,12 @@ async function main() {
   }
 
   let bulkAudit = '';
+  let auditCounter = 1;
+
+  // Indexar eventos reales de PostgreSQL
   for (const a of auditData) {
     const estado = a.accion.includes('FALLIDO') ? 'FALLIDO' : a.accion.includes('BLOQUEADO') ? 'BLOQUEADO' : 'EXITOSO';
-    bulkAudit += JSON.stringify({ index: { _index: auditIndex, _id: `AUDIT-${a.idAuditoria}` } }) + '\n';
+    bulkAudit += JSON.stringify({ index: { _index: auditIndex, _id: `AUDIT-REAL-${a.idAuditoria}` } }) + '\n';
     bulkAudit += JSON.stringify({
       id_auditoria: `AUDIT-${a.idAuditoria}`,
       usuario_id: a.usuarioId,
@@ -402,8 +405,63 @@ async function main() {
       estado_resultado: estado,
       motivo: a.metadatos?.motivo || (estado === 'EXITOSO' ? 'Operación autorizada' : 'Acceso no permitido'),
       metadatos: a.metadatos || {},
-      '@timestamp': a.fechaHora,
+      '@timestamp': a.fechaHora || now,
     }) + '\n';
+    auditCounter++;
+  }
+
+  // Generar eventos exhaustivos de cumplimiento HIPAA / NOM-024 continuos (últimos 15 min y últimas 24h)
+  const auditUsers = [
+    { id: 'usr-doc-01', name: 'Dr. Alberto Arévalo', role: 'doctor_user', ip: '192.168.10.45' },
+    { id: 'usr-doc-02', name: 'Dra. Laura Gómez', role: 'doctor_user', ip: '192.168.10.46' },
+    { id: 'usr-doc-03', name: 'Dr. Roberto Cruz', role: 'doctor_user', ip: '192.168.10.47' },
+    { id: 'usr-nur-01', name: 'Enf. Carmen Morales', role: 'nurse_user', ip: '192.168.10.60' },
+    { id: 'usr-nur-02', name: 'Enf. José Ortiz', role: 'nurse_user', ip: '192.168.10.61' },
+    { id: 'usr-adm-01', name: 'Lic. Sofía Reyes', role: 'admin_user', ip: '192.168.1.10' },
+    { id: 'usr-rec-01', name: 'Mariana Pineda', role: 'receptionist_user', ip: '192.168.10.80' },
+  ];
+
+  const hipaaEventsBlueprint = [
+    { accion: 'CONSULTA_PHI', entidad: 'pacientes', estado: 'EXITOSO', motivo: 'Revisión de expediente clínico de consulta', weight: 35 },
+    { accion: 'CONSULTA_PHI', entidad: 'historia_clinica', estado: 'EXITOSO', motivo: 'Evolución médica de paciente internado', weight: 25 },
+    { accion: 'MODIFICACION_PHI', entidad: 'historia_clinica', estado: 'EXITOSO', motivo: 'Actualización de prescripción y diagnósticos', weight: 20 },
+    { accion: 'AUTO_LOGOUT_HIPAA', entidad: 'sesion_keycloak', estado: 'EXITOSO', motivo: 'Inactividad de 15 minutos superada (HIPAA § 164.312)', weight: 15 },
+    { accion: 'INTENTO_ACCESO_FALLIDO', entidad: 'auth_service', estado: 'FALLIDO', motivo: 'Contraseña errónea en Keycloak', weight: 12, forcedRole: 'doctor_user' },
+    { accion: 'ACCESO_BLOQUEADO', entidad: 'pacientes', estado: 'BLOQUEADO', motivo: 'Intento de acceso a PHI sin privilegios (WAF/Kong)', weight: 10, forcedRole: 'receptionist_user', forcedIp: '187.190.22.4' },
+    { accion: 'EXPORTACION_EXPEDIENTE', entidad: 'expediente_completo', estado: 'EXITOSO', motivo: 'Auditoría interna NOM-024 cifrada AES-256', weight: 6, forcedRole: 'admin_user' },
+  ];
+
+  const deltasMinutes = [
+    1, 2, 3, 5, 7, 9, 11, 13, 15, // Granularidad alta en los últimos 15 min
+    20, 25, 30, 45, 60, 90, 120, // Últimas 2 horas
+    180, 240, 360, 480, 600, 720, 960, 1200, 1440 // Últimas 24 horas
+  ];
+
+  for (const m of deltasMinutes) {
+    const eventTime = new Date(Date.now() - m * 60 * 1000).toISOString();
+    for (const bp of hipaaEventsBlueprint) {
+      const u = bp.forcedRole
+        ? auditUsers.find((user) => user.role === bp.forcedRole) || auditUsers[0]
+        : auditUsers[Math.floor(Math.random() * auditUsers.length)];
+
+      const idEvent = `AUDIT-HIPAA-${auditCounter++}`;
+      bulkAudit += JSON.stringify({ index: { _index: auditIndex, _id: idEvent } }) + '\n';
+      bulkAudit += JSON.stringify({
+        id_auditoria: idEvent,
+        usuario_id: u.id,
+        nombre_usuario: u.name,
+        rol: u.role,
+        accion: bp.accion,
+        entidad: bp.entidad,
+        id_entidad: Math.floor(1 + Math.random() * 15),
+        ip_cliente: bp.forcedIp || u.ip,
+        user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) HealthTech-Platform/2.0',
+        estado_resultado: bp.estado,
+        motivo: bp.motivo,
+        metadatos: { standard: 'HIPAA § 164.312', nom: 'NOM-024-SSA3-2012', severity: bp.estado === 'EXITOSO' ? 'INFO' : 'ALERT' },
+        '@timestamp': eventTime,
+      }) + '\n';
+    }
   }
 
   if (bulkAudit) {
@@ -412,7 +470,7 @@ async function main() {
       headers: { 'Content-Type': 'application/x-ndjson' },
       body: bulkAudit,
     });
-    console.log(`  ✓ ${auditData.length} eventos de auditoría HIPAA indexados en ${auditIndex}`);
+    console.log(`  ✓ ${auditCounter} eventos de auditoría HIPAA indexados en ${auditIndex}`);
   }
 
   // 7. Poblar Métricas de Telemetría SRE / APM (Pilar 3)
@@ -429,23 +487,27 @@ async function main() {
   const endpointsList = [
     { ep: '/api/patients', method: 'GET', baseLat: 14.2, status: 200 },
     { ep: '/api/appointments', method: 'GET', baseLat: 18.5, status: 200 },
+    { ep: '/api/appointments', method: 'POST', baseLat: 22.1, status: 201 },
     { ep: '/api/pharmacy', method: 'GET', baseLat: 11.8, status: 200 },
     { ep: '/api/pharmacy/summary', method: 'GET', baseLat: 9.4, status: 200 },
     { ep: '/api/hospitalizations/bed-census', method: 'GET', baseLat: 21.0, status: 200 },
     { ep: '/api/billing', method: 'GET', baseLat: 17.5, status: 200 },
+    { ep: '/api/billing', method: 'POST', baseLat: 24.0, status: 201 },
     { ep: '/api/dashboard/metrics', method: 'GET', baseLat: 28.2, status: 200 },
     { ep: '/realms/healthtech', method: 'POST', baseLat: 32.0, status: 200 },
     { ep: '/api/audit', method: 'GET', baseLat: 15.0, status: 200 },
     { ep: '/api/auth/login', method: 'POST', baseLat: 45.0, status: 200 },
+    { ep: '/api/auth/login', method: 'POST', baseLat: 42.0, status: 401 },
+    { ep: '/api/patients/9999', method: 'GET', baseLat: 13.0, status: 404 },
     { ep: '/api/appointments/999/status', method: 'PATCH', baseLat: 12.0, status: 404 },
+    { ep: '/api/admin/metrics-summary', method: 'GET', baseLat: 26.5, status: 200 },
   ];
 
   let bulkTelemetry = '';
   let telId = 1;
-  // Generar mediciones para las últimas 24 horas
-  for (let h = 0; h < 24; h++) {
-    const timeOffset = h * 3600000;
-    const metricTime = new Date(Date.now() - timeOffset).toISOString();
+
+  for (const m of deltasMinutes) {
+    const metricTime = new Date(Date.now() - m * 60 * 1000).toISOString();
 
     for (const ep of endpointsList) {
       const jitter = (Math.random() - 0.5) * 6;
@@ -462,29 +524,30 @@ async function main() {
         latencia_ms: lat,
         peticiones_por_minuto: rpm,
         estado_salud: 'Healthy',
-        uso_cpu_pct: 14.5 + (Math.random() * 4),
-        uso_memoria_mb: 172 + (Math.random() * 10),
+        uso_cpu_pct: Math.round((14.5 + Math.random() * 4) * 10) / 10,
+        uso_memoria_mb: Math.round((172 + Math.random() * 10) * 10) / 10,
         '@timestamp': metricTime,
       }) + '\n';
     }
-  }
 
-  // Registrar estado de salud de cada servicio
-  for (const s of servicesList) {
-    bulkTelemetry += JSON.stringify({ index: { _index: telemetryIndex, _id: `SVC-${s.name}` } }) + '\n';
-    bulkTelemetry += JSON.stringify({
-      servicio: s.name,
-      endpoint: `:${s.port}`,
-      metodo_http: 'HEALTHCHECK',
-      codigo_estado: 200,
-      categoria_estado: '2xx',
-      latencia_ms: s.baseLat,
-      peticiones_por_minuto: s.rpm,
-      estado_salud: 'Healthy',
-      uso_cpu_pct: s.cpu,
-      uso_memoria_mb: s.mem,
-      '@timestamp': now,
-    }) + '\n';
+    // Registrar estado de salud de cada microservicio en cada intervalo
+    for (const s of servicesList) {
+      const sLat = Math.max(0.4, Math.round((s.baseLat + (Math.random() - 0.5) * 2) * 10) / 10);
+      bulkTelemetry += JSON.stringify({ index: { _index: telemetryIndex, _id: `SVC-${s.name}-${m}` } }) + '\n';
+      bulkTelemetry += JSON.stringify({
+        servicio: s.name,
+        endpoint: `:${s.port}`,
+        metodo_http: 'HEALTHCHECK',
+        codigo_estado: 200,
+        categoria_estado: '2xx',
+        latencia_ms: sLat,
+        peticiones_por_minuto: s.rpm,
+        estado_salud: 'Healthy',
+        uso_cpu_pct: Math.round((s.cpu + (Math.random() - 0.5) * 2.5) * 10) / 10,
+        uso_memoria_mb: Math.round((s.mem + (Math.random() - 0.5) * 8) * 10) / 10,
+        '@timestamp': metricTime,
+      }) + '\n';
+    }
   }
 
   await fetch(`${ES_URL}/_bulk`, {
@@ -492,7 +555,7 @@ async function main() {
     headers: { 'Content-Type': 'application/x-ndjson' },
     body: bulkTelemetry,
   });
-  console.log(`  ✓ ${telId + servicesList.length} registros de telemetría y salud de microservicios indexados en ${telemetryIndex}`);
+  console.log(`  ✓ ${telId} registros de telemetría y salud de microservicios indexados en ${telemetryIndex}`);
 
   await fetch(`${ES_URL}/${pharmacyIndex},${bedsIndex},${opsIndex},${auditIndex},${telemetryIndex}/_refresh`, { method: 'POST' });
 
@@ -1007,9 +1070,9 @@ async function main() {
         title: 'Disponibilidad SLA',
         type: 'metric',
         params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Todos los contenedores en estado Healthy', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'codigo_estado', customLabel: '🟢 99.98% Uptime' } }],
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🟢 99.98% Uptime SLA' } }],
       }),
-      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
+      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estado_salud: "Healthy"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
     references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: telemetryDvId }],
   };
@@ -1078,7 +1141,7 @@ async function main() {
         params: { type: 'pie', addTooltip: true, addLegend: true, legendPosition: 'right', isDonut: true },
         aggs: [
           { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Respuestas' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'codigo_estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Código de Estado' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'codigo_estado', size: 8, order: 'desc', orderBy: '1', customLabel: 'Código de Estado' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -1086,6 +1149,7 @@ async function main() {
     references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: telemetryDvId }],
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-pie-sre-status?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visPieSreStatus) });
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-pie-sre-status-codes?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visPieSreStatus) });
 
   const visTableSreServices = {
     attributes: {
@@ -1157,6 +1221,9 @@ async function main() {
       attributes: {
         title: '1. Dashboard Negocio: Camas, Farmacia & Facturación',
         description: 'Dashboard de Negocio Hospitalario: Censo y ocupación de camas, control de inventario de medicamentos y facturación en MXN.',
+        timeRestore: true,
+        timeFrom: 'now-24h',
+        timeTo: 'now',
         panelsJSON: JSON.stringify(panelsOps),
       },
       references: [
@@ -1210,6 +1277,9 @@ async function main() {
       attributes: {
         title: '2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA',
         description: 'Dashboard Técnico Unificado: Telemetría de microservicios (uptime, latencias p95, RPM, códigos HTTP), seguridad perimetral Keycloak y registro forense inmutable HIPAA (NOM-024).',
+        timeRestore: true,
+        timeFrom: 'now-24h',
+        timeTo: 'now',
         panelsJSON: JSON.stringify(panelsTech),
       },
       references: [
