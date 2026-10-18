@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
@@ -14,7 +15,7 @@ import {
 import { MetricsService } from '../../telemetry/metrics.service.js';
 
 @Injectable()
-export class HospitalizationsService {
+export class HospitalizationsService implements OnModuleInit {
   constructor(
     @InjectRepository(Internacion)
     private readonly hospitalizationRepo: Repository<Internacion>,
@@ -22,6 +23,11 @@ export class HospitalizationsService {
     private readonly roomRepo: Repository<Habitacion>,
     private readonly metrics: MetricsService,
   ) {}
+
+  async onModuleInit() {
+    // Sincronizar estado inicial de camas al arrancar el microservicio
+    await this.syncBedCensusToElasticsearch().catch(() => {});
+  }
 
   async getBedCensus(): Promise<any[]> {
     const rooms = await this.roomRepo.find({
@@ -110,7 +116,9 @@ export class HospitalizationsService {
 
     const saved = await this.hospitalizationRepo.save(hospitalization);
     this.metrics.recordHospitalization('ingreso');
-    return await this.findOne(saved.idInternacion);
+    const result = await this.findOne(saved.idInternacion);
+    await this.syncBedCensusToElasticsearch().catch(() => {});
+    return result;
   }
 
   async discharge(id: number, dto: DischargePatientDto): Promise<Internacion> {
@@ -134,6 +142,58 @@ export class HospitalizationsService {
 
     await this.hospitalizationRepo.save(stay);
     this.metrics.recordHospitalization('alta', stay.habitacion?.tipo);
-    return await this.findOne(id);
+    const result = await this.findOne(id);
+    await this.syncBedCensusToElasticsearch().catch(() => {});
+    return result;
+  }
+
+  async syncBedCensusToElasticsearch(): Promise<void> {
+    try {
+      const census = await this.getBedCensus();
+      const esUrl = process.env.ELASTICSEARCH_URL || 'http://elasticsearch:9200';
+      const now = new Date().toISOString();
+
+      const tipoLabels: Record<string, string> = {
+        general: 'Habitación General',
+        individual: 'Habitación Individual',
+        terapia_intensiva: 'Terapia Intensiva (UTI)',
+        observacion: 'Observación / Urgencias',
+      };
+
+      let bulk = '';
+      for (const b of census) {
+        const days = b.pacienteActual?.fechaIngreso
+          ? Math.max(1, Math.ceil((Date.now() - new Date(b.pacienteActual.fechaIngreso).getTime()) / (1000 * 60 * 60 * 24)))
+          : 0;
+
+        const doc = {
+          cama_id: b.numero,
+          numero: b.numero,
+          piso: b.piso,
+          tipo: tipoLabels[b.tipo] || b.tipo,
+          estado: b.ocupada ? 'Ocupada' : 'Disponible',
+          tarifa_noche_mxn: Number(b.costoDia),
+          paciente_nombre: b.pacienteActual ? b.pacienteActual.nombreCompleto : null,
+          paciente_dni: b.pacienteActual ? b.pacienteActual.dni : null,
+          medico_responsable: b.pacienteActual ? b.pacienteActual.medicoResponsable : null,
+          diagnostico_ingreso: b.pacienteActual ? b.pacienteActual.diagnosticoIngreso : null,
+          dias_estancia: days,
+          costo_acumulado_mxn: Math.round(Number(b.costoDia) * Math.max(1, days) * 100) / 100,
+          '@timestamp': now,
+        };
+
+        bulk += JSON.stringify({ index: { _index: 'healthtech-beds-census', _id: b.numero } }) + '\n';
+        bulk += JSON.stringify(doc) + '\n';
+      }
+
+      await fetch(`${esUrl}/_bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-ndjson' },
+        body: bulk,
+      });
+      await fetch(`${esUrl}/healthtech-beds-census/_refresh`, { method: 'POST' });
+    } catch (err: any) {
+      console.warn('⚠️ [HospitalizationsService] Error sincronizando camas con Elasticsearch:', err?.message);
+    }
   }
 }

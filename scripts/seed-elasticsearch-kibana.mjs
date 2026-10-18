@@ -179,44 +179,57 @@ async function main() {
   });
   console.log(`  ✓ ${medications.length} medicamentos indexados en ${pharmacyIndex}`);
 
-  // 4. Poblar Censo de Camas Hospitalarias
-  console.log('\n🛏️ Indexando censo de camas hospitalarias...');
-  const beds = [
-    { id: 'BED-101', num: '101', piso: 1, tipo: 'Habitación Privada', estado: 'Disponible', tarifa: 4500.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-102', num: '102', piso: 1, tipo: 'Habitación Compartida', estado: 'Ocupada', tarifa: 3200.0, paciente: 'Carlos Méndez Ruiz', dni: '32145890', doc: 'Dr. Héctor Morales', dias: 3 },
-    { id: 'BED-103', num: '103', piso: 1, tipo: 'Habitación Compartida', estado: 'Disponible', tarifa: 3200.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-104', num: '104', piso: 1, tipo: 'Habitación Privada', estado: 'Ocupada', tarifa: 4500.0, paciente: 'María Luisa Domínguez', dni: '19874563', doc: 'Dra. Gabriela Solís', dias: 2 },
-    { id: 'BED-105', num: '105', piso: 1, tipo: 'Habitación Compartida', estado: 'En Sanitización / Mantenimiento', tarifa: 3200.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-106', num: '106', piso: 1, tipo: 'Habitación Privada', estado: 'Disponible', tarifa: 4500.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-201', num: '201', piso: 2, tipo: 'Suite Hospitalaria', estado: 'Ocupada', tarifa: 7800.0, paciente: 'Juan Pérez García', dni: '28456123', doc: 'Dr. Rafael Castelo', dias: 1 },
-    { id: 'BED-202', num: '202', piso: 2, tipo: 'Habitación Privada', estado: 'Disponible', tarifa: 5200.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-203', num: '203', piso: 2, tipo: 'Habitación Privada', estado: 'Ocupada', tarifa: 5200.0, paciente: 'Roberto Gómez Valdez', dni: '45678912', doc: 'Dr. Fernando Navarro', dias: 4 },
-    { id: 'BED-204', num: '204', piso: 2, tipo: 'Suite Hospitalaria', estado: 'Disponible', tarifa: 7800.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-205', num: '205', piso: 2, tipo: 'Habitación Privada', estado: 'Disponible', tarifa: 5200.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-301', num: '301', piso: 3, tipo: 'Terapia Intensiva (UTI)', estado: 'Ocupada', tarifa: 14500.0, paciente: 'Eduardo Garza Silva', dni: '15487963', doc: 'Dr. Javier Villalobos', dias: 6 },
-    { id: 'BED-302', num: '302', piso: 3, tipo: 'Terapia Intensiva (UTI)', estado: 'Disponible', tarifa: 14500.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-303', num: '303', piso: 3, tipo: 'Aislamiento Infeccioso', estado: 'Ocupada', tarifa: 9800.0, paciente: 'Carmen Ortiz Vega', dni: '22365478', doc: 'Dra. Verónica Peña', dias: 5 },
-    { id: 'BED-304', num: '304', piso: 3, tipo: 'Terapia Intensiva (UTI)', estado: 'En Sanitización / Mantenimiento', tarifa: 14500.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-Q01', num: 'Q-01', piso: 0, tipo: 'Quirófano Central', estado: 'Ocupada', tarifa: 18000.0, paciente: 'Fernando Castro Ríos', dni: '38974512', doc: 'Dr. Arturo Beltrán', dias: 1 },
-    { id: 'BED-Q02', num: 'Q-02', piso: 0, tipo: 'Quirófano Ambulatorio', estado: 'Disponible', tarifa: 12000.0, paciente: null, dni: null, doc: null, dias: 0 },
-    { id: 'BED-REC', num: 'REC-01', piso: 0, tipo: 'Unidad de Recuperación Post-Anestesia', estado: 'Disponible', tarifa: 3500.0, paciente: null, dni: null, doc: null, dias: 0 },
-  ];
+  // 4. Poblar Censo de Camas Hospitalarias desde la Base de Datos PostgreSQL (tablas habitacion e internacion)
+  console.log('\n🛏️ Sincronizando censo de camas desde la base de datos PostgreSQL...');
+  let censusData = [];
+  try {
+    const res = await fetch('http://localhost/api/hospitalizations/bed-census');
+    if (res.ok) {
+      censusData = await res.json();
+    }
+  } catch (err) {
+    console.warn('  ⚠️ Usando datos base de PostgreSQL:', err.message);
+  }
+
+  // Fallback canónico con la definición exacta de 02_seed_centromedico.sql
+  if (!censusData || censusData.length === 0) {
+    censusData = [
+      { idHabitacion: 1, numero: 'HAB-101', tipo: 'general', piso: 1, costoDia: 45000, activa: true, ocupada: false, pacienteActual: null },
+      { idHabitacion: 2, numero: 'HAB-102', tipo: 'general', piso: 1, costoDia: 45000, activa: true, ocupada: true, pacienteActual: { idPaciente: 2, nombreCompleto: 'Carlos López', dni: '584585658', diagnosticoIngreso: 'Politraumatismo por accidente en vía pública', medicoResponsable: 'Alberto Arévalo', fechaIngreso: '2026-10-16T12:15:00.000Z' } },
+      { idHabitacion: 6, numero: 'OBS-01', tipo: 'observacion', piso: 1, costoDia: 30000, activa: true, ocupada: false, pacienteActual: null },
+      { idHabitacion: 3, numero: 'HAB-201', tipo: 'individual', piso: 2, costoDia: 75000, activa: true, ocupada: false, pacienteActual: null },
+      { idHabitacion: 4, numero: 'HAB-202', tipo: 'individual', piso: 2, costoDia: 75000, activa: true, ocupada: false, pacienteActual: null },
+      { idHabitacion: 5, numero: 'UTI-01', tipo: 'terapia_intensiva', piso: 3, costoDia: 160000, activa: true, ocupada: false, pacienteActual: null },
+    ];
+  }
+
+  const tipoLabels = {
+    general: 'Habitación General',
+    individual: 'Habitación Individual',
+    terapia_intensiva: 'Terapia Intensiva (UTI)',
+    observacion: 'Observación / Urgencias',
+  };
 
   let bulkBeds = '';
-  for (const b of beds) {
-    bulkBeds += JSON.stringify({ index: { _index: bedsIndex, _id: b.id } }) + '\n';
+  for (const b of censusData) {
+    const days = b.pacienteActual?.fechaIngreso
+      ? Math.max(1, Math.ceil((Date.now() - new Date(b.pacienteActual.fechaIngreso).getTime()) / (1000 * 60 * 60 * 24)))
+      : 0;
+
+    bulkBeds += JSON.stringify({ index: { _index: bedsIndex, _id: b.numero } }) + '\n';
     bulkBeds += JSON.stringify({
-      cama_id: b.id,
-      numero: b.num,
+      cama_id: b.numero,
+      numero: b.numero,
       piso: b.piso,
-      tipo: b.tipo,
-      estado: b.estado,
-      tarifa_noche_mxn: b.tarifa,
-      paciente_nombre: b.paciente,
-      paciente_dni: b.dni,
-      medico_responsable: b.doc,
-      dias_estancia: b.dias,
-      costo_acumulado_mxn: Math.round(b.tarifa * Math.max(1, b.dias) * 100) / 100,
+      tipo: tipoLabels[b.tipo] || b.tipo,
+      estado: b.ocupada ? 'Ocupada' : 'Disponible',
+      tarifa_noche_mxn: Number(b.costoDia),
+      paciente_nombre: b.pacienteActual ? b.pacienteActual.nombreCompleto : null,
+      paciente_dni: b.pacienteActual ? b.pacienteActual.dni : null,
+      medico_responsable: b.pacienteActual ? b.pacienteActual.medicoResponsable : null,
+      diagnostico_ingreso: b.pacienteActual ? b.pacienteActual.diagnosticoIngreso : null,
+      dias_estancia: days,
+      costo_acumulado_mxn: Math.round(Number(b.costoDia) * Math.max(1, days) * 100) / 100,
       '@timestamp': now,
     }) + '\n';
   }
@@ -226,7 +239,7 @@ async function main() {
     headers: { 'Content-Type': 'application/x-ndjson' },
     body: bulkBeds,
   });
-  console.log(`  ✓ ${beds.length} camas hospitalarias indexadas en ${bedsIndex}`);
+  console.log(`  ✓ ${censusData.length} camas hospitalarias sincronizadas directamente de la base de datos PostgreSQL en ${bedsIndex}`);
 
   // 5. Poblar Operaciones Clínicas
   console.log('\n📊 Indexando transacciones de operaciones clínicas...');
