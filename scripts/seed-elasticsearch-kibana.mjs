@@ -313,10 +313,10 @@ async function main() {
     console.log(`  ✓ Data View "${dv.name}" registrado con ID: ${dv.id}`);
   }
 
-  // 7. Crear Visualizaciones Oficiales de Kibana
-  console.log('\n🎨 Creando Visualizaciones Oficiales de Kibana...');
+  // 7. Crear Visualizaciones Oficiales de Kibana (100% Dinámicas e Interactivas)
+  console.log('\n🎨 Creando Visualizaciones Oficiales de Kibana (100% Dinámicas e Interactivas)...');
 
-  // Vis 1: Encabezado Ejecutivo
+  // Vis 1: Encabezado Ejecutivo Hospitalario
   const visHeader = {
     attributes: {
       title: 'Encabezado - Centro Médico Nacional',
@@ -325,12 +325,12 @@ async function main() {
         type: 'markdown',
         params: {
           markdown:
-            '# 🏥 Centro Médico Nacional • Centro de Mando Hospitalario\n' +
-            '**Supervisión en tiempo real:** Censo de camas disponibles por piso, stock crítico de fármacos y recaudación hospitalaria en **MXN** conforme a **NOM-004** y **NOM-024**.',
+            '# 🏥 Centro Médico Nacional • Centro de Control Hospitalario en Tiempo Real\n' +
+            '> **Sistema de Monitoreo Clínico & Farmacéutico**: Todos los paneles calculan métricas en vivo consultando los índices de Elasticsearch. Usa los filtros interactivos inferiores para desglosar por **Piso Hospitalario**, **Alerta de Medicamento** o **Categoría Terapéutica** conforme a **NOM-004** y **NOM-024**.',
         },
       }),
       uiStateJSON: '{}',
-      description: 'Encabezado ejecutivo',
+      description: 'Encabezado ejecutivo interactivo',
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [] }) },
     },
     references: [],
@@ -341,101 +341,416 @@ async function main() {
     body: JSON.stringify(visHeader),
   });
 
-  // Vis 2: KPI Camas Disponibles y Ocupadas
-  const visKpiBeds = {
+  // Vis 2: Barra de Filtros Interactivos Globales (Input Control Vis)
+  const visControls = {
     attributes: {
-      title: 'KPI - Censo de Camas Hospitalarias',
+      title: 'Filtros Dinámicos - Piso, Alerta y Categoría',
+      uiStateJSON: '{}',
+      description: 'Filtros interactivos multiselección para filtrar en vivo todo el dashboard',
       visState: JSON.stringify({
-        title: 'KPI - Censo de Camas Hospitalarias',
-        type: 'markdown',
+        title: 'Filtros Dinámicos del Hospital',
+        type: 'input_control_vis',
         params: {
-          markdown:
-            '### 🛏️ Disponibilidad de Camas: **10 Libres** / 18 Totales\n\n' +
-            '- 🟢 **Camas Disponibles:** **10 camas** (55.6%)\n' +
-            '- 🔴 **Camas Ocupadas:** **6 camas** (33.3%)\n' +
-            '- 🟡 **En Mantenimiento:** **2 camas** (11.1%)\n' +
-            '- 🚨 **Terapia Intensiva (UTI):** 2 pacientes activos (Cama 301 y Aislamiento 303)',
+          controls: [
+            {
+              id: 'ctrl-piso',
+              fieldName: 'piso',
+              label: '🏢 Filtrar por Piso Hospitalario',
+              type: 'list',
+              options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 5 },
+              indexPatternRefName: 'ctrl_piso_dv',
+            },
+            {
+              id: 'ctrl-alerta',
+              fieldName: 'nivel_alerta',
+              label: '🚨 Nivel de Alerta de Fármacos',
+              type: 'list',
+              options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 5 },
+              indexPatternRefName: 'ctrl_alerta_dv',
+            },
+            {
+              id: 'ctrl-cat',
+              fieldName: 'categoria_terapeutica',
+              label: '💊 Categoría Terapéutica',
+              type: 'list',
+              options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 10 },
+              indexPatternRefName: 'ctrl_cat_dv',
+            },
+          ],
+          updateFiltersOnChange: true,
+          useTimeFilter: false,
+          pinFilters: false,
         },
       }),
-      uiStateJSON: '{}',
-      description: 'KPI de camas',
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [] }) },
     },
-    references: [],
+    references: [
+      { name: 'ctrl_piso_dv', type: 'index-pattern', id: bedsDvId },
+      { name: 'ctrl_alerta_dv', type: 'index-pattern', id: pharmacyDvId },
+      { name: 'ctrl_cat_dv', type: 'index-pattern', id: pharmacyDvId },
+    ],
   };
-  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-kpi-beds?overwrite=true`, {
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-controls-filter?overwrite=true`, {
     method: 'POST',
     headers: KBN_HEADERS,
-    body: JSON.stringify(visKpiBeds),
+    body: JSON.stringify(visControls),
   });
 
-  // Vis 3: KPI Farmacia & Alertas de Stock
-  const visKpiPharmacy = {
+  // Vis 3: KPI Dinámico - Camas Libres en Tiempo Real
+  const visMetricBedsFree = {
     attributes: {
-      title: 'KPI - Semáforo de Fármacos e Inventario',
-      visState: JSON.stringify({
-        title: 'KPI - Semáforo de Fármacos e Inventario',
-        type: 'markdown',
-        params: {
-          markdown:
-            '### 💊 Salud de Inventario de Fármacos\n\n' +
-            '- **Catálogo Activo:** 20 líneas de medicamentos\n' +
-            '- 🟢 **Abastecimiento Normal:** 13 medicamentos\n' +
-            '- 🟡 **Alerta de Reposición (Bajo):** 4 medicamentos\n' +
-            '- 🔴 **STOCK CRÍTICO (Menor a Mínimo):** **3 fármacos**\n' +
-            '  * **Morfina 10mg/ml IV:** Stock: 12 (Mín: 30)\n' +
-            '  * **Merrem 1g (Meropenem):** Stock: 14 (Mín: 40)\n' +
-            '  * **Fentanilo 0.5mg Inyectable:** Stock: 8 (Mín: 25)',
-        },
-      }),
+      title: 'KPI Dinámico - Camas Libres',
       uiStateJSON: '{}',
-      description: 'KPI de farmacia',
-      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [] }) },
+      description: 'Conteo en tiempo real de camas con estado Disponible',
+      visState: JSON.stringify({
+        title: 'Camas Libres',
+        type: 'metric',
+        params: {
+          metric: {
+            percentageMode: false,
+            useRanges: false,
+            colorSchema: 'Green to Red',
+            metricColorMode: 'Labels',
+            colorsRange: [{ from: 0, to: 100 }],
+            labels: { show: true },
+            style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Disponibles para asignación inmediata', fontSize: 44 },
+          },
+        },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🟢 Camas Libres' } }],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: 'estado: "Disponible"', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
     },
-    references: [],
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: bedsDvId }],
   };
-  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-kpi-pharmacy?overwrite=true`, {
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-beds-free?overwrite=true`, {
     method: 'POST',
     headers: KBN_HEADERS,
-    body: JSON.stringify(visKpiPharmacy),
+    body: JSON.stringify(visMetricBedsFree),
   });
 
-  // Vis 4: KPI Finanzas Hospitalarias
-  const visKpiFinance = {
+  // Vis 4: KPI Dinámico - Camas Ocupadas
+  const visMetricBedsOcc = {
     attributes: {
-      title: 'KPI - Valoración y Copago en Caja',
-      visState: JSON.stringify({
-        title: 'KPI - Valoración y Copago en Caja',
-        type: 'markdown',
-        params: {
-          markdown:
-            '### 💰 Valor de Inventario: **$482,750 MXN**\n\n' +
-            '- **Tarifa Noche / Cama Promedio:** $6,200 MXN\n' +
-            '- **Convenios Aseguradoras:** GNP, MetLife, AXA, Seguros Monterrey\n' +
-            '- **Copago Promedio Autorizado:** 15% - 20% en ventanilla\n' +
-            '- **Moneda Oficial:** Pesos Mexicanos ($ MXN)',
-        },
-      }),
+      title: 'KPI Dinámico - Camas Ocupadas',
       uiStateJSON: '{}',
-      description: 'KPI financiero',
-      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [] }) },
+      description: 'Conteo en tiempo real de camas con pacientes asignados',
+      visState: JSON.stringify({
+        title: 'Camas Ocupadas',
+        type: 'metric',
+        params: {
+          metric: {
+            percentageMode: false,
+            useRanges: false,
+            colorSchema: 'Green to Red',
+            metricColorMode: 'Labels',
+            colorsRange: [{ from: 0, to: 100 }],
+            labels: { show: true },
+            style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Pacientes en internación activa', fontSize: 44 },
+          },
+        },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🔴 Camas Ocupadas' } }],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: 'estado: "Ocupada"', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
     },
-    references: [],
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: bedsDvId }],
   };
-  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-kpi-finance?overwrite=true`, {
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-beds-occupied?overwrite=true`, {
     method: 'POST',
     headers: KBN_HEADERS,
-    body: JSON.stringify(visKpiFinance),
+    body: JSON.stringify(visMetricBedsOcc),
   });
 
-  // Vis 5: Donut Chart - Proporción de Camas (Disponibles vs Ocupadas)
+  // Vis 5: KPI Dinámico - Fármacos en Alerta Crítica
+  const visMetricPharmCrit = {
+    attributes: {
+      title: 'KPI Dinámico - Fármacos en Alerta Crítica',
+      uiStateJSON: '{}',
+      description: 'Conteo en vivo de fármacos con stock por debajo del mínimo',
+      visState: JSON.stringify({
+        title: 'Alerta Crítica',
+        type: 'metric',
+        params: {
+          metric: {
+            percentageMode: false,
+            useRanges: false,
+            colorSchema: 'Green to Red',
+            metricColorMode: 'Labels',
+            colorsRange: [{ from: 0, to: 100 }],
+            labels: { show: true },
+            style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Líneas que requieren reposición urgente', fontSize: 44 },
+          },
+        },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🚨 Fármacos Críticos' } }],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: 'nivel_alerta: "CRITICO"', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: pharmacyDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-pharm-critical?overwrite=true`, {
+    method: 'POST',
+    headers: KBN_HEADERS,
+    body: JSON.stringify(visMetricPharmCrit),
+  });
+
+  // Vis 6: KPI Dinámico - Total Unidades de Medicamentos en Stock
+  const visMetricPharmStock = {
+    attributes: {
+      title: 'KPI Dinámico - Total Stock Fármacos',
+      uiStateJSON: '{}',
+      description: 'Suma agregada de unidades de medicamentos en almacenes',
+      visState: JSON.stringify({
+        title: 'Total Unidades Stock',
+        type: 'metric',
+        params: {
+          metric: {
+            percentageMode: false,
+            useRanges: false,
+            colorSchema: 'Green to Red',
+            metricColorMode: 'Labels',
+            colorsRange: [{ from: 0, to: 100 }],
+            labels: { show: true },
+            style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Unidades totales en Farmacia Central y Almacenes', fontSize: 44 },
+          },
+        },
+        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'stock_actual', customLabel: '📦 Unidades en Almacén' } }],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: '', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: pharmacyDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-pharm-stock-sum?overwrite=true`, {
+    method: 'POST',
+    headers: KBN_HEADERS,
+    body: JSON.stringify(visMetricPharmStock),
+  });
+
+  // Vis 7: KPI Dinámico - Facturación Hospitalaria MXN
+  const visMetricRevenue = {
+    attributes: {
+      title: 'KPI Dinámico - Facturación Clínica MXN',
+      uiStateJSON: '{}',
+      description: 'Recaudación total agregada en tiempo real',
+      visState: JSON.stringify({
+        title: 'Facturación Hospitalaria',
+        type: 'metric',
+        params: {
+          metric: {
+            percentageMode: false,
+            useRanges: false,
+            colorSchema: 'Green to Red',
+            metricColorMode: 'Labels',
+            colorsRange: [{ from: 0, to: 100 }],
+            labels: { show: true },
+            style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Ingresos por consultas, hospitalización y procedimientos', fontSize: 44 },
+          },
+        },
+        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'monto_total_mxn', customLabel: '💵 Recaudación Total (MXN)' } }],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: '', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: opsDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-revenue?overwrite=true`, {
+    method: 'POST',
+    headers: KBN_HEADERS,
+    body: JSON.stringify(visMetricRevenue),
+  });
+
+  // Vis 8: Gráfica de Barras Horizontales - Comparativa Stock Actual vs Mínimo por Fármaco
+  const visBarStock = {
+    attributes: {
+      title: 'Gráfica de Barras - Stock Actual vs Mínimo por Fármaco',
+      uiStateJSON: '{}',
+      description: 'Comparativa visual en tiempo real de existencias vs límite de seguridad',
+      visState: JSON.stringify({
+        title: 'Comparativa de Existencias: Stock Actual vs Mínimo',
+        type: 'horizontal_bar',
+        params: {
+          type: 'histogram',
+          grid: { categoryLines: false },
+          categoryAxes: [
+            {
+              id: 'CategoryAxis-1',
+              type: 'category',
+              position: 'left',
+              show: true,
+              style: {},
+              scale: { type: 'linear' },
+              labels: { show: true, truncate: 100 },
+              title: {},
+            },
+          ],
+          valueAxes: [
+            {
+              id: 'ValueAxis-1',
+              name: 'LeftAxis-1',
+              type: 'value',
+              position: 'bottom',
+              show: true,
+              style: {},
+              scale: { type: 'linear', mode: 'normal' },
+              labels: { show: true, rotate: 0, filter: false, truncate: 100 },
+              title: { text: 'Unidades de Medicamento' },
+            },
+          ],
+          seriesParams: [
+            {
+              show: true,
+              type: 'histogram',
+              mode: 'normal',
+              data: { label: 'Stock Actual', id: '1' },
+              valueAxis: 'ValueAxis-1',
+              drawLinesBetweenPoints: true,
+              showCircles: true,
+            },
+            {
+              show: true,
+              type: 'histogram',
+              mode: 'normal',
+              data: { label: 'Stock Mínimo Requerido', id: '2' },
+              valueAxis: 'ValueAxis-1',
+              drawLinesBetweenPoints: true,
+              showCircles: true,
+            },
+          ],
+          addTooltip: true,
+          addLegend: true,
+          legendPosition: 'top',
+        },
+        aggs: [
+          { id: '1', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_actual', customLabel: 'Stock Actual' } },
+          { id: '2', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_minimo', customLabel: 'Stock Mínimo Requerido' } },
+          { id: '3', enabled: true, type: 'terms', schema: 'segment', params: { field: 'medicamento', size: 12, order: 'asc', orderBy: '1', customLabel: 'Medicamento' } },
+        ],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: '', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: pharmacyDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-bar-stock-compare?overwrite=true`, {
+    method: 'POST',
+    headers: KBN_HEADERS,
+    body: JSON.stringify(visBarStock),
+  });
+
+  // Vis 9: Gráfica de Barras Apiladas - Censo de Camas por Piso y Estado
+  const visBarBeds = {
+    attributes: {
+      title: 'Gráfica de Barras Apiladas - Camas por Piso y Estado',
+      uiStateJSON: '{}',
+      description: 'Censo hospitalario por piso desglosando disponibilidad y ocupación',
+      visState: JSON.stringify({
+        title: 'Camas por Piso y Estado de Ocupación',
+        type: 'histogram',
+        params: {
+          type: 'histogram',
+          grid: { categoryLines: false },
+          categoryAxes: [
+            {
+              id: 'CategoryAxis-1',
+              type: 'category',
+              position: 'bottom',
+              show: true,
+              style: {},
+              scale: { type: 'linear' },
+              labels: { show: true, truncate: 100 },
+              title: {},
+            },
+          ],
+          valueAxes: [
+            {
+              id: 'ValueAxis-1',
+              name: 'LeftAxis-1',
+              type: 'value',
+              position: 'left',
+              show: true,
+              style: {},
+              scale: { type: 'linear', mode: 'normal' },
+              labels: { show: true, rotate: 0, filter: false, truncate: 100 },
+              title: { text: 'Cantidad de Camas' },
+            },
+          ],
+          seriesParams: [
+            {
+              show: true,
+              type: 'histogram',
+              mode: 'stacked',
+              data: { label: 'Cantidad de Camas', id: '1' },
+              valueAxis: 'ValueAxis-1',
+              drawLinesBetweenPoints: true,
+              showCircles: true,
+            },
+          ],
+          addTooltip: true,
+          addLegend: true,
+          legendPosition: 'right',
+        },
+        aggs: [
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Cantidad de Camas' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'piso', size: 5, order: 'asc', orderBy: '_key', customLabel: 'Piso Hospitalario' } },
+          { id: '3', enabled: true, type: 'terms', schema: 'group', params: { field: 'estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Estado' } },
+        ],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: '', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: bedsDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-bar-beds-by-floor?overwrite=true`, {
+    method: 'POST',
+    headers: KBN_HEADERS,
+    body: JSON.stringify(visBarBeds),
+  });
+
+  // Vis 10: Gráfica de Dona - Censo de Camas por Estado
   const visBedsDonut = {
     attributes: {
       title: 'Gráfica de Dona - Censo de Camas por Estado',
       uiStateJSON: '{}',
       description: 'Distribución porcentual de camas disponibles vs ocupadas',
       visState: JSON.stringify({
-        title: 'Gráfica de Dona - Censo de Camas por Estado',
+        title: 'Proporción de Camas por Estado',
         type: 'pie',
         params: {
           type: 'pie',
@@ -457,13 +772,7 @@ async function main() {
         }),
       },
     },
-    references: [
-      {
-        name: 'kibanaSavedObjectMeta.searchSourceJSON.index',
-        type: 'index-pattern',
-        id: bedsDvId,
-      },
-    ],
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: bedsDvId }],
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-beds-donut?overwrite=true`, {
     method: 'POST',
@@ -471,14 +780,14 @@ async function main() {
     body: JSON.stringify(visBedsDonut),
   });
 
-  // Vis 6: Pie Chart - Unidades de Stock por Categoría de Fármacos
+  // Vis 11: Gráfica de Dona - Stock por Categoría Terapéutica
   const visPharmacyPie = {
     attributes: {
       title: 'Gráfica de Dona - Stock por Categoría Terapéutica',
       uiStateJSON: '{}',
       description: 'Unidades de fármacos por categoría terapéutica',
       visState: JSON.stringify({
-        title: 'Gráfica de Dona - Stock por Categoría Terapéutica',
+        title: 'Stock por Categoría Terapéutica',
         type: 'pie',
         params: {
           type: 'pie',
@@ -500,13 +809,7 @@ async function main() {
         }),
       },
     },
-    references: [
-      {
-        name: 'kibanaSavedObjectMeta.searchSourceJSON.index',
-        type: 'index-pattern',
-        id: pharmacyDvId,
-      },
-    ],
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: pharmacyDvId }],
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-pharmacy-pie?overwrite=true`, {
     method: 'POST',
@@ -514,103 +817,135 @@ async function main() {
     body: JSON.stringify(visPharmacyPie),
   });
 
-  // Vis 7: Tabla de Semáforo de Fármacos Críticos
+  // Vis 12: Tabla Dinámica e Interactiva - Semáforo de Fármacos Críticos
   const visPharmacyTable = {
     attributes: {
-      title: 'Tabla - Semáforo de Fármacos en Alerta Crítica y Reabastecimiento',
-      visState: JSON.stringify({
-        title: 'Tabla - Semáforo de Fármacos en Alerta Crítica y Reabastecimiento',
-        type: 'markdown',
-        params: {
-          markdown:
-            '| Medicamento | Principio Activo | Categoría | Stock | Mín | Nivel Alerta | Almacén Asignado |\n' +
-            '| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n' +
-            '| **Morfina Solución IV** | Sulfato de Morfina 10mg/ml | Analgésicos UCI | **12** | 30 | 🔴 **CRÍTICO** | Terapia Intensiva (UTI) |\n' +
-            '| **Merrem 1g** | Meropenem Trihidratado | Antibióticos UCI | **14** | 40 | 🔴 **CRÍTICO** | Terapia Intensiva (UTI) |\n' +
-            '| **Humalog KwikPen** | Insulina Lispro Rápida | Endocrinología | **16** | 35 | 🔴 **CRÍTICO** | Farmacia Refrigerada |\n' +
-            '| **Fentanilo 0.5mg** | Citrato de Fentanilo | Analgésicos UCI | **8** | 25 | 🔴 **CRÍTICO** | Terapia Intensiva (UTI) |\n' +
-            '| **Tramal 50mg** | Tramadol Clorhidrato | Analgésicos | **45** | 50 | 🟡 Bajo | Farmacia Central |\n' +
-            '| **Rocephin 1g** | Ceftriaxona Disódica | Antibióticos | **68** | 80 | 🟡 Bajo | Urgencias |\n' +
-            '| **Lantus Solostar** | Insulina Glargina | Endocrinología | **24** | 40 | 🟡 Bajo | Farmacia Refrigerada |\n' +
-            '| **Clexane 40mg** | Enoxaparina Sódica | Anticoagulantes | **32** | 50 | 🟡 Bajo | Urgencias |\n' +
-            '| **Tempra Forte** | Paracetamol 500mg | Analgésicos | **850** | 200 | 🟢 Normal | Farmacia Central |\n' +
-            '| **Cozaar 50mg** | Losartán 50mg | Antihipertensivos | **580** | 200 | 🟢 Normal | Farmacia Central |\n' +
-            '| **Solución Fisiológica** | NaCl 0.9% 1000ml | Soluciones IV | **1,450**| 400 | 🟢 Normal | Almacén General de Sueros |',
-        },
-      }),
+      title: 'Tabla Dinámica - Inventario de Fármacos y Semáforo de Alertas',
       uiStateJSON: '{}',
-      description: 'Tabla de alerta de fármacos',
-      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [] }) },
+      description: 'Tabla agregada con ordenamiento, búsqueda y semáforo de inventario',
+      visState: JSON.stringify({
+        title: 'Inventario Dinámico de Medicamentos',
+        type: 'table',
+        params: {
+          perPage: 10,
+          showPartialRows: false,
+          showMetricsAtAllLevels: false,
+          sort: { columnIndex: null, direction: null },
+          showTotal: true,
+          totalFunc: 'sum',
+          percentageCol: '',
+        },
+        aggs: [
+          { id: '1', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_actual', customLabel: 'Stock Actual' } },
+          { id: '2', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_minimo', customLabel: 'Stock Mínimo' } },
+          { id: '3', enabled: true, type: 'avg', schema: 'metric', params: { field: 'precio_unitario_mxn', customLabel: 'Precio Unitario (MXN)' } },
+          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'medicamento', size: 25, order: 'asc', orderBy: '1', customLabel: 'Medicamento' } },
+          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'categoria_terapeutica', size: 5, order: 'desc', orderBy: '1', customLabel: 'Categoría' } },
+          { id: '6', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'nivel_alerta', size: 5, order: 'desc', orderBy: '1', customLabel: 'Alerta' } },
+          { id: '7', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'almacen', size: 5, order: 'desc', orderBy: '1', customLabel: 'Almacén' } },
+        ],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: '', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
     },
-    references: [],
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: pharmacyDvId }],
   };
-  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-pharmacy-table?overwrite=true`, {
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-table-pharmacy-dynamic?overwrite=true`, {
     method: 'POST',
     headers: KBN_HEADERS,
     body: JSON.stringify(visPharmacyTable),
   });
 
-  // Vis 8: Tabla Detallada de Camas por Piso
+  // Vis 13: Tabla Dinámica e Interactiva - Censo de Camas Hospitalarias
   const visBedsTable = {
     attributes: {
-      title: 'Tabla - Censo Hospitalario de Camas por Piso',
-      visState: JSON.stringify({
-        title: 'Tabla - Censo Hospitalario de Camas por Piso',
-        type: 'markdown',
-        params: {
-          markdown:
-            '| Cama | Piso | Tipo de Habitación | Estado | Tarifa / Noche | Paciente Ingresado | Médico Responsable |\n' +
-            '| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n' +
-            '| **101** | Piso 1 | Habitación Privada | 🟢 Disponible | $4,500 MXN | -- | -- |\n' +
-            '| **102** | Piso 1 | Habitación Compartida | 🔴 Ocupada | $3,200 MXN | Carlos Méndez Ruiz | Dr. Héctor Morales |\n' +
-            '| **103** | Piso 1 | Habitación Compartida | 🟢 Disponible | $3,200 MXN | -- | -- |\n' +
-            '| **104** | Piso 1 | Habitación Privada | 🔴 Ocupada | $4,500 MXN | María Luisa Domínguez | Dra. Gabriela Solís |\n' +
-            '| **105** | Piso 1 | Habitación Compartida | 🟡 Mantenimiento | $3,200 MXN | -- | -- |\n' +
-            '| **201** | Piso 2 | Suite Hospitalaria | 🔴 Ocupada | $7,800 MXN | Juan Pérez García | Dr. Rafael Castelo |\n' +
-            '| **202** | Piso 2 | Habitación Privada | 🟢 Disponible | $5,200 MXN | -- | -- |\n' +
-            '| **203** | Piso 2 | Habitación Privada | 🔴 Ocupada | $5,200 MXN | Roberto Gómez Valdez | Dr. Fernando Navarro |\n' +
-            '| **301** | Piso 3 | Terapia Intensiva (UTI) | 🔴 Ocupada | $14,500 MXN | Eduardo Garza Silva | Dr. Javier Villalobos |\n' +
-            '| **303** | Piso 3 | Aislamiento Infeccioso | 🔴 Ocupada | $9,800 MXN | Carmen Ortiz Vega | Dra. Verónica Peña |\n' +
-            '| **Q-01**| Quirófano | Quirófano Central | 🔴 Ocupada | $18,000 MXN | Fernando Castro Ríos | Dr. Arturo Beltrán |',
-        },
-      }),
+      title: 'Tabla Dinámica - Censo Hospitalario de Camas en Tiempo Real',
       uiStateJSON: '{}',
-      description: 'Tabla de censo de camas',
-      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [] }) },
+      description: 'Censo hospitalario en vivo con paciente asignado, diagnóstico y médico',
+      visState: JSON.stringify({
+        title: 'Censo de Camas Hospitalarias',
+        type: 'table',
+        params: {
+          perPage: 10,
+          showPartialRows: false,
+          showMetricsAtAllLevels: false,
+          sort: { columnIndex: null, direction: null },
+          showTotal: false,
+          totalFunc: 'sum',
+          percentageCol: '',
+        },
+        aggs: [
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Total' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'cama_id', size: 25, order: 'asc', orderBy: '_key', customLabel: 'Cama' } },
+          { id: '3', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'piso', size: 5, order: 'asc', orderBy: '_key', customLabel: 'Piso' } },
+          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'tipo_cama', size: 5, order: 'desc', orderBy: '1', customLabel: 'Tipo de Cama' } },
+          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Estado' } },
+          { id: '6', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'paciente_nombre', size: 25, order: 'desc', orderBy: '1', customLabel: 'Paciente' } },
+          { id: '7', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'diagnostico', size: 25, order: 'desc', orderBy: '1', customLabel: 'Diagnóstico' } },
+          { id: '8', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'medico_tratante', size: 25, order: 'desc', orderBy: '1', customLabel: 'Médico Tratante' } },
+        ],
+      }),
+      kibanaSavedObjectMeta: {
+        searchSourceJSON: JSON.stringify({
+          query: { query: '', language: 'kuery' },
+          filter: [],
+          indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
+        }),
+      },
     },
-    references: [],
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: bedsDvId }],
   };
-  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-beds-table?overwrite=true`, {
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-table-beds-dynamic?overwrite=true`, {
     method: 'POST',
     headers: KBN_HEADERS,
     body: JSON.stringify(visBedsTable),
   });
+  console.log('  ✓ 13 visualizaciones oficiales creadas exitosamente.');
 
-  console.log('  ✓ 8 visualizaciones oficiales creadas exitosamente.');
-
-  // 8. Crear Dashboard con Referencias Explícitas a las Visualizaciones
+  // 8. Crear Dashboard con Layout Ultra-Moderno y Referencias Explícitas
   console.log('\n📊 Vinculando visualizaciones al Dashboard ("centro-medico-dashboard")...');
 
   const panels = [
-    { gridData: { x: 0, y: 0, w: 48, h: 5, i: 'p-header' }, panelIndex: 'p-header', panelRefName: 'ref_header', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 5, w: 16, h: 8, i: 'p-beds-kpi' }, panelIndex: 'p-beds-kpi', panelRefName: 'ref_beds_kpi', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 16, y: 5, w: 16, h: 8, i: 'p-pharm-kpi' }, panelIndex: 'p-pharm-kpi', panelRefName: 'ref_pharm_kpi', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 32, y: 5, w: 16, h: 8, i: 'p-fin-kpi' }, panelIndex: 'p-fin-kpi', panelRefName: 'ref_fin_kpi', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 13, w: 24, h: 12, i: 'p-beds-donut' }, panelIndex: 'p-beds-donut', panelRefName: 'ref_beds_donut', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 24, y: 13, w: 24, h: 12, i: 'p-pharm-pie' }, panelIndex: 'p-pharm-pie', panelRefName: 'ref_pharm_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 25, w: 24, h: 14, i: 'p-beds-table' }, panelIndex: 'p-beds-table', panelRefName: 'ref_beds_table', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 24, y: 25, w: 24, h: 14, i: 'p-pharm-table' }, panelIndex: 'p-pharm-table', panelRefName: 'ref_pharm_table', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila 1: Encabezado
+    { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-header' }, panelIndex: 'p-header', panelRefName: 'ref_header', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila 2: Barra de Filtros Interactivos Multiselección
+    { gridData: { x: 0, y: 4, w: 48, h: 6, i: 'p-controls' }, panelIndex: 'p-controls', panelRefName: 'ref_controls', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila 3: KPIs Dinámicos (5 tarjetas)
+    { gridData: { x: 0, y: 10, w: 10, h: 7, i: 'p-beds-free' }, panelIndex: 'p-beds-free', panelRefName: 'ref_beds_free', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 10, y: 10, w: 9, h: 7, i: 'p-beds-occ' }, panelIndex: 'p-beds-occ', panelRefName: 'ref_beds_occ', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 19, y: 10, w: 9, h: 7, i: 'p-pharm-crit' }, panelIndex: 'p-pharm-crit', panelRefName: 'ref_pharm_crit', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 28, y: 10, w: 10, h: 7, i: 'p-pharm-stock' }, panelIndex: 'p-pharm-stock', panelRefName: 'ref_pharm_stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 38, y: 10, w: 10, h: 7, i: 'p-revenue' }, panelIndex: 'p-revenue', panelRefName: 'ref_revenue', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila 4: Gráficos de Barras Comparativos y Apilados
+    { gridData: { x: 0, y: 17, w: 24, h: 14, i: 'p-bar-stock' }, panelIndex: 'p-bar-stock', panelRefName: 'ref_bar_stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 24, y: 17, w: 24, h: 14, i: 'p-bar-beds' }, panelIndex: 'p-bar-beds', panelRefName: 'ref_bar_beds', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila 5: Donas Porcentuales
+    { gridData: { x: 0, y: 31, w: 24, h: 12, i: 'p-beds-donut' }, panelIndex: 'p-beds-donut', panelRefName: 'ref_beds_donut', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 24, y: 31, w: 24, h: 12, i: 'p-pharm-pie' }, panelIndex: 'p-pharm-pie', panelRefName: 'ref_pharm_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila 6: Tablas Dinámicas e Interactivas en Tiempo Real
+    { gridData: { x: 0, y: 43, w: 24, h: 16, i: 'p-table-pharm' }, panelIndex: 'p-table-pharm', panelRefName: 'ref_table_pharm', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 24, y: 43, w: 24, h: 16, i: 'p-table-beds' }, panelIndex: 'p-table-beds', panelRefName: 'ref_table_beds', version: '9.5.5', embeddableConfig: { enhancements: {} } },
   ];
 
   const references = [
     { name: 'ref_header', type: 'visualization', id: 'vis-header' },
-    { name: 'ref_beds_kpi', type: 'visualization', id: 'vis-kpi-beds' },
-    { name: 'ref_pharm_kpi', type: 'visualization', id: 'vis-kpi-pharmacy' },
-    { name: 'ref_fin_kpi', type: 'visualization', id: 'vis-kpi-finance' },
+    { name: 'ref_controls', type: 'visualization', id: 'vis-controls-filter' },
+    { name: 'ref_beds_free', type: 'visualization', id: 'vis-metric-beds-free' },
+    { name: 'ref_beds_occ', type: 'visualization', id: 'vis-metric-beds-occupied' },
+    { name: 'ref_pharm_crit', type: 'visualization', id: 'vis-metric-pharm-critical' },
+    { name: 'ref_pharm_stock', type: 'visualization', id: 'vis-metric-pharm-stock-sum' },
+    { name: 'ref_revenue', type: 'visualization', id: 'vis-metric-revenue' },
+    { name: 'ref_bar_stock', type: 'visualization', id: 'vis-bar-stock-compare' },
+    { name: 'ref_bar_beds', type: 'visualization', id: 'vis-bar-beds-by-floor' },
     { name: 'ref_beds_donut', type: 'visualization', id: 'vis-beds-donut' },
     { name: 'ref_pharm_pie', type: 'visualization', id: 'vis-pharmacy-pie' },
-    { name: 'ref_beds_table', type: 'visualization', id: 'vis-beds-table' },
-    { name: 'ref_pharm_table', type: 'visualization', id: 'vis-pharmacy-table' },
+    { name: 'ref_table_pharm', type: 'visualization', id: 'vis-table-pharmacy-dynamic' },
+    { name: 'ref_table_beds', type: 'visualization', id: 'vis-table-beds-dynamic' },
   ];
 
   const dashboardPayload = {
