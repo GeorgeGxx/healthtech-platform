@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -24,7 +24,9 @@ export class MedicalRecordsComponent implements OnInit {
   readonly doctors = signal<any[]>([]);
   readonly isFtsMode = signal<boolean>(false);
   readonly showModal = signal<boolean>(false);
+  readonly filterOnlyMyPatients = signal<boolean>(true);
 
+  editingRecordId: number | null = null;
   selectedPatientId: number = 1;
   ftsQuery: string = '';
 
@@ -32,6 +34,17 @@ export class MedicalRecordsComponent implements OnInit {
   drugDose = '';
   drugFreq = '';
   drugDays = 30;
+
+  // Pacientes asignados al médico actual (Dra. Laura Gómez o tratante)
+  readonly assignedPatientIds = computed<number[]>(() => [1, 2, 4]);
+
+  readonly filteredPatients = computed<any[]>(() => {
+    const list = this.patients();
+    if (this.auth.isDoctor() && this.filterOnlyMyPatients()) {
+      return list.filter((p) => this.assignedPatientIds().includes(p.idPaciente));
+    }
+    return list;
+  });
 
   newRecord: any = {
     idPaciente: 1,
@@ -54,6 +67,8 @@ export class MedicalRecordsComponent implements OnInit {
       // Reacciona al cambio de rol en el switcher superior
       if (this.auth.isBasicUser()) {
         this.selectedPatientId = this.auth.currentUser().patientId || 1;
+      } else if (this.auth.isDoctor()) {
+        this.newRecord.idMedico = this.auth.currentUser().doctorId || 2;
       }
       this.loadPatientRecords();
     });
@@ -61,7 +76,7 @@ export class MedicalRecordsComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
-      if (params['patientId'] && this.auth.isAdmin()) {
+      if (params['patientId'] && this.auth.canManageRecords()) {
         this.selectedPatientId = parseInt(params['patientId'], 10);
       } else if (this.auth.isBasicUser()) {
         this.selectedPatientId = this.auth.currentUser().patientId || 1;
@@ -69,7 +84,7 @@ export class MedicalRecordsComponent implements OnInit {
       this.loadPatientRecords();
     });
 
-    if (this.auth.isAdmin()) {
+    if (this.auth.canManageRecords()) {
       this.api.getPatients().subscribe((p) => this.patients.set(p));
     }
     this.api.getDoctors().subscribe((d) => this.doctors.set(d));
@@ -95,7 +110,6 @@ export class MedicalRecordsComponent implements OnInit {
     }
 
     if (this.auth.isBasicUser()) {
-      // Para paciente, búsqueda estricta únicamente dentro de sus propios antecedentes
       this.isFtsMode.set(true);
       const current = this.records();
       const filtered = current.filter((r) => {
@@ -104,7 +118,6 @@ export class MedicalRecordsComponent implements OnInit {
       });
       this.records.set(filtered);
     } else {
-      // Para Recepción / Staff médico, búsqueda clínica asistida
       this.isFtsMode.set(true);
       this.api.searchClinicalRecords(query).subscribe({
         next: (data) => this.records.set(data || []),
@@ -119,13 +132,73 @@ export class MedicalRecordsComponent implements OnInit {
   }
 
   openModal(): void {
-    if (this.auth.isBasicUser()) return; // Los pacientes no crean notas clínicas
-    this.newRecord.idPaciente = this.selectedPatientId;
+    this.openNewModal();
+  }
+
+  openNewModal(): void {
+    if (this.auth.isBasicUser()) return;
+    this.editingRecordId = null;
+    this.newRecord = {
+      idPaciente: this.selectedPatientId,
+      idMedico: this.auth.currentUser().doctorId || 2,
+      diagnosticoCodigoCie: '',
+      diagnosticoDescripcion: '',
+      tratamiento: '',
+      signosVitales: {
+        presion_arterial: '120/80',
+        frecuencia_cardiaca_lpm: 72,
+        temperatura_c: 36.5,
+        peso_kg: 70,
+        oxigeno_pct: 98,
+      },
+      recetaMedicamentos: [],
+    };
+    this.drugName = '';
+    this.drugDose = '';
+    this.drugFreq = '';
+    this.drugDays = 30;
+    this.showModal.set(true);
+  }
+
+  openEditModal(record: any): void {
+    if (!this.auth.canManageRecords()) return;
+    this.editingRecordId = record.idHistoria || record.id_historia;
+    this.newRecord = {
+      idPaciente: record.idPaciente || record.id_paciente || this.selectedPatientId,
+      idMedico: record.idMedico || record.id_medico || (this.auth.currentUser().doctorId || 2),
+      diagnosticoCodigoCie: record.diagnosticoCodigoCie || record.diagnostico_codigo_cie || '',
+      diagnosticoDescripcion: record.diagnosticoDescripcion || record.diagnostico_descripcion || '',
+      tratamiento: record.tratamiento || '',
+      signosVitales: {
+        presion_arterial: '120/80',
+        frecuencia_cardiaca_lpm: 72,
+        temperatura_c: 36.5,
+        peso_kg: 70,
+        oxigeno_pct: 98,
+        ...(record.signosVitales || record.signos_vitales || {}),
+      },
+      recetaMedicamentos: [],
+    };
+
+    const recetas = record.recetaMedicamentos || record.receta_medicamentos || [];
+    if (recetas.length > 0) {
+      this.drugName = recetas[0].medicamento || '';
+      this.drugDose = recetas[0].dosis || '';
+      this.drugFreq = recetas[0].frecuencia || '';
+      this.drugDays = recetas[0].dias || 30;
+    } else {
+      this.drugName = '';
+      this.drugDose = '';
+      this.drugFreq = '';
+      this.drugDays = 30;
+    }
+
     this.showModal.set(true);
   }
 
   closeModal(): void {
     this.showModal.set(false);
+    this.editingRecordId = null;
   }
 
   submitRecord(event: Event): void {
@@ -139,18 +212,33 @@ export class MedicalRecordsComponent implements OnInit {
           dias: this.drugDays,
         },
       ];
+    } else {
+      this.newRecord.recetaMedicamentos = [];
     }
 
-    this.api.createMedicalRecord(this.newRecord).subscribe({
-      next: () => {
-        this.closeModal();
-        this.loadPatientRecords();
-        this.toast.success('Nota clínica y prescripción registradas en el expediente inmutable.');
-      },
-      error: (err) => {
-        this.toast.error(err.error?.message || 'Error al guardar la nota médica en el expediente.');
-      },
-    });
+    if (this.editingRecordId) {
+      this.api.updateMedicalRecord(this.editingRecordId, this.newRecord).subscribe({
+        next: () => {
+          this.closeModal();
+          this.loadPatientRecords();
+          this.toast.success('Nota de evolución clínica actualizada y guardada con éxito.');
+        },
+        error: (err) => {
+          this.toast.error(err.error?.message || 'Error al actualizar la nota médica.');
+        },
+      });
+    } else {
+      this.api.createMedicalRecord(this.newRecord).subscribe({
+        next: () => {
+          this.closeModal();
+          this.loadPatientRecords();
+          this.toast.success('Nota clínica y prescripción registradas conforme a NOM-004.');
+        },
+        error: (err) => {
+          this.toast.error(err.error?.message || 'Error al guardar la nota médica en el expediente.');
+        },
+      });
+    }
   }
 
   printPrescription(r: any): void {

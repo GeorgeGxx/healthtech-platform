@@ -537,6 +537,16 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/medical-records`, data);
   }
 
+  updateMedicalRecord(id: number, data: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/medical-records/${id}`, data);
+  }
+
+  getRecordsByDoctor(doctorId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/medical-records/doctor/${doctorId}`).pipe(
+      catchError(() => of([]))
+    );
+  }
+
   // --- Facturación ---
   getBillingSummary(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/billing/summary`).pipe(

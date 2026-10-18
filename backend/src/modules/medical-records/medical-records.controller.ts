@@ -3,6 +3,7 @@ import {
   Inject,
   Get,
   Post,
+  Put,
   Body,
   Param,
   Query,
@@ -32,6 +33,12 @@ export class MedicalRecordsController {
     return await this.recordsService.findByPatient(patientId);
   }
 
+  @Get('doctor/:doctorId')
+  @ApiOperation({ summary: 'Obtener notas de evolución de los pacientes asignados a un médico' })
+  async findByDoctor(@Param('doctorId', ParseIntPipe) doctorId: number) {
+    return await this.recordsService.findByDoctor(doctorId);
+  }
+
   @Get('search')
   @ApiOperation({ summary: 'Búsqueda clínica en texto completo (Full Text Search PostgreSQL en español)' })
   @ApiQuery({ name: 'q', required: true, description: 'Término clínico (ej: hipertensión, diabetes, fractura)' })
@@ -49,5 +56,14 @@ export class MedicalRecordsController {
   @ApiOperation({ summary: 'Registrar una nueva evolución clínica con signos vitales y recetas' })
   async create(@Body() dto: CreateMedicalRecordDto) {
     return await this.recordsService.create(dto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Actualizar y guardar cambios en una nota de evolución clínica' })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Partial<CreateMedicalRecordDto>,
+  ) {
+    return await this.recordsService.update(id, dto);
   }
 }

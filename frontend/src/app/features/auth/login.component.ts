@@ -56,6 +56,11 @@ export class LoginComponent implements OnInit {
     this.router.navigateByUrl(this.returnUrl);
   }
 
+  quickLoginDoctor(): void {
+    this.auth.switchToDoctor();
+    this.router.navigateByUrl(this.returnUrl);
+  }
+
   quickLoginPatient(): void {
     this.auth.switchToBasicUser();
     this.router.navigateByUrl(this.returnUrl);

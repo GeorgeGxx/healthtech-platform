@@ -24,9 +24,11 @@ export class App {
 
   readonly isMobileMenuOpen = signal<boolean>(false);
 
-  switchUser(role: 'admin_user' | 'basic_user' | 'guest'): void {
+  switchUser(role: 'admin_user' | 'doctor_user' | 'basic_user' | 'guest'): void {
     if (role === 'admin_user') {
       this.auth.switchToAdmin();
+    } else if (role === 'doctor_user') {
+      this.auth.switchToDoctor();
     } else if (role === 'basic_user') {
       this.auth.switchToBasicUser();
     } else {

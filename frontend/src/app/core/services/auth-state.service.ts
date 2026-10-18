@@ -6,10 +6,13 @@ export interface AppUser {
   username: string;
   name: string;
   email: string;
-  role: 'admin_user' | 'basic_user' | 'guest';
+  role: 'admin_user' | 'basic_user' | 'doctor_user' | 'guest';
   roleTitle: string;
   roles: string[];
   patientId?: number;
+  doctorId?: number;
+  license?: string;
+  specialty?: string;
   dni?: string;
   insurance?: string;
 }
@@ -32,6 +35,19 @@ export const ADMIN_USER: AppUser = {
   role: 'admin_user',
   roleTitle: 'Recepción y Coordinación Médica',
   roles: ['admin_user', 'receptionist_user'],
+};
+
+export const DOCTOR_USER: AppUser = {
+  id: 'usr-doc-02',
+  username: 'doctor_user',
+  name: 'Dra. Laura Gómez',
+  email: 'laura.gomez@centromedico.mx',
+  role: 'doctor_user',
+  roleTitle: 'Médico Tratante Especialista',
+  roles: ['doctor_user'],
+  doctorId: 2,
+  license: 'MN-10002',
+  specialty: 'Dermatología',
 };
 
 export const BASIC_USER: AppUser = {
@@ -58,9 +74,13 @@ export class AuthStateService {
 
   // Señales calculadas
   readonly isAdmin = computed(() => this.currentUser().role === 'admin_user');
+  readonly isDoctor = computed(() => this.currentUser().role === 'doctor_user');
   readonly isBasicUser = computed(() => this.currentUser().role === 'basic_user');
   readonly isGuest = computed(() => this.currentUser().role === 'guest');
   readonly isAuthenticated = computed(() => this.currentUser().role !== 'guest');
+  readonly canManageRecords = computed(
+    () => this.currentUser().role === 'admin_user' || this.currentUser().role === 'doctor_user',
+  );
 
   login(username: string, password: string): { success: boolean; message?: string } {
     const u = (username || '').trim().toLowerCase();
@@ -75,6 +95,15 @@ export class AuthStateService {
       return { success: true };
     }
 
+    // Credenciales para Médico Tratante / doctor_user (Dra. Laura Gómez)
+    if (
+      (u === 'doctor_user' || u === 'doctor' || u === 'medico' || u === 'laura' || u === 'laura.gomez' || u === 'dr.gomez' || u === 'laura.gomez@centromedico.mx') &&
+      (p === 'doctor' || p === 'Doctor123!' || p === 'admin' || p === 'doctor123')
+    ) {
+      this.setUser(DOCTOR_USER);
+      return { success: true };
+    }
+
     // Credenciales para Paciente / basic_user (Juan Pérez García)
     if (
       (u === 'basic_user' || u === 'user' || u === 'paciente' || u === 'juan' || u === 'juan.perez' || u === 'juan.perez@email.com') &&
@@ -86,7 +115,7 @@ export class AuthStateService {
 
     return {
       success: false,
-      message: 'Credenciales inválidas. Puede ingresar con admin_user / Admin123! o basic_user / User123!, o utilizar los botones de acceso rápido.',
+      message: 'Credenciales inválidas. Puede ingresar con doctor_user / Doctor123!, admin_user / Admin123! o basic_user / User123!.',
     };
   }
 
@@ -98,6 +127,11 @@ export class AuthStateService {
   switchToAdmin(): void {
     this.setUser(ADMIN_USER);
     this.router.navigate(['/dashboard']);
+  }
+
+  switchToDoctor(): void {
+    this.setUser(DOCTOR_USER);
+    this.router.navigate(['/medical-records']);
   }
 
   switchToBasicUser(): void {
@@ -120,10 +154,11 @@ export class AuthStateService {
   private loadInitialUser(): AppUser {
     try {
       const savedRole = localStorage.getItem('healthtech_user_role');
+      if (savedRole === 'doctor_user') return DOCTOR_USER;
       if (savedRole === 'basic_user') return BASIC_USER;
       if (savedRole === 'guest') return GUEST_USER;
       if (savedRole === 'admin_user') return ADMIN_USER;
-      return ADMIN_USER; // Default para iniciar con flujo hospitalario listo
+      return ADMIN_USER;
     } catch {
       return ADMIN_USER;
     }

@@ -60,6 +60,46 @@ export class MedicalRecordsService {
     return await this.findOne(saved.idHistoria);
   }
 
+  async update(id: number, dto: Partial<CreateMedicalRecordDto>): Promise<HistoriaClinica> {
+    const record = await this.findOne(id);
+    if (dto.diagnosticoCodigoCie !== undefined) {
+      record.diagnosticoCodigoCie = dto.diagnosticoCodigoCie ?? undefined;
+    }
+    if (dto.diagnosticoDescripcion !== undefined) {
+      record.diagnosticoDescripcion = dto.diagnosticoDescripcion;
+    }
+    if (dto.tratamiento !== undefined) {
+      record.tratamiento = dto.tratamiento ?? undefined;
+    }
+    if (dto.signosVitales !== undefined) {
+      record.signosVitales = dto.signosVitales;
+    }
+    if (dto.recetaMedicamentos !== undefined) {
+      record.recetaMedicamentos = dto.recetaMedicamentos;
+    }
+    if (dto.idPaciente !== undefined) {
+      record.idPaciente = dto.idPaciente;
+    }
+    if (dto.idMedico !== undefined) {
+      record.idMedico = dto.idMedico;
+    }
+
+    await this.recordRepo.save(record);
+    return await this.findOne(id);
+  }
+
+  async findByDoctor(doctorId: number): Promise<HistoriaClinica[]> {
+    return await this.recordRepo.find({
+      where: { idMedico: doctorId },
+      relations: {
+        paciente: true,
+        medico: true,
+        turno: true,
+      },
+      order: { fechaAtencion: 'DESC' },
+    });
+  }
+
   async searchClinicalText(term: string): Promise<any[]> {
     if (!term || term.trim().length === 0) {
       return [];

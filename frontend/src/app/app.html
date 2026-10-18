@@ -149,6 +149,72 @@
             </div>
             <span>Auditoría & Cumplimiento</span>
           </a>
+        } @else if (auth.isDoctor()) {
+          <!-- Vistas para Médico Tratante Especialista (Dra. Laura Gómez) -->
+          <div class="px-3 py-2 text-xs font-bold text-indigo-900 bg-indigo-50/90 rounded-xl mb-3 border border-indigo-200/80 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+            <span>Área Médica • Dra. Laura Gómez</span>
+          </div>
+
+          <a
+            routerLink="/medical-records"
+            routerLinkActive="bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/80 shadow-xs"
+            (click)="closeMobileMenu()"
+            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 transition-all group"
+          >
+            <div class="w-8 h-8 rounded-lg bg-indigo-100/70 text-indigo-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            </div>
+            <span class="font-bold text-slate-800">Expedientes & Notas Clínicas</span>
+          </a>
+
+          <a
+            routerLink="/appointments"
+            routerLinkActive="bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/80 shadow-xs"
+            (click)="closeMobileMenu()"
+            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 transition-all group"
+          >
+            <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            </div>
+            <span>Mis Pacientes & Consultas</span>
+          </a>
+
+          <a
+            routerLink="/hospitalizations"
+            routerLinkActive="bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/80 shadow-xs"
+            (click)="closeMobileMenu()"
+            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 transition-all group"
+          >
+            <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <span>Pacientes en Internación</span>
+          </a>
+
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/80 shadow-xs"
+            (click)="closeMobileMenu()"
+            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 transition-all group"
+          >
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+            </div>
+            <span>Tablero del Médico</span>
+          </a>
+
+          <a
+            routerLink="/staff"
+            routerLinkActive="bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/80 shadow-xs"
+            (click)="closeMobileMenu()"
+            class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 transition-all group"
+          >
+            <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+            <span>Cuerpo Médico</span>
+          </a>
         } @else if (auth.isBasicUser()) {
           <!-- Vistas Exclusivas para el Paciente (Juan Pérez García) -->
           <div class="px-3 py-2 text-xs font-bold text-sky-800 bg-sky-50 rounded-xl mb-3 border border-sky-200/70">
@@ -288,10 +354,13 @@
             <span class="font-semibold px-2.5 py-1 rounded-lg border text-xs"
               [ngClass]="{
                 'bg-emerald-50 text-emerald-800 border-emerald-200': auth.isAdmin(),
+                'bg-indigo-50 text-indigo-800 border-indigo-200': auth.isDoctor(),
                 'bg-sky-50 text-sky-800 border-sky-200': auth.isBasicUser()
               }">
               @if (auth.isAdmin()) {
                 Módulo de Recepción y Control
+              } @else if (auth.isDoctor()) {
+                Área Clínica • Dra. Laura Gómez
               } @else {
                 Portal del Paciente
               }
@@ -301,20 +370,28 @@
       </div>
 
       <div class="flex items-center gap-3 sm:gap-4">
-        <!-- Conmutador Rápido de Demostración (Recepción vs Paciente vs Visitante) -->
-        <div class="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 text-xs sm:text-sm shadow-inner">
+        <!-- Conmutador Rápido de Demostración (Recepción vs Médico vs Paciente vs Visitante) -->
+        <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs shadow-inner">
           <button
             (click)="switchUser('admin_user')"
             [class]="auth.isAdmin() ? 'bg-emerald-600 text-white font-extrabold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
-            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
+            class="px-2 sm:px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
             title="Ingresar como personal de Recepción y Coordinación Médica"
           >
             Recepción
           </button>
           <button
+            (click)="switchUser('doctor_user')"
+            [class]="auth.isDoctor() ? 'bg-indigo-600 text-white font-extrabold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
+            class="px-2 sm:px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
+            title="Ingresar como Médico Tratante (Dra. Laura Gómez)"
+          >
+            Médico
+          </button>
+          <button
             (click)="switchUser('basic_user')"
             [class]="auth.isBasicUser() ? 'bg-sky-600 text-white font-extrabold shadow-xs' : 'text-slate-600 hover:text-slate-900 font-medium'"
-            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
+            class="px-2 sm:px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
             title="Ingresar como el paciente Juan Pérez García"
           >
             Paciente
@@ -322,7 +399,7 @@
           <button
             (click)="switchUser('guest')"
             [class]="auth.isGuest() ? 'bg-slate-700 text-white font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-800 font-medium'"
-            class="px-2.5 sm:px-3 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
+            class="px-2 sm:px-2.5 py-1.5 rounded-lg transition-all text-xs cursor-pointer"
             title="Ver como visitante no autenticado (costos y servicios)"
           >
             Invitado
@@ -355,11 +432,12 @@
             class="w-9 h-9 rounded-xl text-white flex items-center justify-center font-extrabold text-xs shadow-xs"
             [ngClass]="{
               'bg-gradient-to-tr from-emerald-600 to-teal-500': auth.isAdmin(),
+              'bg-gradient-to-tr from-indigo-600 to-purple-500': auth.isDoctor(),
               'bg-gradient-to-tr from-sky-600 to-indigo-500': auth.isBasicUser(),
               'bg-slate-400': auth.isGuest()
             }"
           >
-            {{ auth.isAdmin() ? 'SR' : (auth.isBasicUser() ? 'JP' : 'G') }}
+            {{ auth.isAdmin() ? 'SR' : (auth.isDoctor() ? 'LG' : (auth.isBasicUser() ? 'JP' : 'G')) }}
           </div>
           <div class="hidden md:block text-left text-xs">
             <span class="font-extrabold text-slate-900 block leading-tight">{{ auth.currentUser().name }}</span>
