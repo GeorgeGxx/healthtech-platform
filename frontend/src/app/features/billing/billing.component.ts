@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
@@ -17,6 +17,50 @@ export class BillingComponent implements OnInit {
   readonly patients = signal<any[]>([]);
   readonly concepts = signal<any[]>([]);
   readonly showModal = signal<boolean>(false);
+
+  // Paginación Reactiva
+  readonly currentPage = signal<number>(1);
+  readonly pageSize = signal<number>(5);
+
+  readonly totalPages = computed(() => {
+    return Math.max(1, Math.ceil(this.payments().length / this.pageSize()));
+  });
+
+  readonly pagedPayments = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.payments().slice(start, start + this.pageSize());
+  });
+
+  readonly startIndex = computed(() => {
+    return this.payments().length === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1;
+  });
+
+  readonly endIndex = computed(() => {
+    return Math.min(this.currentPage() * this.pageSize(), this.payments().length);
+  });
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+
+  setPageSize(size: any): void {
+    this.pageSize.set(Number(size));
+    this.currentPage.set(1);
+  }
 
   newPayment: any = {
     idPaciente: 4,

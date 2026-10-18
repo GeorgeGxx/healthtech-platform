@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, Medicamento, PharmacySummary } from '../../core/services/api.service';
@@ -15,6 +15,27 @@ export class PharmacyComponent implements OnInit {
   readonly medicamentos = signal<Medicamento[]>([]);
   readonly summary = signal<PharmacySummary | null>(null);
   readonly isLoading = signal<boolean>(false);
+
+  // Paginación Reactiva
+  readonly currentPage = signal<number>(1);
+  readonly pageSize = signal<number>(6);
+
+  readonly totalPages = computed(() => {
+    return Math.max(1, Math.ceil(this.medicamentos().length / this.pageSize()));
+  });
+
+  readonly pagedMedicamentos = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.medicamentos().slice(start, start + this.pageSize());
+  });
+
+  readonly startIndex = computed(() => {
+    return this.medicamentos().length === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1;
+  });
+
+  readonly endIndex = computed(() => {
+    return Math.min(this.currentPage() * this.pageSize(), this.medicamentos().length);
+  });
 
   searchTerm = '';
   selectedCategory = '';
@@ -61,6 +82,7 @@ export class PharmacyComponent implements OnInit {
   }
 
   onFilterChange(): void {
+    this.currentPage.set(1);
     this.loadMedicamentos();
   }
 
@@ -68,7 +90,31 @@ export class PharmacyComponent implements OnInit {
     this.searchTerm = '';
     this.selectedCategory = '';
     this.selectedAlert = '';
+    this.currentPage.set(1);
     this.loadMedicamentos();
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+
+  setPageSize(size: any): void {
+    this.pageSize.set(Number(size));
+    this.currentPage.set(1);
   }
 
   getStockPercentage(m: Medicamento): number {
