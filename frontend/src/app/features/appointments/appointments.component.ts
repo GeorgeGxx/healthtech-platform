@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -15,6 +15,7 @@ import { ToastService } from '../../core/services/toast.service';
 export class AppointmentsComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   readonly auth = inject(AuthStateService);
 
@@ -50,8 +51,23 @@ export class AppointmentsComponent implements OnInit {
   ngOnInit(): void {
     this.loadAppointments();
     this.loadCatalogs();
-    if (this.route.snapshot.queryParams['openModal'] === 'true') {
+
+    const shouldOpenModal =
+      history.state?.openModal ||
+      this.route.snapshot.queryParams['openModal'] === 'true';
+
+    if (shouldOpenModal) {
       setTimeout(() => this.openModal(), 100);
+
+      // Si se navega o redirige con parámetro queryParam, limpiar de inmediato la URL para mantenerla 100% limpia
+      if (this.route.snapshot.queryParams['openModal']) {
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { openModal: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true,
+        });
+      }
     }
   }
 
