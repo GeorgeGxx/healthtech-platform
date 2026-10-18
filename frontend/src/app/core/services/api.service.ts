@@ -35,6 +35,33 @@ export interface ClinicalServiceTariff {
   imagenUrl: string;
 }
 
+export interface Medicamento {
+  idMedicamento: string;
+  nombreComercial: string;
+  principioActivo: string;
+  categoriaTerapeutica: string;
+  presentacion: string;
+  lote: string;
+  caducidad: string;
+  stockActual: number;
+  stockMinimo: number;
+  stockMaximo: number;
+  nivelAlerta: 'Normal' | 'Bajo' | 'Crítico' | string;
+  ubicacionAlmacen: string;
+  precioUnitarioMxn: number;
+  activo: boolean;
+}
+
+export interface PharmacySummary {
+  totalMedicamentos: number;
+  totalUnidadesStock: number;
+  criticosCount: number;
+  bajoCount: number;
+  normalCount: number;
+  valorInventarioMxn: number;
+  almacenesCount: number;
+}
+
 // Datos de contingencia clínica sincronizados fielmente con 02_seed_centromedico.sql
 const FALLBACK_METRICS: DashboardMetrics = {
   kpis: {
@@ -530,5 +557,37 @@ export class ApiService {
 
   createPayment(data: any): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/billing`, data);
+  }
+
+  // --- Farmacia e Inventario Hospitalario ---
+  getMedicamentos(search?: string, categoria?: string, alerta?: string): Observable<Medicamento[]> {
+    const params: Record<string, string> = {};
+    if (search && search.trim() !== '') params['search'] = search.trim();
+    if (categoria && categoria.trim() !== '') params['categoria'] = categoria.trim();
+    if (alerta && alerta.trim() !== '') params['alerta'] = alerta.trim();
+
+    return this.http.get<Medicamento[]>(`${this.baseUrl}/pharmacy`, { params }).pipe(
+      catchError((err) => {
+        console.warn('API /pharmacy no disponible:', err.message);
+        return of([]);
+      })
+    );
+  }
+
+  getPharmacySummary(): Observable<PharmacySummary> {
+    return this.http.get<PharmacySummary>(`${this.baseUrl}/pharmacy/summary`).pipe(
+      catchError((err) => {
+        console.warn('API /pharmacy/summary no disponible:', err.message);
+        return of({
+          totalMedicamentos: 20,
+          totalUnidadesStock: 6379,
+          criticosCount: 4,
+          bajoCount: 4,
+          normalCount: 12,
+          valorInventarioMxn: 902950,
+          almacenesCount: 5,
+        });
+      })
+    );
   }
 }

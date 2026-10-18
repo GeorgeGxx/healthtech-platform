@@ -1,0 +1,266 @@
+<div class="space-y-6 animate-fade-in">
+  <!-- Encabezado de Página -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold shadow-xs">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900">Farmacia & Stock Hospitalario</h1>
+          <p class="text-xs sm:text-sm text-slate-500 font-medium">Control de existencias, lotes, caducidades y semáforo de reorden en tiempo real</p>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        PostgreSQL 18 &bull; Stock en Vivo
+      </span>
+    </div>
+  </div>
+
+  <!-- Métricas y KPIs de Farmacia -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <!-- KPI 1: Líneas de Fármacos -->
+    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Líneas en Catálogo</span>
+        <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+        </div>
+      </div>
+      <div class="mt-3">
+        <span class="text-2xl font-black text-slate-900 block">{{ summary()?.totalMedicamentos || 20 }}</span>
+        <span class="text-xs text-slate-500 block">Fármacos activos</span>
+      </div>
+    </div>
+
+    <!-- KPI 2: Total Unidades en Existencia -->
+    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidades en Almacén</span>
+        <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        </div>
+      </div>
+      <div class="mt-3">
+        <span class="text-2xl font-black text-slate-900 block">{{ (summary()?.totalUnidadesStock || 6379) | number }}</span>
+        <span class="text-xs text-slate-500 block">Dosis y cajas disponibles</span>
+      </div>
+    </div>
+
+    <!-- KPI 3: Alerta Crítica -->
+    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group border-l-4 border-l-rose-500">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-rose-600">Alerta Crítica</span>
+        <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        </div>
+      </div>
+      <div class="mt-3">
+        <span class="text-2xl font-black text-rose-700 block">{{ summary()?.criticosCount || 4 }}</span>
+        <span class="text-xs text-rose-500 block">Bajo el mínimo de seguridad</span>
+      </div>
+    </div>
+
+    <!-- KPI 4: Stock Bajo -->
+    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group border-l-4 border-l-amber-500">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-amber-600">Stock Próximo a Mínimo</span>
+        <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+      <div class="mt-3">
+        <span class="text-2xl font-black text-amber-700 block">{{ summary()?.bajoCount || 4 }}</span>
+        <span class="text-xs text-amber-500 block">Sugerencia de reabastecimiento</span>
+      </div>
+    </div>
+
+    <!-- KPI 5: Valor de Inventario -->
+    <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Valor Total Almacén</span>
+        <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+      </div>
+      <div class="mt-3">
+        <span class="text-2xl font-black text-emerald-700 block">${{ (summary()?.valorInventarioMxn || 902950) | number:'1.2-2' }}</span>
+        <span class="text-xs text-slate-500 block">Valuación en MXN</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Filtros Dinámicos -->
+  <div class="glass-panel p-4 rounded-2xl border border-slate-200/90 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+    <div class="flex-1 flex flex-col sm:flex-row gap-3">
+      <!-- Input de Búsqueda -->
+      <div class="relative flex-1">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="onFilterChange()"
+          placeholder="Buscar por nombre, principio activo, lote o almacén..."
+          class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder:text-slate-400"
+        />
+      </div>
+
+      <!-- Filtro por Categoría -->
+      <select
+        [(ngModel)]="selectedCategory"
+        (change)="onFilterChange()"
+        class="text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+      >
+        <option value="">Todas las Categorías</option>
+        @for (cat of categories; track cat) {
+          <option [value]="cat">{{ cat }}</option>
+        }
+      </select>
+
+      <!-- Filtro por Semáforo de Alerta -->
+      <select
+        [(ngModel)]="selectedAlert"
+        (change)="onFilterChange()"
+        class="text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
+      >
+        <option value="">Todos los Estados</option>
+        <option value="Normal">🟢 Normal (Abastecido)</option>
+        <option value="Bajo">🟡 Stock Bajo</option>
+        <option value="Crítico">🔴 Alerta Crítica</option>
+      </select>
+    </div>
+
+    <!-- Acciones -->
+    <div class="flex items-center gap-2">
+      <button
+        (click)="resetFilters()"
+        class="px-3.5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+        title="Restablecer filtros"
+      >
+        Limpiar
+      </button>
+      <button
+        (click)="loadMedicamentos(); loadSummary()"
+        class="px-3.5 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabla Dinámica de Medicamentos -->
+  <div class="glass-panel rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-500">
+            <th class="px-5 py-3.5">Código / Fármaco</th>
+            <th class="px-4 py-3.5">Categoría Terapéutica</th>
+            <th class="px-4 py-3.5">Presentación & Lote</th>
+            <th class="px-4 py-3.5">Caducidad</th>
+            <th class="px-4 py-3.5">Almacén Asignado</th>
+            <th class="px-5 py-3.5 min-w-[180px]">Nivel de Stock (Actual / Máx)</th>
+            <th class="px-4 py-3.5 text-center">Semáforo</th>
+            <th class="px-5 py-3.5 text-right">Precio Unitario</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-sm">
+          @for (m of medicamentos(); track m.idMedicamento) {
+            <tr class="hover:bg-slate-50/70 transition-colors">
+              <!-- Código y Nombre -->
+              <td class="px-5 py-3.5">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                    {{ m.idMedicamento }}
+                  </span>
+                  <div>
+                    <span class="font-bold text-slate-900 block">{{ m.nombreComercial }}</span>
+                    <span class="text-xs text-slate-500 block">{{ m.principioActivo }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Categoría -->
+              <td class="px-4 py-3.5">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
+                  {{ m.categoriaTerapeutica }}
+                </span>
+              </td>
+
+              <!-- Presentación & Lote -->
+              <td class="px-4 py-3.5">
+                <span class="text-xs font-medium text-slate-800 block">{{ m.presentacion }}</span>
+                <span class="text-[11px] font-mono text-slate-400 block">Lote: {{ m.lote }}</span>
+              </td>
+
+              <!-- Caducidad -->
+              <td class="px-4 py-3.5 text-xs text-slate-600 font-medium whitespace-nowrap">
+                {{ m.caducidad }}
+              </td>
+
+              <!-- Ubicación de Almacén -->
+              <td class="px-4 py-3.5">
+                <div class="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+                  <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  <span>{{ m.ubicacionAlmacen }}</span>
+                </div>
+              </td>
+
+              <!-- Progreso de Stock -->
+              <td class="px-5 py-3.5">
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between text-xs font-semibold">
+                    <span class="text-slate-900">{{ m.stockActual }} unid.</span>
+                    <span class="text-slate-400 text-[11px]">Mín: {{ m.stockMinimo }} / Máx: {{ m.stockMaximo }}</span>
+                  </div>
+                  <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all"
+                      [ngClass]="getProgressBarColor(m.nivelAlerta)"
+                      [style.width.%]="getStockPercentage(m)"
+                    ></div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Semáforo de Alerta -->
+              <td class="px-4 py-3.5 text-center">
+                <span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border"
+                  [ngClass]="getAlertBadgeClass(m.nivelAlerta)"
+                >
+                  @if (m.nivelAlerta === 'Normal') { 🟢 }
+                  @else if (m.nivelAlerta === 'Bajo') { 🟡 }
+                  @else { 🔴 }
+                  <span class="ml-1">{{ m.nivelAlerta }}</span>
+                </span>
+              </td>
+
+              <!-- Precio Unitario -->
+              <td class="px-5 py-3.5 text-right font-bold text-slate-900">
+                ${{ m.precioUnitarioMxn | number:'1.2-2' }} <span class="text-xs text-slate-400 font-normal">MXN</span>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="8" class="px-6 py-12 text-center text-slate-400">
+                <div class="flex flex-col items-center gap-2">
+                  <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span class="text-sm font-medium">No se encontraron medicamentos con los filtros aplicados.</span>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

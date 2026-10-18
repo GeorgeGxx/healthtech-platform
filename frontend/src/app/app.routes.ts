@@ -82,6 +82,19 @@ export const routes: Routes = [
       import('./features/staff/staff.component').then((m) => m.StaffComponent),
   },
   {
+    path: 'pharmacy',
+    canActivate: [adminGuard],
+    loadComponent: () =>
+      import('./features/pharmacy/pharmacy.component').then(
+        (m) => m.PharmacyComponent,
+      ),
+  },
+  {
+    path: 'farmacia',
+    redirectTo: 'pharmacy',
+    pathMatch: 'full',
+  },
+  {
     path: 'admin',
     canActivate: [adminGuard],
     loadComponent: () =>

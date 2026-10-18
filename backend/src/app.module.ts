@@ -19,6 +19,7 @@ import {
   ConceptoPago,
   Pago,
   RegistroAuditoria,
+  Medicamento,
 } from './entities/index.js';
 
 // Módulos Transversales: Observabilidad, Seguridad, Caché y Auditoría
@@ -36,6 +37,7 @@ import { HospitalizationsModule } from './modules/hospitalizations/hospitalizati
 import { BillingModule } from './modules/billing/billing.module.js';
 import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
+import { PharmacyModule } from './modules/pharmacy/pharmacy.module.js';
 
 @Module({
   imports: [
@@ -72,6 +74,7 @@ import { AdminModule } from './modules/admin/admin.module.js';
           ConceptoPago,
           Pago,
           RegistroAuditoria,
+          Medicamento,
         ],
         synchronize: false, // Schema gestionado por 01_schema_centromedico.sql
         logging: false,
@@ -85,6 +88,7 @@ import { AdminModule } from './modules/admin/admin.module.js';
     BillingModule,
     DashboardModule,
     AdminModule,
+    PharmacyModule,
   ],
   controllers: [AppController],
   providers: [AppService],
