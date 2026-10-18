@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, Medicamento, PharmacySummary } from '../../core/services/api.service';
+import { AuthStateService } from '../../core/services/auth-state.service';
 
 @Component({
   selector: 'app-pharmacy',
@@ -11,6 +12,7 @@ import { ApiService, Medicamento, PharmacySummary } from '../../core/services/ap
 })
 export class PharmacyComponent implements OnInit {
   private readonly api = inject(ApiService);
+  readonly auth = inject(AuthStateService);
 
   readonly medicamentos = signal<Medicamento[]>([]);
   readonly summary = signal<PharmacySummary | null>(null);
