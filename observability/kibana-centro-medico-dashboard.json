@@ -1,5 +1,25 @@
 [
   {
+    "type": "index-pattern",
+    "id": "healthtech-pharmacy-dv",
+    "attributes": {
+      "title": "healthtech-pharmacy-stock*",
+      "timeFieldName": "@timestamp",
+      "name": "Farmacia - Stock y Alertas de Medicamentos"
+    },
+    "references": []
+  },
+  {
+    "type": "index-pattern",
+    "id": "healthtech-beds-dv",
+    "attributes": {
+      "title": "healthtech-beds-census*",
+      "timeFieldName": "@timestamp",
+      "name": "Censo de Camas y Ocupación Hospitalaria"
+    },
+    "references": []
+  },
+  {
     "attributes": {
       "description": "Encabezado ejecutivo",
       "kibanaSavedObjectMeta": {
@@ -10,14 +30,14 @@
       "visState": "{\"title\":\"Encabezado - Centro Médico Nacional\",\"type\":\"markdown\",\"params\":{\"markdown\":\"# 🏥 Centro Médico Nacional • Centro de Mando Hospitalario\\n**Supervisión en tiempo real:** Censo de camas disponibles por piso, stock crítico de fármacos y recaudación hospitalaria en **MXN** conforme a **NOM-004** y **NOM-024**.\"}}"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:14.109Z",
+    "created_at": "2026-10-18T00:01:17.413Z",
     "id": "vis-header",
     "managed": false,
     "references": [],
     "type": "visualization",
     "typeMigrationVersion": "8.5.0",
-    "updated_at": "2026-10-17T23:54:14.109Z",
-    "version": "WzE3LDFd"
+    "updated_at": "2026-10-18T00:01:17.413Z",
+    "version": "WzU3LDFd"
   },
   {
     "attributes": {
@@ -30,14 +50,14 @@
       "visState": "{\"title\":\"KPI - Censo de Camas Hospitalarias\",\"type\":\"markdown\",\"params\":{\"markdown\":\"### 🛏️ Disponibilidad de Camas: **10 Libres** / 18 Totales\\n\\n- 🟢 **Camas Disponibles:** **10 camas** (55.6%)\\n- 🔴 **Camas Ocupadas:** **6 camas** (33.3%)\\n- 🟡 **En Mantenimiento:** **2 camas** (11.1%)\\n- 🚨 **Terapia Intensiva (UTI):** 2 pacientes activos (Cama 301 y Aislamiento 303)\"}}"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:15.113Z",
+    "created_at": "2026-10-18T00:01:18.421Z",
     "id": "vis-kpi-beds",
     "managed": false,
     "references": [],
     "type": "visualization",
     "typeMigrationVersion": "8.5.0",
-    "updated_at": "2026-10-17T23:54:15.113Z",
-    "version": "WzE4LDFd"
+    "updated_at": "2026-10-18T00:01:18.421Z",
+    "version": "WzU4LDFd"
   },
   {
     "attributes": {
@@ -50,14 +70,14 @@
       "visState": "{\"title\":\"KPI - Semáforo de Fármacos e Inventario\",\"type\":\"markdown\",\"params\":{\"markdown\":\"### 💊 Salud de Inventario de Fármacos\\n\\n- **Catálogo Activo:** 20 líneas de medicamentos\\n- 🟢 **Abastecimiento Normal:** 13 medicamentos\\n- 🟡 **Alerta de Reposición (Bajo):** 4 medicamentos\\n- 🔴 **STOCK CRÍTICO (Menor a Mínimo):** **3 fármacos**\\n  * **Morfina 10mg/ml IV:** Stock: 12 (Mín: 30)\\n  * **Merrem 1g (Meropenem):** Stock: 14 (Mín: 40)\\n  * **Fentanilo 0.5mg Inyectable:** Stock: 8 (Mín: 25)\"}}"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:16.120Z",
+    "created_at": "2026-10-18T00:01:19.430Z",
     "id": "vis-kpi-pharmacy",
     "managed": false,
     "references": [],
     "type": "visualization",
     "typeMigrationVersion": "8.5.0",
-    "updated_at": "2026-10-17T23:54:16.120Z",
-    "version": "WzE5LDFd"
+    "updated_at": "2026-10-18T00:01:19.430Z",
+    "version": "WzU5LDFd"
   },
   {
     "attributes": {
@@ -70,14 +90,14 @@
       "visState": "{\"title\":\"KPI - Valoración y Copago en Caja\",\"type\":\"markdown\",\"params\":{\"markdown\":\"### 💰 Valor de Inventario: **$482,750 MXN**\\n\\n- **Tarifa Noche / Cama Promedio:** $6,200 MXN\\n- **Convenios Aseguradoras:** GNP, MetLife, AXA, Seguros Monterrey\\n- **Copago Promedio Autorizado:** 15% - 20% en ventanilla\\n- **Moneda Oficial:** Pesos Mexicanos ($ MXN)\"}}"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:17.127Z",
+    "created_at": "2026-10-18T00:01:20.440Z",
     "id": "vis-kpi-finance",
     "managed": false,
     "references": [],
     "type": "visualization",
     "typeMigrationVersion": "8.5.0",
-    "updated_at": "2026-10-17T23:54:17.127Z",
-    "version": "WzIwLDFd"
+    "updated_at": "2026-10-18T00:01:20.440Z",
+    "version": "WzYwLDFd"
   },
   {
     "attributes": {
@@ -90,7 +110,7 @@
       "visState": "{\"title\":\"Gráfica de Dona - Censo de Camas por Estado\",\"type\":\"pie\",\"params\":{\"type\":\"pie\",\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"isDonut\":true},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"count\",\"schema\":\"metric\",\"params\":{\"customLabel\":\"Número de Camas\"}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"segment\",\"params\":{\"field\":\"estado\",\"size\":5,\"order\":\"desc\",\"orderBy\":\"1\",\"customLabel\":\"Estado de Ocupación\"}}]}"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:18.136Z",
+    "created_at": "2026-10-18T00:01:21.448Z",
     "id": "vis-beds-donut",
     "managed": false,
     "references": [
@@ -102,8 +122,8 @@
     ],
     "type": "visualization",
     "typeMigrationVersion": "8.5.0",
-    "updated_at": "2026-10-17T23:54:18.136Z",
-    "version": "WzIxLDFd"
+    "updated_at": "2026-10-18T00:01:21.448Z",
+    "version": "WzYxLDFd"
   },
   {
     "attributes": {
@@ -116,7 +136,7 @@
       "visState": "{\"title\":\"Gráfica de Dona - Stock por Categoría Terapéutica\",\"type\":\"pie\",\"params\":{\"type\":\"pie\",\"addTooltip\":true,\"addLegend\":true,\"legendPosition\":\"right\",\"isDonut\":true},\"aggs\":[{\"id\":\"1\",\"enabled\":true,\"type\":\"sum\",\"schema\":\"metric\",\"params\":{\"field\":\"stock_actual\",\"customLabel\":\"Total Unidades Stock\"}},{\"id\":\"2\",\"enabled\":true,\"type\":\"terms\",\"schema\":\"segment\",\"params\":{\"field\":\"categoria_terapeutica\",\"size\":10,\"order\":\"desc\",\"orderBy\":\"1\",\"customLabel\":\"Categoría Terapéutica\"}}]}"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:19.146Z",
+    "created_at": "2026-10-18T00:01:22.460Z",
     "id": "vis-pharmacy-pie",
     "managed": false,
     "references": [
@@ -128,8 +148,8 @@
     ],
     "type": "visualization",
     "typeMigrationVersion": "8.5.0",
-    "updated_at": "2026-10-17T23:54:19.146Z",
-    "version": "WzIyLDFd"
+    "updated_at": "2026-10-18T00:01:22.460Z",
+    "version": "WzYyLDFd"
   },
   {
     "attributes": {
@@ -142,14 +162,14 @@
       "visState": "{\"title\":\"Tabla - Censo Hospitalario de Camas por Piso\",\"type\":\"markdown\",\"params\":{\"markdown\":\"| Cama | Piso | Tipo de Habitación | Estado | Tarifa / Noche | Paciente Ingresado | Médico Responsable |\\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\\n| **101** | Piso 1 | Habitación Privada | 🟢 Disponible | $4,500 MXN | -- | -- |\\n| **102** | Piso 1 | Habitación Compartida | 🔴 Ocupada | $3,200 MXN | Carlos Méndez Ruiz | Dr. Héctor Morales |\\n| **103** | Piso 1 | Habitación Compartida | 🟢 Disponible | $3,200 MXN | -- | -- |\\n| **104** | Piso 1 | Habitación Privada | 🔴 Ocupada | $4,500 MXN | María Luisa Domínguez | Dra. Gabriela Solís |\\n| **105** | Piso 1 | Habitación Compartida | 🟡 Mantenimiento | $3,200 MXN | -- | -- |\\n| **201** | Piso 2 | Suite Hospitalaria | 🔴 Ocupada | $7,800 MXN | Juan Pérez García | Dr. Rafael Castelo |\\n| **202** | Piso 2 | Habitación Privada | 🟢 Disponible | $5,200 MXN | -- | -- |\\n| **203** | Piso 2 | Habitación Privada | 🔴 Ocupada | $5,200 MXN | Roberto Gómez Valdez | Dr. Fernando Navarro |\\n| **301** | Piso 3 | Terapia Intensiva (UTI) | 🔴 Ocupada | $14,500 MXN | Eduardo Garza Silva | Dr. Javier Villalobos |\\n| **303** | Piso 3 | Aislamiento Infeccioso | 🔴 Ocupada | $9,800 MXN | Carmen Ortiz Vega | Dra. Verónica Peña |\\n| **Q-01**| Quirófano | Quirófano Central | 🔴 Ocupada | $18,000 MXN | Fernando Castro Ríos | Dr. Arturo Beltrán |\"}}"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:21.162Z",
+    "created_at": "2026-10-18T00:01:24.481Z",
     "id": "vis-beds-table",
     "managed": false,
     "references": [],
     "type": "visualization",
     "typeMigrationVersion": "8.5.0",
-    "updated_at": "2026-10-17T23:54:21.162Z",
-    "version": "WzI0LDFd"
+    "updated_at": "2026-10-18T00:01:24.481Z",
+    "version": "WzY0LDFd"
   },
   {
     "attributes": {
@@ -162,14 +182,14 @@
       "visState": "{\"title\":\"Tabla - Semáforo de Fármacos en Alerta Crítica y Reabastecimiento\",\"type\":\"markdown\",\"params\":{\"markdown\":\"| Medicamento | Principio Activo | Categoría | Stock | Mín | Nivel Alerta | Almacén Asignado |\\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\\n| **Morfina Solución IV** | Sulfato de Morfina 10mg/ml | Analgésicos UCI | **12** | 30 | 🔴 **CRÍTICO** | Terapia Intensiva (UTI) |\\n| **Merrem 1g** | Meropenem Trihidratado | Antibióticos UCI | **14** | 40 | 🔴 **CRÍTICO** | Terapia Intensiva (UTI) |\\n| **Humalog KwikPen** | Insulina Lispro Rápida | Endocrinología | **16** | 35 | 🔴 **CRÍTICO** | Farmacia Refrigerada |\\n| **Fentanilo 0.5mg** | Citrato de Fentanilo | Analgésicos UCI | **8** | 25 | 🔴 **CRÍTICO** | Terapia Intensiva (UTI) |\\n| **Tramal 50mg** | Tramadol Clorhidrato | Analgésicos | **45** | 50 | 🟡 Bajo | Farmacia Central |\\n| **Rocephin 1g** | Ceftriaxona Disódica | Antibióticos | **68** | 80 | 🟡 Bajo | Urgencias |\\n| **Lantus Solostar** | Insulina Glargina | Endocrinología | **24** | 40 | 🟡 Bajo | Farmacia Refrigerada |\\n| **Clexane 40mg** | Enoxaparina Sódica | Anticoagulantes | **32** | 50 | 🟡 Bajo | Urgencias |\\n| **Tempra Forte** | Paracetamol 500mg | Analgésicos | **850** | 200 | 🟢 Normal | Farmacia Central |\\n| **Cozaar 50mg** | Losartán 50mg | Antihipertensivos | **580** | 200 | 🟢 Normal | Farmacia Central |\\n| **Solución Fisiológica** | NaCl 0.9% 1000ml | Soluciones IV | **1,450**| 400 | 🟢 Normal | Almacén General de Sueros |\"}}"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:20.155Z",
+    "created_at": "2026-10-18T00:01:23.469Z",
     "id": "vis-pharmacy-table",
     "managed": false,
     "references": [],
     "type": "visualization",
     "typeMigrationVersion": "8.5.0",
-    "updated_at": "2026-10-17T23:54:20.155Z",
-    "version": "WzIzLDFd"
+    "updated_at": "2026-10-18T00:01:23.469Z",
+    "version": "WzYzLDFd"
   },
   {
     "attributes": {
@@ -179,12 +199,12 @@
         "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
       },
       "optionsJSON": "{\"useMargins\":true,\"hidePanelTitles\":false}",
-      "panelsJSON": "[{\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":5,\"i\":\"p-header\"},\"panelIndex\":\"p-header\",\"panelRefName\":\"ref_header\"},{\"gridData\":{\"x\":0,\"y\":5,\"w\":16,\"h\":8,\"i\":\"p-beds-kpi\"},\"panelIndex\":\"p-beds-kpi\",\"panelRefName\":\"ref_beds_kpi\"},{\"gridData\":{\"x\":16,\"y\":5,\"w\":16,\"h\":8,\"i\":\"p-pharm-kpi\"},\"panelIndex\":\"p-pharm-kpi\",\"panelRefName\":\"ref_pharm_kpi\"},{\"gridData\":{\"x\":32,\"y\":5,\"w\":16,\"h\":8,\"i\":\"p-fin-kpi\"},\"panelIndex\":\"p-fin-kpi\",\"panelRefName\":\"ref_fin_kpi\"},{\"gridData\":{\"x\":0,\"y\":13,\"w\":24,\"h\":12,\"i\":\"p-beds-donut\"},\"panelIndex\":\"p-beds-donut\",\"panelRefName\":\"ref_beds_donut\"},{\"gridData\":{\"x\":24,\"y\":13,\"w\":24,\"h\":12,\"i\":\"p-pharm-pie\"},\"panelIndex\":\"p-pharm-pie\",\"panelRefName\":\"ref_pharm_pie\"},{\"gridData\":{\"x\":0,\"y\":25,\"w\":24,\"h\":14,\"i\":\"p-beds-table\"},\"panelIndex\":\"p-beds-table\",\"panelRefName\":\"ref_beds_table\"},{\"gridData\":{\"x\":24,\"y\":25,\"w\":24,\"h\":14,\"i\":\"p-pharm-table\"},\"panelIndex\":\"p-pharm-table\",\"panelRefName\":\"ref_pharm_table\"}]",
+      "panelsJSON": "[{\"gridData\":{\"x\":0,\"y\":0,\"w\":48,\"h\":5,\"i\":\"p-header\"},\"panelIndex\":\"p-header\",\"panelRefName\":\"ref_header\",\"version\":\"9.5.5\",\"embeddableConfig\":{\"enhancements\":{}}},{\"gridData\":{\"x\":0,\"y\":5,\"w\":16,\"h\":8,\"i\":\"p-beds-kpi\"},\"panelIndex\":\"p-beds-kpi\",\"panelRefName\":\"ref_beds_kpi\",\"version\":\"9.5.5\",\"embeddableConfig\":{\"enhancements\":{}}},{\"gridData\":{\"x\":16,\"y\":5,\"w\":16,\"h\":8,\"i\":\"p-pharm-kpi\"},\"panelIndex\":\"p-pharm-kpi\",\"panelRefName\":\"ref_pharm_kpi\",\"version\":\"9.5.5\",\"embeddableConfig\":{\"enhancements\":{}}},{\"gridData\":{\"x\":32,\"y\":5,\"w\":16,\"h\":8,\"i\":\"p-fin-kpi\"},\"panelIndex\":\"p-fin-kpi\",\"panelRefName\":\"ref_fin_kpi\",\"version\":\"9.5.5\",\"embeddableConfig\":{\"enhancements\":{}}},{\"gridData\":{\"x\":0,\"y\":13,\"w\":24,\"h\":12,\"i\":\"p-beds-donut\"},\"panelIndex\":\"p-beds-donut\",\"panelRefName\":\"ref_beds_donut\",\"version\":\"9.5.5\",\"embeddableConfig\":{\"enhancements\":{}}},{\"gridData\":{\"x\":24,\"y\":13,\"w\":24,\"h\":12,\"i\":\"p-pharm-pie\"},\"panelIndex\":\"p-pharm-pie\",\"panelRefName\":\"ref_pharm_pie\",\"version\":\"9.5.5\",\"embeddableConfig\":{\"enhancements\":{}}},{\"gridData\":{\"x\":0,\"y\":25,\"w\":24,\"h\":14,\"i\":\"p-beds-table\"},\"panelIndex\":\"p-beds-table\",\"panelRefName\":\"ref_beds_table\",\"version\":\"9.5.5\",\"embeddableConfig\":{\"enhancements\":{}}},{\"gridData\":{\"x\":24,\"y\":25,\"w\":24,\"h\":14,\"i\":\"p-pharm-table\"},\"panelIndex\":\"p-pharm-table\",\"panelRefName\":\"ref_pharm_table\",\"version\":\"9.5.5\",\"embeddableConfig\":{\"enhancements\":{}}}]",
       "timeRestore": false,
       "title": "Centro Médico Nacional - Farmacia, Camas & Operación Clínica"
     },
     "coreMigrationVersion": "8.8.0",
-    "created_at": "2026-10-17T23:54:22.169Z",
+    "created_at": "2026-10-18T00:01:25.491Z",
     "id": "centro-medico-dashboard",
     "managed": false,
     "references": [
@@ -231,8 +251,8 @@
     ],
     "type": "dashboard",
     "typeMigrationVersion": "10.3.0",
-    "updated_at": "2026-10-17T23:54:22.169Z",
-    "version": "WzI1LDFd"
+    "updated_at": "2026-10-18T00:01:25.491Z",
+    "version": "WzY1LDFd"
   },
   {
     "excludedObjects": [],
