@@ -210,9 +210,10 @@
       </div>
     }
   </div>
+</div>
 
-  <!-- Modal de Nueva Nota de Evolución (Sólo para personal médico/recepción) -->
-  @if (showModal() && auth.isAdmin()) {
+<!-- Modal de Nueva Nota de Evolución (Sólo para personal médico/recepción) -->
+@if (showModal() && auth.isAdmin()) {
     <div
       (click)="closeModal()"
       class="clinical-modal-overlay animate-fade-in"
@@ -323,4 +324,3 @@
       </div>
     </div>
   }
-</div>
