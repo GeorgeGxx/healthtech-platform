@@ -96,6 +96,20 @@
   animation: modalPop 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Animación de panel lateral deslizante */
+@keyframes slideLeft {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-left {
+  animation: slideLeft 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Scrollbar ergonómica */
 ::-webkit-scrollbar {
   width: 6px;
@@ -172,7 +186,8 @@
   flex-shrink: 0;
 }
 
-.clinical-modal-box-body {
+.clinical-modal-box-body,
+.clinical-modal-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -180,7 +195,8 @@
   padding: 1.25rem 1.5rem;
 }
 
-.clinical-modal-box-footer {
+.clinical-modal-box-footer,
+.clinical-modal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;

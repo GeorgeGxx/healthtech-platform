@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ClinicalModalComponent } from '../../shared/components/clinical-modal/clinical-modal.component';
 
 @Component({
   selector: 'app-hospitalizations',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ClinicalModalComponent],
   templateUrl: './hospitalizations.component.html',
 })
 export class HospitalizationsComponent implements OnInit {

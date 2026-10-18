@@ -5,11 +5,12 @@ import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { ToastService } from '../../core/services/toast.service';
+import { ClinicalModalComponent } from '../../shared/components/clinical-modal/clinical-modal.component';
 
 @Component({
   selector: 'app-medical-records',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ClinicalModalComponent],
   templateUrl: './medical-records.component.html',
 })
 export class MedicalRecordsComponent implements OnInit {

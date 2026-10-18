@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStateService } from '../../core/services/auth-state.service';
+import { ClinicalModalComponent } from '../../shared/components/clinical-modal/clinical-modal.component';
 
 @Component({
   selector: 'app-patients',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ClinicalModalComponent],
   templateUrl: './patients.component.html',
 })
 export class PatientsComponent implements OnInit {
