@@ -6,6 +6,7 @@ import { ObraSocial } from '../../entities/obra-social.entity.js';
 import { Pais } from '../../entities/pais.entity.js';
 import { CreatePatientDto } from './dto/create-patient.dto.js';
 import { RedisService } from '../../redis/redis.service.js';
+import { applyPagination, paginate } from '../../domain/utils/pagination.util.js';
 
 @Injectable()
 export class PatientsService {
@@ -18,6 +19,17 @@ export class PatientsService {
     private readonly countryRepo: Repository<Pais>,
     private readonly redis: RedisService,
   ) {}
+
+  private calculateAge(birthDate: string | Date): number {
+    const birth = new Date(birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const m = today.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return Math.max(0, age);
+  }
 
   async findAll(search?: string, page?: number, limit?: number): Promise<any> {
     const qb = this.patientRepo
@@ -34,40 +46,16 @@ export class PatientsService {
     }
 
     const total = await qb.getCount();
-
-    if (page && limit) {
-      qb.skip((page - 1) * limit).take(limit);
-    }
-
+    applyPagination(qb, page, limit);
     const patients = await qb.getMany();
 
-    const mapped = patients.map((p) => {
-      const birth = new Date(p.fechaNacimiento);
-      const today = new Date();
-      let age = today.getFullYear() - birth.getFullYear();
-      const m = today.getMonth() - birth.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--;
-      }
+    const mapped = patients.map((p) => ({
+      ...p,
+      edad: this.calculateAge(p.fechaNacimiento),
+      nombreCompleto: `${p.nombre} ${p.apellido}`,
+    }));
 
-      return {
-        ...p,
-        edad: age,
-        nombreCompleto: `${p.nombre} ${p.apellido}`,
-      };
-    });
-
-    if (page && limit) {
-      return {
-        data: mapped,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    }
-
-    return mapped;
+    return paginate(mapped, total, page, limit);
   }
 
 

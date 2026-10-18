@@ -13,6 +13,7 @@ import {
   UpdateAppointmentStatusDto,
 } from './dto/create-appointment.dto.js';
 import { MetricsService } from '../../telemetry/metrics.service.js';
+import { applyPagination, paginate } from '../../domain/utils/pagination.util.js';
 
 @Injectable()
 export class AppointmentsService {
@@ -34,7 +35,7 @@ export class AppointmentsService {
       .leftJoinAndSelect('t.medico', 'm')
       .leftJoinAndSelect('t.especialidad', 'e')
       .leftJoinAndSelect('t.consultorio', 'c')
-      .orderBy('lower(t.horario_rango)', 'DESC')
+      .orderBy('t.horarioRango', 'DESC')
       .addOrderBy('t.idTurno', 'DESC');
 
     if (doctorId) {
@@ -46,30 +47,11 @@ export class AppointmentsService {
     }
 
     const total = await qb.getCount();
-
-    if (page && limit) {
-      qb.skip((page - 1) * limit).take(limit);
-    }
-
+    applyPagination(qb, page, limit);
     const appointments = await qb.getMany();
 
     const mapped = appointments.map((t) => {
-      let inicio: string | null = null;
-      let fin: string | null = null;
-      if (t.horarioRango) {
-        const match = t.horarioRango.match(/\["([^"]+)",\s*"([^"]+)"\)/);
-        if (match) {
-          inicio = match[1];
-          fin = match[2];
-        } else {
-          const parts = t.horarioRango.replace(/[\[\)"']/g, '').split(',');
-          if (parts.length === 2) {
-            inicio = parts[0];
-            fin = parts[1];
-          }
-        }
-      }
-
+      const { inicio, fin } = AppointmentSlot.parseRange(t.horarioRango);
       return {
         ...t,
         fechaInicio: inicio,
@@ -77,17 +59,7 @@ export class AppointmentsService {
       };
     });
 
-    if (page && limit) {
-      return {
-        data: mapped,
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      };
-    }
-
-    return mapped;
+    return paginate(mapped, total, page, limit);
   }
 
 

@@ -530,17 +530,17 @@ async function main() {
   // 9. Crear Visualizaciones Oficiales
   console.log('\n🎨 Creando Visualizaciones Oficiales de los 3 Pilares...');
 
-  // --- PILAR 2: Inteligencia Hospitalaria & Finanzas ---
+  // --- PILAR 1: Dashboard Negocio (Camas, Farmacia & Facturación) ---
   const visHeaderOps = {
     attributes: {
-      title: 'Banner - Inteligencia Hospitalaria & Camas',
+      title: 'Banner - Dashboard Negocio (Camas, Farmacia & Facturación)',
       visState: JSON.stringify({
-        title: 'Banner - Inteligencia Hospitalaria',
+        title: 'Banner - Dashboard Negocio',
         type: 'markdown',
         params: {
           markdown:
-            '# 🏥 Centro Médico Nacional • Inteligencia Hospitalaria & Gestión de Capacidad\n' +
-            '> **Acceso Rápido a los 3 Pilares**: [🏥 1. Camas, Farmacia & Facturación](#/view/centro-medico-dashboard) &bull; [🛡️ 2. Seguridad & Auditoría HIPAA](#/view/hipaa-security-audit-dashboard) &bull; [⚙️ 3. Salud del Sistema SRE / APM](#/view/sre-telemetry-dashboard)',
+            '# 🏥 Centro Médico • Dashboard Negocio: Camas, Farmacia & Facturación\n' +
+            '> **Navegación Unificada**: [🛡️ Ir a Dashboard Tech (Salud del Sistema, SRE / APM, Seguridad & Auditoría HIPAA)](#/view/tech-sre-security-dashboard) &bull; **Filtros Dinámicos e Inteligencia Hospitalaria en Tiempo Real**',
         },
       }),
       uiStateJSON: '{}',
@@ -810,18 +810,17 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-table-beds-dynamic?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visBedsTable) });
 
-  // --- PILAR 1: Visualizaciones de Seguridad & Auditoría HIPAA (NOM-024) ---
-  const visHeaderHipaa = {
+  // --- PILAR 2: Visualizaciones de Dashboard Tech (SRE / APM, Seguridad & Auditoría HIPAA) ---
+  const visHeaderTech = {
     attributes: {
-      title: 'Banner - Seguridad Hospitalaria & Auditoría HIPAA',
+      title: 'Banner - Dashboard Tech (SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA)',
       visState: JSON.stringify({
-        title: 'Banner - Seguridad HIPAA',
+        title: 'Banner - Dashboard Tech',
         type: 'markdown',
         params: {
           markdown:
-            '# 🛡️ Centro Médico Nacional • Centro de Ciberseguridad & Auditoría Forense HIPAA\n' +
-            '> **Cumplimiento Normativo HIPAA § 164.312 & NOM-024-SSA3-2012**: Trazabilidad inmutable de accesos a Datos de Salud Protegidos (PHI).  \n' +
-            '> **Acceso Rápido**: [🏥 1. Camas, Farmacia & Facturación](#/view/centro-medico-dashboard) &bull; [🛡️ 2. Seguridad & Auditoría HIPAA](#/view/hipaa-security-audit-dashboard) &bull; [⚙️ 3. Salud del Sistema SRE / APM](#/view/sre-telemetry-dashboard)',
+            '# 🛡️ Centro Médico • Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA\n' +
+            '> **Navegación Unificada**: [🏥 Ir a Dashboard Negocio (Camas, Farmacia & Facturación)](#/view/business-operations-dashboard) &bull; **Telemetría OpenTelemetry & Auditoría Forense HIPAA (NOM-024)**',
         },
       }),
       uiStateJSON: '{}',
@@ -829,7 +828,7 @@ async function main() {
     },
     references: [],
   };
-  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-header-hipaa?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visHeaderHipaa) });
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-header-tech?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visHeaderTech) });
 
   const visControlsAudit = {
     attributes: {
@@ -1111,17 +1110,36 @@ async function main() {
 
   console.log('  ✓ 25 visualizaciones oficiales creadas exitosamente para los 3 Pilares.');
 
-  // 10. Crear y Vincular los 3 Dashboards
-  console.log('\n📊 Vinculando los 3 Dashboards en Kibana...');
+  // 10. Limpiar dashboards obsoletos y Registrar EXACTAMENTE los 2 Dashboards solicitados
+  console.log('\n📊 Registrando exactamente los 2 Dashboards en Kibana...');
 
-  // --- DASHBOARD 1: Inteligencia Hospitalaria & Gestión de Capacidad ---
+  // Eliminar dashboards anteriores o de prueba para mantener la vista limpia
+  const oldDashboards = [
+    'test-dash',
+    'test-ref-dash',
+    'centro-medico-dashboard',
+    'hipaa-security-audit-dashboard',
+    'sre-telemetry-dashboard',
+    'business-operations-dashboard',
+    'tech-sre-security-dashboard',
+  ];
+  for (const dashId of oldDashboards) {
+    try {
+      await fetch(`${KBN_URL}/api/saved_objects/dashboard/${dashId}`, {
+        method: 'DELETE',
+        headers: KBN_HEADERS,
+      });
+    } catch {}
+  }
+
+  // --- DASHBOARD 1: NEGOCIO (Camas, Farmacia & Facturación) ---
   const panelsOps = [
     { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-header' }, panelIndex: 'p-header', panelRefName: 'ref_header', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 0, y: 4, w: 48, h: 6, i: 'p-controls' }, panelIndex: 'p-controls', panelRefName: 'ref_controls', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 0, y: 10, w: 10, h: 7, i: 'p-beds-free' }, panelIndex: 'p-beds-free', panelRefName: 'ref_beds_free', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 10, y: 10, w: 9, h: 7, i: 'p-beds-occ' }, panelIndex: 'p-beds-occ', panelRefName: 'ref_beds_occ', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 19, y: 10, w: 9, h: 7, i: 'p-pharm-crit' }, panelIndex: 'p-pharm-crit', panelRefName: 'ref_pharm_crit', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 28, y: 10, w: 10, h: 7, i: 'p-pharm-stock' }, panelIndex: 'p-pharm-stock', panelRefName: 'ref_pharm_stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 19, y: 10, w: 9, h: 7, i: 'p-pharm-crit' }, panelIndex: 'p-pharm-crit', panelRefName: 'ref_pharm-crit', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 28, y: 10, w: 10, h: 7, i: 'p-pharm-stock' }, panelIndex: 'p-pharm-stock', panelRefName: 'ref_pharm-stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 38, y: 10, w: 10, h: 7, i: 'p-revenue' }, panelIndex: 'p-revenue', panelRefName: 'ref_revenue', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 0, y: 17, w: 24, h: 14, i: 'p-bar-stock' }, panelIndex: 'p-bar-stock', panelRefName: 'ref_bar_stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 24, y: 17, w: 24, h: 14, i: 'p-bar-beds' }, panelIndex: 'p-bar-beds', panelRefName: 'ref_bar_beds', version: '9.5.5', embeddableConfig: { enhancements: {} } },
@@ -1132,13 +1150,13 @@ async function main() {
     { gridData: { x: 24, y: 43, w: 24, h: 16, i: 'p-table-beds' }, panelIndex: 'p-table-beds', panelRefName: 'ref_table_beds', version: '9.5.5', embeddableConfig: { enhancements: {} } },
   ];
 
-  await fetch(`${KBN_URL}/api/saved_objects/dashboard/centro-medico-dashboard?overwrite=true`, {
+  await fetch(`${KBN_URL}/api/saved_objects/dashboard/business-operations-dashboard?overwrite=true`, {
     method: 'POST',
     headers: KBN_HEADERS,
     body: JSON.stringify({
       attributes: {
-        title: '1. Inteligencia Hospitalaria - Camas, Farmacia & Facturación',
-        description: 'Pilar 2: Control de capacidad de camas, inventario de medicamentos y facturación en MXN.',
+        title: '1. Dashboard Negocio: Camas, Farmacia & Facturación',
+        description: 'Dashboard de Negocio Hospitalario: Censo y ocupación de camas, control de inventario de medicamentos y facturación en MXN.',
         panelsJSON: JSON.stringify(panelsOps),
       },
       references: [
@@ -1146,8 +1164,8 @@ async function main() {
         { name: 'ref_controls', type: 'visualization', id: 'vis-controls-filter' },
         { name: 'ref_beds_free', type: 'visualization', id: 'vis-metric-beds-free' },
         { name: 'ref_beds_occ', type: 'visualization', id: 'vis-metric-beds-occupied' },
-        { name: 'ref_pharm_crit', type: 'visualization', id: 'vis-metric-pharm-critical' },
-        { name: 'ref_pharm_stock', type: 'visualization', id: 'vis-metric-pharm-stock-sum' },
+        { name: 'ref_pharm-crit', type: 'visualization', id: 'vis-metric-pharm-critical' },
+        { name: 'ref_pharm-stock', type: 'visualization', id: 'vis-metric-pharm-stock-sum' },
         { name: 'ref_revenue', type: 'visualization', id: 'vis-metric-revenue' },
         { name: 'ref_bar_stock', type: 'visualization', id: 'vis-bar-stock-compare' },
         { name: 'ref_bar_beds', type: 'visualization', id: 'vis-bar-beds-by-floor' },
@@ -1159,88 +1177,71 @@ async function main() {
       ],
     }),
   });
-  console.log('  ✓ Dashboard 1: "1. Inteligencia Hospitalaria - Camas, Farmacia & Facturación" registrado.');
+  console.log('  ✓ Dashboard 1: "1. Dashboard Negocio: Camas, Farmacia & Facturación" registrado.');
 
-  // --- DASHBOARD 2: Seguridad & Auditoría HIPAA (Pilar 1) ---
-  const panelsHipaa = [
-    { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-hipaa-header' }, panelIndex: 'p-hipaa-header', panelRefName: 'ref_hipaa_header', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 4, w: 48, h: 6, i: 'p-hipaa-ctrl' }, panelIndex: 'p-hipaa-ctrl', panelRefName: 'ref_hipaa_ctrl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 10, w: 12, h: 7, i: 'p-hipaa-tot' }, panelIndex: 'p-hipaa-tot', panelRefName: 'ref_hipaa_tot', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 12, y: 10, w: 12, h: 7, i: 'p-hipaa-phi' }, panelIndex: 'p-hipaa-phi', panelRefName: 'ref_hipaa_phi', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 24, y: 10, w: 12, h: 7, i: 'p-hipaa-fail' }, panelIndex: 'p-hipaa-fail', panelRefName: 'ref_hipaa_fail', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 36, y: 10, w: 12, h: 7, i: 'p-hipaa-log' }, panelIndex: 'p-hipaa-log', panelRefName: 'ref_hipaa_log', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 17, w: 26, h: 14, i: 'p-hipaa-bar' }, panelIndex: 'p-hipaa-bar', panelRefName: 'ref_hipaa_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 26, y: 17, w: 22, h: 14, i: 'p-hipaa-pie' }, panelIndex: 'p-hipaa-pie', panelRefName: 'ref_hipaa_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 31, w: 48, h: 16, i: 'p-hipaa-tbl' }, panelIndex: 'p-hipaa-tbl', panelRefName: 'ref_hipaa_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+  // --- DASHBOARD 2: TECH (Salud del Sistema, SRE / APM, Seguridad & Auditoría HIPAA) ---
+  const panelsTech = [
+    { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-tech-hdr' }, panelIndex: 'p-tech-hdr', panelRefName: 'ref_tech_hdr', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 0, y: 4, w: 48, h: 6, i: 'p-tech-ctrl' }, panelIndex: 'p-tech-ctrl', panelRefName: 'ref_tech_ctrl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila unificada de 7 KPIs (Salud SRE + Seguridad HIPAA)
+    { gridData: { x: 0, y: 10, w: 7, h: 7, i: 'p-sre-upt' }, panelIndex: 'p-sre-upt', panelRefName: 'ref_sre_upt', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 7, y: 10, w: 7, h: 7, i: 'p-sre-lat' }, panelIndex: 'p-sre-lat', panelRefName: 'ref_sre_lat', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 14, y: 10, w: 7, h: 7, i: 'p-sre-rpm' }, panelIndex: 'p-sre-rpm', panelRefName: 'ref_sre_rpm', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 21, y: 10, w: 7, h: 7, i: 'p-hipaa-tot' }, panelIndex: 'p-hipaa-tot', panelRefName: 'ref_hipaa_tot', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 28, y: 10, w: 7, h: 7, i: 'p-hipaa-phi' }, panelIndex: 'p-hipaa-phi', panelRefName: 'ref_hipaa_phi', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 35, y: 10, w: 7, h: 7, i: 'p-hipaa-fail' }, panelIndex: 'p-hipaa-fail', panelRefName: 'ref_hipaa_fail', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 42, y: 10, w: 6, h: 7, i: 'p-hipaa-log' }, panelIndex: 'p-hipaa-log', panelRefName: 'ref_hipaa_log', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Visualizaciones SRE / APM
+    { gridData: { x: 0, y: 17, w: 28, h: 14, i: 'p-sre-bar' }, panelIndex: 'p-sre-bar', panelRefName: 'ref_sre_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 28, y: 17, w: 20, h: 14, i: 'p-sre-pie' }, panelIndex: 'p-sre-pie', panelRefName: 'ref_sre_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Tabla de microservicios y estado de salud
+    { gridData: { x: 0, y: 31, w: 48, h: 13, i: 'p-sre-tbl' }, panelIndex: 'p-sre-tbl', panelRefName: 'ref_sre_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Visualizaciones Seguridad & HIPAA
+    { gridData: { x: 0, y: 44, w: 26, h: 14, i: 'p-hipaa-bar' }, panelIndex: 'p-hipaa-bar', panelRefName: 'ref_hipaa_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 26, y: 44, w: 22, h: 14, i: 'p-hipaa-pie' }, panelIndex: 'p-hipaa-pie', panelRefName: 'ref_hipaa_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Tabla Forense Inmutable de Seguridad HIPAA
+    { gridData: { x: 0, y: 58, w: 48, h: 16, i: 'p-hipaa-tbl' }, panelIndex: 'p-hipaa-tbl', panelRefName: 'ref_hipaa_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
   ];
 
-  await fetch(`${KBN_URL}/api/saved_objects/dashboard/hipaa-security-audit-dashboard?overwrite=true`, {
+  await fetch(`${KBN_URL}/api/saved_objects/dashboard/tech-sre-security-dashboard?overwrite=true`, {
     method: 'POST',
     headers: KBN_HEADERS,
     body: JSON.stringify({
       attributes: {
-        title: '2. Seguridad Hospitalaria & Auditoría HIPAA (NOM-024)',
-        description: 'Pilar 1: Trazabilidad inmutable de accesos a expedientes clínicos (PHI), logins y defensa perimetral.',
-        panelsJSON: JSON.stringify(panelsHipaa),
+        title: '2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA',
+        description: 'Dashboard Técnico Unificado: Telemetría de microservicios (uptime, latencias p95, RPM, códigos HTTP), seguridad perimetral Keycloak y registro forense inmutable HIPAA (NOM-024).',
+        panelsJSON: JSON.stringify(panelsTech),
       },
       references: [
-        { name: 'ref_hipaa_header', type: 'visualization', id: 'vis-header-hipaa' },
-        { name: 'ref_hipaa_ctrl', type: 'visualization', id: 'vis-controls-audit' },
+        { name: 'ref_tech_hdr', type: 'visualization', id: 'vis-header-tech' },
+        { name: 'ref_tech_ctrl', type: 'visualization', id: 'vis-controls-audit' },
+        { name: 'ref_sre_upt', type: 'visualization', id: 'vis-metric-sre-uptime' },
+        { name: 'ref_sre_lat', type: 'visualization', id: 'vis-metric-sre-latency' },
+        { name: 'ref_sre_rpm', type: 'visualization', id: 'vis-metric-sre-rpm' },
         { name: 'ref_hipaa_tot', type: 'visualization', id: 'vis-metric-audit-total' },
         { name: 'ref_hipaa_phi', type: 'visualization', id: 'vis-metric-audit-phi' },
         { name: 'ref_hipaa_fail', type: 'visualization', id: 'vis-metric-audit-failed' },
         { name: 'ref_hipaa_log', type: 'visualization', id: 'vis-metric-audit-logout' },
+        { name: 'ref_sre_bar', type: 'visualization', id: 'vis-bar-sre-endpoints' },
+        { name: 'ref_sre_pie', type: 'visualization', id: 'vis-pie-sre-status-codes' },
+        { name: 'ref_sre_tbl', type: 'visualization', id: 'vis-table-sre-services' },
         { name: 'ref_hipaa_bar', type: 'visualization', id: 'vis-bar-audit-roles' },
         { name: 'ref_hipaa_pie', type: 'visualization', id: 'vis-pie-audit-actions' },
         { name: 'ref_hipaa_tbl', type: 'visualization', id: 'vis-table-audit-forensic' },
       ],
     }),
   });
-  console.log('  ✓ Dashboard 2: "2. Seguridad Hospitalaria & Auditoría HIPAA (NOM-024)" registrado.');
+  console.log('  ✓ Dashboard 2: "2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA" registrado.');
 
-  // --- DASHBOARD 3: Salud de Plataforma SRE & APM (Pilar 3) ---
-  const panelsSre = [
-    { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-sre-hdr' }, panelIndex: 'p-sre-hdr', panelRefName: 'ref_sre_hdr', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 4, w: 16, h: 7, i: 'p-sre-upt' }, panelIndex: 'p-sre-upt', panelRefName: 'ref_sre_upt', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 16, y: 4, w: 16, h: 7, i: 'p-sre-lat' }, panelIndex: 'p-sre-lat', panelRefName: 'ref_sre_lat', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 32, y: 4, w: 16, h: 7, i: 'p-sre-rpm' }, panelIndex: 'p-sre-rpm', panelRefName: 'ref_sre_rpm', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 11, w: 28, h: 14, i: 'p-sre-bar' }, panelIndex: 'p-sre-bar', panelRefName: 'ref_sre_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 28, y: 11, w: 20, h: 14, i: 'p-sre-pie' }, panelIndex: 'p-sre-pie', panelRefName: 'ref_sre_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 25, w: 48, h: 14, i: 'p-sre-tbl' }, panelIndex: 'p-sre-tbl', panelRefName: 'ref_sre_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-  ];
-
-  await fetch(`${KBN_URL}/api/saved_objects/dashboard/sre-telemetry-dashboard?overwrite=true`, {
-    method: 'POST',
-    headers: KBN_HEADERS,
-    body: JSON.stringify({
-      attributes: {
-        title: '3. Salud de la Plataforma & Telemetría SRE / APM',
-        description: 'Pilar 3: Monitoreo de latencia, disponibilidad y rendimiento de microservicios con OpenTelemetry y Kong.',
-        panelsJSON: JSON.stringify(panelsSre),
-      },
-      references: [
-        { name: 'ref_sre_hdr', type: 'visualization', id: 'vis-header-sre' },
-        { name: 'ref_sre_upt', type: 'visualization', id: 'vis-metric-sre-uptime' },
-        { name: 'ref_sre_lat', type: 'visualization', id: 'vis-metric-sre-latency' },
-        { name: 'ref_sre_rpm', type: 'visualization', id: 'vis-metric-sre-rpm' },
-        { name: 'ref_sre_bar', type: 'visualization', id: 'vis-bar-sre-endpoints' },
-        { name: 'ref_sre_pie', type: 'visualization', id: 'vis-pie-sre-status-codes' },
-        { name: 'ref_sre_tbl', type: 'visualization', id: 'vis-table-sre-services' },
-      ],
-    }),
-  });
-  console.log('  ✓ Dashboard 3: "3. Salud de la Plataforma & Telemetría SRE / APM" registrado.');
-
-  // 11. Exportar la suite completa a ./observability/
-  console.log('\n💾 Exportando la suite completa de los 3 Pilares en JSON y NDJSON...');
+  // 11. Exportar la suite de los 2 Dashboards a ./observability/
+  console.log('\n💾 Exportando los 2 Dashboards a JSON y NDJSON...');
   const exportRes = await fetch(`${KBN_URL}/api/saved_objects/_export`, {
     method: 'POST',
     headers: KBN_HEADERS,
     body: JSON.stringify({
       objects: [
-        { type: 'dashboard', id: 'centro-medico-dashboard' },
-        { type: 'dashboard', id: 'hipaa-security-audit-dashboard' },
-        { type: 'dashboard', id: 'sre-telemetry-dashboard' },
+        { type: 'dashboard', id: 'business-operations-dashboard' },
+        { type: 'dashboard', id: 'tech-sre-security-dashboard' },
         { type: 'index-pattern', id: pharmacyDvId },
         { type: 'index-pattern', id: bedsDvId },
         { type: 'index-pattern', id: opsDvId },
@@ -1267,15 +1268,13 @@ async function main() {
   console.log(`  ✓ Archivo JSON formateado actualizado: ${jsonPath}`);
 
   console.log('\n============================================================');
-  console.log('🎉 LOS 3 PILARES HAN SIDO APROVISIONADOS EXITOSAMENTE');
+  console.log('🎉 LOS 2 DASHBOARDS HAN SIDO APROVISIONADOS EXITOSAMENTE');
   console.log('============================================================');
-  console.log('🔗 Enlaces directos a los 3 Dashboards en Kibana:');
-  console.log('   1. Inteligencia Hospitalaria & Finanzas:');
-  console.log('      http://localhost:5601/app/dashboards#/view/centro-medico-dashboard');
-  console.log('   2. Seguridad Hospitalaria & Auditoría HIPAA:');
-  console.log('      http://localhost:5601/app/dashboards#/view/hipaa-security-audit-dashboard');
-  console.log('   3. Salud de la Plataforma & Telemetría SRE / APM:');
-  console.log('      http://localhost:5601/app/dashboards#/view/sre-telemetry-dashboard');
+  console.log('🔗 Enlaces directos a los 2 Dashboards en Kibana:');
+  console.log('   1. Dashboard Negocio (Camas, Farmacia & Facturación):');
+  console.log('      http://localhost:5601/app/dashboards#/view/business-operations-dashboard');
+  console.log('   2. Dashboard Tech (SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA):');
+  console.log('      http://localhost:5601/app/dashboards#/view/tech-sre-security-dashboard');
 }
 
 main().catch((err) => {

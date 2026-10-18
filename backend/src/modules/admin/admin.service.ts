@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { DashboardService } from '../dashboard/dashboard.service.js';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly dashboardService: DashboardService,
+  ) {}
 
   async getSystemStatus() {
     let dbStatus = 'ok';
@@ -68,18 +72,15 @@ export class AdminService {
   }
 
   async getMetricsSummary() {
-    const [patientCount] = await this.dataSource.query('SELECT COUNT(*) AS total FROM paciente');
-    const [appointmentCount] = await this.dataSource.query('SELECT COUNT(*) AS total FROM turno');
+    const { kpis } = await this.dashboardService.getExecutiveMetrics();
     const [auditCount] = await this.dataSource.query('SELECT COUNT(*) AS total FROM registro_auditoria');
-    const [paymentTotal] = await this.dataSource.query('SELECT COALESCE(SUM(monto_neto), 0) AS total FROM pago');
-    const [activeHospitalizations] = await this.dataSource.query('SELECT COUNT(*) AS total FROM internacion WHERE fecha_alta IS NULL');
 
     return {
-      totalPacientes: Number(patientCount?.total || 0),
-      totalTurnos: Number(appointmentCount?.total || 0),
+      totalPacientes: kpis.totalPatients,
+      totalTurnos: kpis.totalAppointments,
       accesosAuditoriaPhi: Number(auditCount?.total || 0),
-      recaudacionNetaMxn: Number(paymentTotal?.total || 0),
-      pacientesInternados: Number(activeHospitalizations?.total || 0),
+      recaudacionNetaMxn: kpis.totalRevenue,
+      pacientesInternados: kpis.occupiedBeds,
     };
   }
 

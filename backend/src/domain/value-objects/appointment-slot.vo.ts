@@ -35,4 +35,26 @@ export class AppointmentSlot {
   toPostgresRangeString(): string {
     return `["${this.startTime.toISOString()}","${this.endTime.toISOString()}"]`;
   }
+
+  /**
+   * Parsea un rango tstzrange de PostgreSQL (ej. '["2026-10-18 10:00:00+00", "2026-10-18 10:30:00+00"]')
+   * de forma robusta e inmutable
+   */
+  static parseRange(horarioRango?: string | null): { inicio: string | null; fin: string | null } {
+    if (!horarioRango) {
+      return { inicio: null, fin: null };
+    }
+
+    const match = horarioRango.match(/\["([^"]+)",\s*"([^"]+)"\)/);
+    if (match) {
+      return { inicio: match[1], fin: match[2] };
+    }
+
+    const parts = horarioRango.replace(/[\[\)"']/g, '').split(',');
+    if (parts.length === 2) {
+      return { inicio: parts[0].trim(), fin: parts[1].trim() };
+    }
+
+    return { inicio: null, fin: null };
+  }
 }
