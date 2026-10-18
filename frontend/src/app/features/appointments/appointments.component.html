@@ -40,191 +40,152 @@
     </div>
   </div>
 
-  <!-- Tarjeta Ejecutiva de Honorarios Médicos del Día para la Doctora -->
+  <!-- Tarjeta Ejecutiva y Amigable de Cobro Diario para la Doctora -->
   @if (auth.isDoctor()) {
-    <div class="glass-panel p-6 rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/80 via-white to-sky-50/50 shadow-sm space-y-5">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-indigo-100">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <div class="glass-panel p-6 rounded-3xl border border-indigo-200/90 bg-gradient-to-br from-indigo-50/70 via-white to-sky-50/40 shadow-sm space-y-6">
+      
+      <!-- Encabezado con saludo y selector de días -->
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-indigo-100/80">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-indigo-500/25">
+            🩺
           </div>
           <div>
-            <h2 class="text-base font-bold text-slate-900">
-              Liquidación Proporcional de Honorarios Médicos por Jornada
-            </h2>
-            <p class="text-xs text-slate-500">
-              Dra. Laura Gómez • Especialidad Cardiología • Base: ${{ feePerConsultation | number }} MXN por paciente atendido
+            <div class="flex items-center gap-2">
+              <h2 class="text-lg font-black text-slate-900 tracking-tight">
+                Mi Jornada de Consulta y Cobro Diario
+              </h2>
+              <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                ${{ feePerConsultation | number }} MXN por paciente
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">
+              Dra. Laura Gómez • Especialidad Cardiología • Liquidación proporcional por día
             </p>
           </div>
         </div>
-        <span class="px-3 py-1 text-xs font-extrabold rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200 self-start sm:self-auto">
-          Cálculo Proporcional Diario
-        </span>
-      </div>
 
-      <!-- Selector Rápido de Jornada Diaria -->
-      <div class="flex flex-wrap items-center gap-2 pt-1">
-        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Filtrar por Jornada:</span>
-        @for (day of doctorDaysList(); track day.dateKey) {
+        <!-- Selector de días en botones amigables -->
+        <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80">
+          @for (day of doctorDaysList(); track day.dateKey) {
+            <button
+              type="button"
+              (click)="selectDoctorDay(day.dateKey)"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+              [class]="selectedDoctorDay() === day.dateKey
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'"
+            >
+              <span>📅 {{ day.dateKey === '2026-10-18' ? 'Hoy (18 Oct)' : (day.dateKey === '2026-10-17' ? 'Ayer (17 Oct)' : day.dateKey) }}</span>
+              <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono"
+                [class]="selectedDoctorDay() === day.dateKey ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200/80 text-slate-600'">
+                ${{ day.confirmedPayout | number }}
+              </span>
+            </button>
+          }
           <button
             type="button"
-            (click)="selectDoctorDay(day.dateKey)"
-            [class]="selectedDoctorDay() === day.dateKey
-              ? 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-500/30 cursor-pointer flex items-center gap-2'
-              : 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition cursor-pointer flex items-center gap-2'"
+            (click)="selectDoctorDay('all')"
+            class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+            [class]="selectedDoctorDay() === 'all'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'"
           >
-            <span>📅 {{ day.formattedDate }}</span>
-            <span [class]="selectedDoctorDay() === day.dateKey ? 'px-1.5 py-0.5 rounded-md bg-indigo-700/90 text-[11px] font-mono' : 'px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-mono'">
-              {{ day.totalPatients }} pac. • ${{ day.confirmedPayout | number }} MXN
-            </span>
+            Ver Todas
           </button>
-        }
-        <button
-          type="button"
-          (click)="selectDoctorDay('all')"
-          [class]="selectedDoctorDay() === 'all'
-            ? 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-500/30 cursor-pointer'
-            : 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition cursor-pointer'"
-        >
-          Ver Todas las Jornadas
-        </button>
+        </div>
       </div>
 
-      <!-- Métricas financieras de la jornada seleccionada -->
+      <!-- Resumen visual directo de cobro -->
       @let fin = activeDoctorDaySummary();
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
-        <!-- Card 1: Total Pacientes del Mismo Día -->
-        <div class="p-4 rounded-xl bg-slate-900 text-white shadow-md shadow-slate-900/10">
-          <div class="flex items-center justify-between text-slate-400">
-            <span class="text-xs font-bold uppercase tracking-wider">Total Pacientes del Día</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        
+        <!-- Bloque Principal: Total a Cobrar Hoy -->
+        <div class="lg:col-span-5 p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white shadow-lg shadow-indigo-950/10 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between text-slate-400">
+              <span class="text-xs font-bold uppercase tracking-wider">Tu Cobro del Día</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                {{ fin.attendanceRate }}% asistido
+              </span>
+            </div>
+            <div class="mt-3 flex items-baseline gap-2">
+              <span class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white">
+                ${{ fin.confirmedPayout | number }}
+              </span>
+              <span class="text-sm font-semibold text-indigo-200">MXN</span>
+            </div>
+            <p class="text-xs text-indigo-200/90 mt-1">
+              {{ fin.attendedCount }} de {{ fin.totalPatients }} pacientes asistieron hoy a consulta
+            </p>
           </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span class="text-xl sm:text-2xl font-black text-white font-mono">
-              {{ fin.totalPatients }} pacientes
-            </span>
+
+          <!-- Barra de progreso amigable -->
+          <div class="mt-4 pt-3 border-t border-white/10 space-y-1.5">
+            <div class="flex justify-between text-[11px] text-slate-300">
+              <span>Asistencia del día</span>
+              <span class="font-bold text-white">{{ fin.attendedCount }} de {{ fin.totalPatients }} pacientes ({{ fin.attendanceRate }}%)</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-white/20 overflow-hidden">
+              <div class="h-full bg-emerald-400 rounded-full transition-all duration-500" [style.width.%]="fin.attendanceRate"></div>
+            </div>
           </div>
-          <p class="text-[11px] text-indigo-300 mt-1 font-medium">
-            Suma total agendada: ${{ fin.totalPotential | number }} MXN potenciales
-          </p>
         </div>
 
-        <!-- Card 2: Asistieron (Atendidos) -->
-        <div class="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 shadow-xs">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Asistieron (Atendidos)</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+        <!-- 3 Tarjetas Amigables de Estado del Día -->
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Total Pacientes Citados -->
+          <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center gap-2 text-slate-500">
+              <span class="text-base">👥</span>
+              <span class="text-xs font-bold uppercase tracking-wider">Pacientes del Día</span>
+            </div>
+            <div class="mt-2">
+              <span class="text-2xl font-black text-slate-900 block">{{ fin.totalPatients }}</span>
+              <span class="text-[11px] text-slate-400">Citados en esta jornada</span>
+            </div>
+            <div class="mt-3 text-[11px] font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded-lg">
+              Potencial: ${{ fin.totalPotential | number }} MXN
+            </div>
           </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span class="text-xl sm:text-2xl font-black text-emerald-950 font-mono">
-              ${{ fin.confirmedPayout | number }} MXN
-            </span>
-            <span class="text-xs font-bold text-emerald-700">{{ fin.attendedCount }} consultas</span>
-          </div>
-          <p class="text-[11px] text-emerald-700/90 mt-1 font-medium">
-            ✓ Pago confirmado por el centro médico
-          </p>
-        </div>
 
-        <!-- Card 3: Cancelados ($0) -->
-        <div class="p-4 rounded-xl bg-rose-50/80 border border-rose-200 shadow-xs">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-rose-800 uppercase tracking-wider">Cancelaron Cita</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          <!-- Asistieron (Atendidos) -->
+          <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center gap-2 text-emerald-800">
+              <span class="text-base">✅</span>
+              <span class="text-xs font-bold uppercase tracking-wider">Asistieron</span>
+            </div>
+            <div class="mt-2">
+              <span class="text-2xl font-black text-emerald-950 block">{{ fin.attendedCount }}</span>
+              <span class="text-[11px] text-emerald-700">Consultas realizadas</span>
+            </div>
+            <div class="mt-3 text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-1 rounded-lg">
+              +${{ fin.confirmedPayout | number }} MXN cobrados
+            </div>
           </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span class="text-xl sm:text-2xl font-black text-rose-950 font-mono">
-              $0 MXN
-            </span>
-            <span class="text-xs font-bold text-rose-700">{{ fin.canceledCount }} canceladas</span>
-          </div>
-          <p class="text-[11px] text-rose-700/90 mt-1 font-medium">
-            ✕ Sin devengo (Citas canceladas no se pagan)
-          </p>
-        </div>
 
-        <!-- Card 4: Liquidación Proporcional del Día -->
-        <div class="p-4 rounded-xl bg-indigo-50/90 border border-indigo-200 shadow-xs">
-          <div class="flex items-center justify-between text-indigo-900">
-            <span class="text-xs font-bold uppercase tracking-wider">Liquidación Proporcional</span>
-            <span class="px-2 py-0.5 text-[10px] font-black rounded-full bg-indigo-200 text-indigo-950">
-              {{ fin.attendanceRate }}% asistido
-            </span>
-          </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span class="text-xl sm:text-2xl font-black text-indigo-950 font-mono">
-              ${{ fin.confirmedPayout | number }} MXN
-            </span>
-          </div>
-          <!-- Barra de progreso proporcional -->
-          <div class="w-full h-1.5 rounded-full bg-indigo-200 overflow-hidden mt-2">
-            <div class="h-full bg-indigo-600 rounded-full transition-all duration-500" [style.width.%]="fin.attendanceRate"></div>
+          <!-- Cancelaron -->
+          <div class="p-4 rounded-2xl bg-rose-50/70 border border-rose-200/80 shadow-xs flex flex-col justify-between">
+            <div class="flex items-center gap-2 text-rose-800">
+              <span class="text-base">❌</span>
+              <span class="text-xs font-bold uppercase tracking-wider">Cancelaron</span>
+            </div>
+            <div class="mt-2">
+              <span class="text-2xl font-black text-rose-950 block">{{ fin.canceledCount }}</span>
+              <span class="text-[11px] text-rose-700">Citas no realizadas</span>
+            </div>
+            <div class="mt-3 text-[11px] font-medium text-rose-700 bg-rose-100/80 px-2 py-1 rounded-lg">
+              $0 MXN (No se cobra)
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Resumen de Liquidación Proporcional por Fecha (Tabla Resumen Diaria) -->
-      <div class="p-4 rounded-xl bg-white/95 border border-indigo-100 shadow-2xs space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Desglose de Liquidación Diaria por Fecha</span>
-          <span class="text-xs text-slate-500">Suma diaria de pacientes y honorario devengado</span>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left">
-            <thead class="bg-indigo-50/70 text-slate-600 font-bold border-b border-indigo-100">
-              <tr>
-                <th class="px-3.5 py-2.5">Fecha de Jornada</th>
-                <th class="px-3.5 py-2.5 text-center">Suma Total Pacientes</th>
-                <th class="px-3.5 py-2.5 text-center">Asistieron</th>
-                <th class="px-3.5 py-2.5 text-center">Cancelaron</th>
-                <th class="px-3.5 py-2.5 text-center">Asistencia Proporcional</th>
-                <th class="px-3.5 py-2.5 text-right">Liquidación a Pagar</th>
-                <th class="px-3.5 py-2.5 text-center">Acción</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-indigo-50">
-              @for (d of doctorDaysList(); track d.dateKey) {
-                <tr class="hover:bg-indigo-50/40 transition" [class.bg-indigo-50/60]="selectedDoctorDay() === d.dateKey">
-                  <td class="px-3.5 py-2.5 font-bold text-slate-900">
-                    {{ d.formattedDate }}
-                  </td>
-                  <td class="px-3.5 py-2.5 text-center font-bold text-slate-800">
-                    {{ d.totalPatients }} pacientes
-                  </td>
-                  <td class="px-3.5 py-2.5 text-center font-bold text-emerald-700">
-                    {{ d.attendedCount }}
-                  </td>
-                  <td class="px-3.5 py-2.5 text-center font-medium text-rose-600">
-                    {{ d.canceledCount }}
-                  </td>
-                  <td class="px-3.5 py-2.5 text-center font-bold text-indigo-700">
-                    {{ d.attendanceRate }}%
-                  </td>
-                  <td class="px-3.5 py-2.5 text-right font-black font-mono text-emerald-800 text-sm">
-                    ${{ d.confirmedPayout | number }} MXN
-                  </td>
-                  <td class="px-3.5 py-2.5 text-center">
-                    <button
-                      type="button"
-                      (click)="selectDoctorDay(d.dateKey)"
-                      class="px-2.5 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer"
-                      [class]="selectedDoctorDay() === d.dateKey ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'"
-                    >
-                      {{ selectedDoctorDay() === d.dateKey ? 'Viendo Citas' : 'Filtrar Día' }}
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Nota explicativa de la liquidación proporcional -->
-      <div class="p-3.5 bg-white/80 rounded-xl border border-indigo-100 flex items-start gap-2.5 text-xs text-slate-600">
-        <svg class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <!-- Explicación sencilla y humana -->
+      <div class="p-3.5 bg-white/90 rounded-2xl border border-indigo-100 flex items-center gap-3 text-xs text-slate-600">
+        <span class="text-lg shrink-0">💡</span>
         <div>
-          <strong>Regla de Liquidación Proporcional:</strong> Se suman todos los pacientes programados en la misma jornada ({{ fin.totalPatients }} pacientes). El pago al médico se calcula proporcionalmente según los pacientes atendidos ({{ fin.attendedCount }} de {{ fin.totalPatients }} asistieron, devengando <strong>${{ fin.confirmedPayout | number }} MXN</strong>). Las cancelaciones no generan honorarios ($0.00 MXN).
+          <strong>¿Cómo calculamos tu pago?</strong> Sumamos todos los pacientes citados hoy (<strong>{{ fin.totalPatients }} pacientes</strong>). Cada uno que asiste a consulta te genera <strong>${{ feePerConsultation | number }} MXN</strong>. Si un paciente cancela, no se cobra ($0 MXN). Hoy cobras <strong>${{ fin.confirmedPayout | number }} MXN</strong> por los {{ fin.attendedCount }} pacientes atendidos.
         </div>
       </div>
     </div>
@@ -272,7 +233,7 @@
       <div class="pt-5">
         <button
           (click)="resetFilters()"
-          class="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg transition"
+          class="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg transition cursor-pointer"
         >
           Limpiar filtros
         </button>
@@ -280,179 +241,313 @@
     </div>
   }
 
-  <!-- Tabla de Citas Médicas -->
-  <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
-    @if (auth.isDoctor()) {
-      <div class="px-5 py-3.5 bg-gradient-to-r from-indigo-50 to-slate-50 border-b border-indigo-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
-          <span class="text-xs font-bold text-slate-800">
-            Jornada Seleccionada: <strong class="text-indigo-950">{{ activeDoctorDaySummary().formattedDate }}</strong>
-          </span>
-          <span class="text-xs text-slate-500 font-medium">
-            (Ordenadas cronológicamente desde la más actual)
-          </span>
-        </div>
-        <div class="flex items-center gap-3 text-xs">
-          <span class="font-bold text-slate-700">
-            Suma del Día: <strong class="text-slate-900">{{ displayedAppointments().length }} pacientes</strong>
-          </span>
-          <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-black font-mono">
-            Liquidación: ${{ activeDoctorDaySummary().confirmedPayout | number }} MXN
-          </span>
-          @if (selectedDoctorDay() !== 'all') {
-            <button
-              (click)="selectDoctorDay('all')"
-              class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
-            >
-              Mostrar Todos
-            </button>
-          }
-        </div>
+  <!-- Barra de Encabezado y Selector de Vista (Fichas vs Tabla) -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shadow-2xs">
+        📋
       </div>
-    }
-
-    <div class="overflow-x-auto">
-      <table class="w-full text-left text-sm text-slate-600">
-        <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
-          <tr>
-            <th class="px-5 py-3.5">Fecha y Horario</th>
-            @if (!auth.isBasicUser()) {
-              <th class="px-5 py-3.5">Paciente</th>
-            }
-            <th class="px-5 py-3.5">Médico Tratante</th>
-            <th class="px-5 py-3.5">Especialidad</th>
-            <th class="px-5 py-3.5">Consultorio</th>
-            <th class="px-5 py-3.5">Motivo de Consulta</th>
-            <th class="px-5 py-3.5">Estado</th>
-            @if (auth.isDoctor()) {
-              <th class="px-5 py-3.5 text-right">Honorario Estimado</th>
-            }
-            <th class="px-5 py-3.5 text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100">
-          @for (t of displayedAppointments(); track t.idTurno) {
-            <tr class="hover:bg-slate-50/70 transition-colors">
-              <td class="px-5 py-3.5 font-medium text-xs text-slate-800">
-                <span class="block font-semibold text-slate-900">
-                  {{ t.fechaInicio ? (t.fechaInicio | date: 'dd/MM/yyyy') : 'Fecha por confirmar' }}
-                </span>
-                <span class="text-slate-500">
-                  {{ t.fechaInicio ? (t.fechaInicio | date: 'HH:mm') : '--:--' }} hrs
-                </span>
-              </td>
-
-              @if (!auth.isBasicUser()) {
-                <td class="px-5 py-3.5 font-semibold text-slate-900">
-                  {{ t.paciente?.nombre || t.paciente }} {{ t.paciente?.apellido }}
-                  <span class="block text-xs font-normal text-slate-500">DNI: {{ t.paciente?.dni || 'N/A' }}</span>
-                </td>
-              }
-
-              <td class="px-5 py-3.5 text-slate-800 font-medium">
-                Dr/a. {{ t.medico?.nombre || t.medico }} {{ t.medico?.apellido }}
-              </td>
-
-              <td class="px-5 py-3.5">
-                <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200/50">
-                  {{ t.especialidad?.nombre || t.especialidad || 'Consulta General' }}
-                </span>
-              </td>
-
-              <td class="px-5 py-3.5 text-xs text-slate-600">
-                {{ t.consultorio?.codigo || t.consultorio || 'Asignación en recepción' }}
-              </td>
-
-              <td class="px-5 py-3.5 text-xs text-slate-600 max-w-xs truncate">
-                {{ t.motivoConsulta || 'Consulta médica de control' }}
-              </td>
-
-              <td class="px-5 py-3.5">
-                <span class="inline-block px-2.5 py-1 text-xs font-bold rounded-full uppercase tracking-wider"
-                  [ngClass]="{
-                    'bg-emerald-100 text-emerald-800': t.estado === 'atendido',
-                    'bg-blue-100 text-blue-800': t.estado === 'confirmado',
-                    'bg-amber-100 text-amber-800': t.estado === 'pendiente',
-                    'bg-rose-100 text-rose-800': t.estado === 'cancelado',
-                    'bg-slate-200 text-slate-800': t.estado === 'ausente'
-                  }">
-                  {{ t.estado }}
-                </span>
-              </td>
-
-              @if (auth.isDoctor()) {
-                <td class="px-5 py-3.5 text-right font-mono text-xs whitespace-nowrap">
-                  @if (t.estado === 'atendido') {
-                    <span class="inline-flex items-center gap-1.5 font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-300">
-                      <span>+${{ feePerConsultation | number }}</span>
-                      <span class="text-[9px] uppercase px-1 rounded bg-emerald-200 text-emerald-900 font-extrabold">Devengado</span>
-                    </span>
-                  } @else if (t.estado === 'cancelado') {
-                    <span class="inline-flex items-center gap-1.5 font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                      <span class="line-through">$0 MXN</span>
-                      <span class="text-[9px] uppercase px-1 rounded bg-rose-100 text-rose-700 font-extrabold">Cancelado</span>
-                    </span>
-                  } @else {
-                    <span class="inline-flex items-center gap-1.5 font-semibold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
-                      <span>${{ feePerConsultation | number }}</span>
-                      <span class="text-[9px] uppercase px-1 rounded bg-sky-200 text-sky-900 font-extrabold">Si asiste</span>
-                    </span>
-                  }
-                </td>
-              }
-
-              <td class="px-5 py-3.5 text-right space-x-1 whitespace-nowrap">
-                @if (auth.isAdmin() || auth.isDoctor()) {
-                  @if (t.estado !== 'atendido' && t.estado !== 'cancelado') {
-                    <button
-                      (click)="changeStatus(t.idTurno, 'atendido')"
-                      class="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition cursor-pointer"
-                      title="Marcar como Atendido en Consulta (Devenga Honorario)"
-                    >
-                      Asistió (Atender)
-                    </button>
-                    <button
-                      (click)="changeStatus(t.idTurno, 'cancelado')"
-                      class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
-                      title="Marcar como Cancelada (No devenga honorario)"
-                    >
-                      Cancelar
-                    </button>
-                  } @else {
-                    <span class="text-xs font-medium text-slate-400">
-                      {{ t.estado === 'atendido' ? '✓ Honorario liquidado' : '✕ Sin pago' }}
-                    </span>
-                  }
-                } @else {
-                  @if (t.estado === 'pendiente') {
-                    <button
-                      (click)="cancelMyAppointment(t.idTurno)"
-                      class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
-                      title="Cancelar mi cita"
-                    >
-                      Cancelar cita
-                    </button>
-                  } @else {
-                    <span class="text-xs text-slate-400">Sin acciones</span>
-                  }
-                }
-              </td>
-            </tr>
-          } @empty {
-            <tr>
-              <td [attr.colspan]="auth.isDoctor() ? 9 : (!auth.isBasicUser() ? 8 : 7)" class="px-5 py-10 text-center text-slate-500">
-                <div class="max-w-sm mx-auto space-y-1">
-                  <p class="font-medium text-slate-700">No hay citas médicas para mostrar</p>
-                  <p class="text-xs text-slate-400">
-                    {{ auth.isBasicUser() ? 'Actualmente no tienes citas programadas. Puedes solicitar una cita pulsando el botón superior.' : 'No se encontraron turnos con los filtros seleccionados.' }}
-                  </p>
-                </div>
-              </td>
-            </tr>
-          }
-      </table>
+      <div>
+        <h3 class="text-base font-bold text-slate-900">
+          {{ auth.isDoctor() ? ('Pacientes de ' + activeDoctorDaySummary().formattedDate) : 'Listado de Citas Médicas' }}
+        </h3>
+        <p class="text-xs text-slate-500">
+          {{ displayedAppointments().length }} {{ displayedAppointments().length === 1 ? 'paciente citado' : 'pacientes citados' }} • Ordenados desde el más reciente
+        </p>
+      </div>
     </div>
+
+    <!-- Selector de vista amigable -->
+    <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 self-start sm:self-auto">
+      <button
+        type="button"
+        (click)="setViewMode('cards')"
+        class="px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5"
+        [class]="viewMode() === 'cards' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+      >
+        <span>📇</span>
+        <span>Fichas Amigables</span>
+      </button>
+      <button
+        type="button"
+        (click)="setViewMode('table')"
+        class="px-3 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5"
+        [class]="viewMode() === 'table' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'"
+      >
+        <span>📑</span>
+        <span>Tabla Simple</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- VISTA 1: FICHAS AMIGABLES DE PACIENTES (POR DEFECTO) -->
+  @if (viewMode() === 'cards') {
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      @for (t of displayedAppointments(); track t.idTurno) {
+        <div
+          class="rounded-2xl p-5 border transition-all hover:shadow-md flex flex-col justify-between gap-4"
+          [class]="t.estado === 'atendido' ? 'border-emerald-200 bg-white shadow-xs' : (t.estado === 'cancelado' ? 'border-rose-200 bg-rose-50/20 shadow-xs' : 'border-slate-200 bg-white shadow-xs')"
+        >
+          <!-- Fila Superior: Hora y Estado -->
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-black text-slate-900 font-mono flex items-center gap-1.5">
+                <span>🕒</span>
+                <span>{{ t.fechaInicio ? (t.fechaInicio | date: 'HH:mm') : '--:--' }} hrs</span>
+              </span>
+              <span class="text-xs text-slate-500 font-medium">
+                ({{ t.fechaInicio ? (t.fechaInicio | date: 'dd/MM/yyyy') : 'Fecha por confirmar' }})
+              </span>
+            </div>
+
+            <!-- Badge de Estado en lenguaje natural -->
+            <span
+              class="px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5"
+              [ngClass]="{
+                'bg-emerald-100 text-emerald-800 border border-emerald-200': t.estado === 'atendido',
+                'bg-rose-100 text-rose-800 border border-rose-200': t.estado === 'cancelado',
+                'bg-blue-100 text-blue-800 border border-blue-200': t.estado === 'confirmado',
+                'bg-amber-100 text-amber-800 border border-amber-200': t.estado === 'pendiente'
+              }"
+            >
+              @if (t.estado === 'atendido') { <span>✅ Asistió (Atendido)</span> }
+              @else if (t.estado === 'cancelado') { <span>❌ Cita Cancelada</span> }
+              @else if (t.estado === 'confirmado') { <span>⏱ Confirmado</span> }
+              @else { <span>⏳ Pendiente</span> }
+            </span>
+          </div>
+
+          <!-- Datos del Paciente -->
+          <div class="flex items-start gap-3.5">
+            <div
+              class="w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 border shadow-2xs"
+              [ngClass]="getAvatarColor(t.paciente?.nombre || t.paciente)"
+            >
+              {{ getInitials(t.paciente?.nombre || t.paciente, t.paciente?.apellido) }}
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <h4 class="text-base font-bold text-slate-900 truncate">
+                {{ t.paciente?.nombre || t.paciente }} {{ t.paciente?.apellido }}
+              </h4>
+              <p class="text-xs text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5">
+                <span>📍 {{ t.consultorio?.codigo || t.consultorio || 'Consultorio' }}</span>
+                <span>•</span>
+                <span>{{ t.especialidad?.nombre || t.especialidad || 'Consulta General' }}</span>
+                @if (auth.isAdmin()) {
+                  <span>•</span>
+                  <span class="font-semibold text-slate-700">Dr/a. {{ t.medico?.nombre || t.medico }} {{ t.medico?.apellido }}</span>
+                }
+              </p>
+              <div class="mt-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-700">
+                <span class="text-slate-400 font-bold block text-[10px] uppercase tracking-wider">Motivo de consulta:</span>
+                <p class="mt-0.5 line-clamp-2 font-medium">{{ t.motivoConsulta || 'Consulta médica de control y seguimiento' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pie de la Ficha: Cobro y Botones de Acción -->
+          <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            @if (auth.isDoctor()) {
+              <div>
+                @if (t.estado === 'atendido') {
+                  <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-800">
+                    <span>💰 Cobro de hoy:</span>
+                    <span class="font-mono text-sm font-black text-emerald-900">+${{ feePerConsultation | number }} MXN</span>
+                    <span class="text-[10px] bg-emerald-200/80 text-emerald-950 px-1.5 py-0.5 rounded font-extrabold">Devengado</span>
+                  </div>
+                } @else if (t.estado === 'cancelado') {
+                  <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                    <span>💰 Cobro:</span>
+                    <span class="font-mono text-sm line-through font-bold text-slate-400">$0 MXN</span>
+                    <span class="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-extrabold">Cancelado</span>
+                  </div>
+                } @else {
+                  <div class="flex items-center gap-1.5 text-xs text-sky-800">
+                    <span>💰 Al atender cobrarás:</span>
+                    <span class="font-mono text-sm font-bold text-sky-950">${{ feePerConsultation | number }} MXN</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-xs text-slate-500">
+                DNI Paciente: <strong class="text-slate-700">{{ t.paciente?.dni || 'N/A' }}</strong>
+              </div>
+            }
+
+            <!-- Botones de Acción -->
+            <div class="flex items-center gap-2 self-end sm:self-auto">
+              @if (auth.isAdmin() || auth.isDoctor()) {
+                @if (t.estado !== 'atendido' && t.estado !== 'cancelado') {
+                  <button
+                    (click)="changeStatus(t.idTurno, 'atendido')"
+                    class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs cursor-pointer flex items-center gap-1"
+                    title="Confirmar que el paciente asistió a la consulta"
+                  >
+                    <span>✔</span>
+                    <span>Marcar Atendido</span>
+                  </button>
+                  <button
+                    (click)="changeStatus(t.idTurno, 'cancelado')"
+                    class="px-2.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition cursor-pointer"
+                    title="Registrar cancelación de cita"
+                  >
+                    Cancelar
+                  </button>
+                } @else {
+                  <span class="text-xs font-medium text-slate-400">
+                    {{ t.estado === 'atendido' ? '✓ Cita finalizada' : '✕ Turno cancelado' }}
+                  </span>
+                }
+              } @else {
+                @if (t.estado === 'pendiente') {
+                  <button
+                    (click)="cancelMyAppointment(t.idTurno)"
+                    class="px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition cursor-pointer"
+                  >
+                    Cancelar cita
+                  </button>
+                } @else {
+                  <span class="text-xs text-slate-400">Sin acciones</span>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="col-span-full p-12 text-center text-slate-400 bg-white rounded-3xl border border-slate-200">
+          <span class="text-3xl block mb-2">📅</span>
+          <p class="font-bold text-slate-700 text-sm">No hay citas para mostrar en esta fecha</p>
+          <p class="text-xs text-slate-400 mt-1">Selecciona otra jornada o pulsa en "Ver Todas".</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- VISTA 2: TABLA SIMPLE Y ESPACIOSA (SOLO 5 COLUMNAS CLARAS) -->
+  @if (viewMode() === 'table') {
+    <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-slate-600">
+          <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
+            <tr>
+              <th class="px-5 py-3.5">Horario & Fecha</th>
+              <th class="px-5 py-3.5">Paciente & Motivo</th>
+              <th class="px-5 py-3.5">Consultorio</th>
+              <th class="px-5 py-3.5">Estado & Cobro</th>
+              <th class="px-5 py-3.5 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            @for (t of displayedAppointments(); track t.idTurno) {
+              <tr class="hover:bg-slate-50/70 transition-colors">
+                <!-- Horario -->
+                <td class="px-5 py-4 font-medium text-xs text-slate-800">
+                  <span class="block font-black text-sm text-slate-900 font-mono">
+                    🕒 {{ t.fechaInicio ? (t.fechaInicio | date: 'HH:mm') : '--:--' }} hrs
+                  </span>
+                  <span class="text-slate-500 text-xs">
+                    {{ t.fechaInicio ? (t.fechaInicio | date: 'dd/MM/yyyy') : 'Por confirmar' }}
+                  </span>
+                </td>
+
+                <!-- Paciente & Motivo -->
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-2.5">
+                    <div
+                      class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 border"
+                      [ngClass]="getAvatarColor(t.paciente?.nombre || t.paciente)"
+                    >
+                      {{ getInitials(t.paciente?.nombre || t.paciente, t.paciente?.apellido) }}
+                    </div>
+                    <div>
+                      <span class="font-bold text-slate-900 block">
+                        {{ t.paciente?.nombre || t.paciente }} {{ t.paciente?.apellido }}
+                      </span>
+                      <span class="text-xs text-slate-500 block truncate max-w-xs">
+                        {{ t.motivoConsulta || 'Consulta médica de control' }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Consultorio & Especialidad -->
+                <td class="px-5 py-4 text-xs">
+                  <span class="font-semibold text-slate-800 block">
+                    📍 {{ t.consultorio?.codigo || t.consultorio || 'Consultorio' }}
+                  </span>
+                  <span class="text-slate-500 block">
+                    {{ t.especialidad?.nombre || t.especialidad || 'Cardiología' }}
+                  </span>
+                </td>
+
+                <!-- Estado & Cobro -->
+                <td class="px-5 py-4">
+                  <div class="space-y-1">
+                    <span
+                      class="inline-block px-2.5 py-0.5 text-xs font-bold rounded-full"
+                      [ngClass]="{
+                        'bg-emerald-100 text-emerald-800': t.estado === 'atendido',
+                        'bg-rose-100 text-rose-800': t.estado === 'cancelado',
+                        'bg-blue-100 text-blue-800': t.estado === 'confirmado',
+                        'bg-amber-100 text-amber-800': t.estado === 'pendiente'
+                      }"
+                    >
+                      {{ t.estado === 'atendido' ? '✅ Atendido' : (t.estado === 'cancelado' ? '❌ Cancelado' : t.estado) }}
+                    </span>
+                    @if (auth.isDoctor()) {
+                      <span class="block text-xs font-mono font-bold" [class.text-emerald-700]="t.estado === 'atendido'" [class.text-slate-400]="t.estado === 'cancelado'" [class.text-sky-700]="t.estado !== 'atendido' && t.estado !== 'cancelado'">
+                        {{ t.estado === 'atendido' ? ('+$' + (feePerConsultation | number) + ' MXN') : (t.estado === 'cancelado' ? '$0 MXN' : ('$' + (feePerConsultation | number) + ' MXN')) }}
+                      </span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Acciones -->
+                <td class="px-5 py-4 text-right space-x-1 whitespace-nowrap">
+                  @if (auth.isAdmin() || auth.isDoctor()) {
+                    @if (t.estado !== 'atendido' && t.estado !== 'cancelado') {
+                      <button
+                        (click)="changeStatus(t.idTurno, 'atendido')"
+                        class="px-2.5 py-1 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition cursor-pointer"
+                      >
+                        ✔ Atender
+                      </button>
+                      <button
+                        (click)="changeStatus(t.idTurno, 'cancelado')"
+                        class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                    } @else {
+                      <span class="text-xs font-medium text-slate-400">
+                        {{ t.estado === 'atendido' ? '✓ Cobrado' : '✕ Sin cobro' }}
+                      </span>
+                    }
+                  } @else {
+                    @if (t.estado === 'pendiente') {
+                      <button
+                        (click)="cancelMyAppointment(t.idTurno)"
+                        class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
+                      >
+                        Cancelar cita
+                      </button>
+                    }
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="px-5 py-10 text-center text-slate-500">
+                  <p class="font-medium text-slate-700">No hay citas médicas para mostrar</p>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
 
     <!-- Paginación de Citas Médicas -->
     @if (totalPages() > 1) {
@@ -484,8 +579,6 @@
         </div>
       </div>
     }
-  </div>
-
 
   <!-- Modal de Agendar/Solicitar Cita (Centrado Clínico) -->
   <app-clinical-modal

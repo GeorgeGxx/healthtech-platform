@@ -30,6 +30,7 @@ export class AppointmentsComponent implements OnInit {
 
   readonly feePerConsultation = 1200;
   readonly selectedDoctorDay = signal<string>('2026-10-18');
+  readonly viewMode = signal<'cards' | 'table'>('cards');
 
   selectedDoctorId: number = 0;
   selectedDate: string = '';
@@ -43,6 +44,33 @@ export class AppointmentsComponent implements OnInit {
     fin: '',
     motivoConsulta: '',
   };
+
+  setViewMode(mode: 'cards' | 'table'): void {
+    this.viewMode.set(mode);
+  }
+
+  getInitials(nombre?: string, apellido?: string): string {
+    const p1 = (nombre || '').trim()[0] || '';
+    const p2 = (apellido || '').trim()[0] || '';
+    return (p1 + p2).toUpperCase() || 'P';
+  }
+
+  getAvatarColor(name?: string): string {
+    const colors = [
+      'bg-indigo-100 text-indigo-700 border-indigo-200',
+      'bg-emerald-100 text-emerald-700 border-emerald-200',
+      'bg-sky-100 text-sky-700 border-sky-200',
+      'bg-purple-100 text-purple-700 border-purple-200',
+      'bg-amber-100 text-amber-700 border-amber-200',
+      'bg-rose-100 text-rose-700 border-rose-200',
+    ];
+    let hash = 0;
+    const str = name || 'paciente';
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  }
 
   private sortAppointmentsDesc(list: any[]): any[] {
     return [...list].sort((a, b) => {
