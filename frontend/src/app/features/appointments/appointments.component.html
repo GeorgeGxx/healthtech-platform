@@ -66,33 +66,42 @@
         </div>
 
         <!-- Selector de días en botones amigables -->
-        <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100/90 rounded-2xl border border-slate-200/80">
-          @for (day of doctorDaysList(); track day.dateKey) {
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1">
+            <span>📅</span> Filtrar por Día:
+          </span>
+          <div class="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80">
+            @for (day of doctorDaysList(); track day.dateKey) {
+              <button
+                type="button"
+                (click)="selectDoctorDay(day.dateKey)"
+                class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border shadow-2xs"
+                [class]="selectedDoctorDay() === day.dateKey
+                  ? 'bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-500/30'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'"
+              >
+                <span>📅 {{ day.dayLabel }}</span>
+                <span class="px-2 py-0.5 rounded-md text-[11px] font-bold"
+                  [class]="selectedDoctorDay() === day.dateKey ? 'bg-indigo-700/80 text-white' : 'bg-slate-100 text-slate-700'">
+                  {{ day.totalPatients }} pac.
+                </span>
+                <span class="text-[11px] font-mono font-extrabold"
+                  [class]="selectedDoctorDay() === day.dateKey ? 'text-indigo-100' : 'text-emerald-700'">
+                  ${{ day.confirmedPayout | number }} MXN
+                </span>
+              </button>
+            }
             <button
               type="button"
-              (click)="selectDoctorDay(day.dateKey)"
-              class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-              [class]="selectedDoctorDay() === day.dateKey
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'"
+              (click)="selectDoctorDay('all')"
+              class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border shadow-2xs"
+              [class]="selectedDoctorDay() === 'all'
+                ? 'bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-500/30'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'"
             >
-              <span>📅 {{ day.dateKey === '2026-10-18' ? 'Hoy (18 Oct)' : (day.dateKey === '2026-10-17' ? 'Ayer (17 Oct)' : day.dateKey) }}</span>
-              <span class="px-1.5 py-0.5 rounded-md text-[10px] font-mono"
-                [class]="selectedDoctorDay() === day.dateKey ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200/80 text-slate-600'">
-                ${{ day.confirmedPayout | number }}
-              </span>
+              📋 Ver Todos los Días ({{ doctorAppointments().length }})
             </button>
-          }
-          <button
-            type="button"
-            (click)="selectDoctorDay('all')"
-            class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
-            [class]="selectedDoctorDay() === 'all'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'"
-          >
-            Ver Todas
-          </button>
+          </div>
         </div>
       </div>
 
@@ -104,7 +113,7 @@
         <div class="lg:col-span-5 p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white shadow-lg shadow-indigo-950/10 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between text-slate-400">
-              <span class="text-xs font-bold uppercase tracking-wider">Tu Cobro del Día</span>
+              <span class="text-xs font-bold uppercase tracking-wider">{{ fin.isSingleDay ? 'Tu Cobro del Día' : 'Cobro Total Acumulado' }}</span>
               <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 {{ fin.attendanceRate }}% asistido
               </span>
@@ -116,14 +125,14 @@
               <span class="text-sm font-semibold text-indigo-200">MXN</span>
             </div>
             <p class="text-xs text-indigo-200/90 mt-1">
-              {{ fin.attendedCount }} de {{ fin.totalPatients }} pacientes asistieron hoy a consulta
+              {{ fin.attendedCount }} de {{ fin.totalPatients }} pacientes asistieron a consulta {{ fin.isSingleDay ? 'este día' : 'en total' }}
             </p>
           </div>
 
           <!-- Barra de progreso amigable -->
           <div class="mt-4 pt-3 border-t border-white/10 space-y-1.5">
             <div class="flex justify-between text-[11px] text-slate-300">
-              <span>Asistencia del día</span>
+              <span>{{ fin.isSingleDay ? 'Asistencia del día' : 'Asistencia global' }}</span>
               <span class="font-bold text-white">{{ fin.attendedCount }} de {{ fin.totalPatients }} pacientes ({{ fin.attendanceRate }}%)</span>
             </div>
             <div class="w-full h-2 rounded-full bg-white/20 overflow-hidden">
@@ -138,11 +147,11 @@
           <div class="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex flex-col justify-between">
             <div class="flex items-center gap-2 text-slate-500">
               <span class="text-base">👥</span>
-              <span class="text-xs font-bold uppercase tracking-wider">Pacientes del Día</span>
+              <span class="text-xs font-bold uppercase tracking-wider">{{ fin.isSingleDay ? 'Pacientes del Día' : 'Total Pacientes' }}</span>
             </div>
             <div class="mt-2">
               <span class="text-2xl font-black text-slate-900 block">{{ fin.totalPatients }}</span>
-              <span class="text-[11px] text-slate-400">Citados en esta jornada</span>
+              <span class="text-[11px] text-slate-400">{{ fin.isSingleDay ? 'Citados en esta jornada' : 'Citados en todas las fechas' }}</span>
             </div>
             <div class="mt-3 text-[11px] font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded-lg">
               Potencial: ${{ fin.totalPotential | number }} MXN
@@ -185,7 +194,7 @@
       <div class="p-3.5 bg-white/90 rounded-2xl border border-indigo-100 flex items-center gap-3 text-xs text-slate-600">
         <span class="text-lg shrink-0">💡</span>
         <div>
-          <strong>¿Cómo calculamos tu pago?</strong> Sumamos todos los pacientes citados hoy (<strong>{{ fin.totalPatients }} pacientes</strong>). Cada uno que asiste a consulta te genera <strong>${{ feePerConsultation | number }} MXN</strong>. Si un paciente cancela, no se cobra ($0 MXN). Hoy cobras <strong>${{ fin.confirmedPayout | number }} MXN</strong> por los {{ fin.attendedCount }} pacientes atendidos.
+          <strong>¿Cómo calculamos tu pago?</strong> Sumamos los pacientes citados (<strong>{{ fin.totalPatients }} pacientes</strong>). Cada uno que asiste a consulta te genera <strong>${{ feePerConsultation | number }} MXN</strong>. Si un paciente cancela, no se cobra ($0 MXN). En este periodo cobras <strong>${{ fin.confirmedPayout | number }} MXN</strong> por los {{ fin.attendedCount }} pacientes atendidos.
         </div>
       </div>
     </div>
@@ -241,7 +250,7 @@
     </div>
   }
 
-  <!-- Barra de Encabezado y Selector de Vista (Fichas vs Tabla) -->
+  <!-- Barra de Encabezado y Estado de Filtro de Citas -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
     <div class="flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shadow-2xs">
@@ -249,7 +258,7 @@
       </div>
       <div>
         <h3 class="text-base font-bold text-slate-900">
-          {{ auth.isDoctor() ? ('Pacientes de ' + activeDoctorDaySummary().formattedDate) : 'Listado de Citas Médicas' }}
+          {{ auth.isDoctor() ? ('Pacientes del ' + activeDoctorDaySummary().formattedDate) : 'Listado de Citas Médicas' }}
         </h3>
         <p class="text-xs text-slate-500">
           {{ displayedAppointments().length }} {{ displayedAppointments().length === 1 ? 'paciente citado' : 'pacientes citados' }} • Ordenados desde el más reciente
@@ -257,6 +266,27 @@
       </div>
     </div>
 
+    @if (auth.isDoctor()) {
+      <div class="flex items-center gap-2">
+        @if (selectedDoctorDay() !== 'all') {
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+            <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+            Día filtrado: {{ activeDoctorDaySummary().formattedDate }}
+          </span>
+          <button
+            type="button"
+            (click)="selectDoctorDay('all')"
+            class="text-xs font-bold text-slate-600 hover:text-indigo-600 bg-white hover:bg-slate-50 px-3 py-1 rounded-xl border border-slate-200 shadow-2xs transition cursor-pointer"
+          >
+            Ver todos los días ✕
+          </button>
+        } @else {
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            📋 Viendo todas las jornadas
+          </span>
+        }
+      </div>
+    }
   </div>
 
   <!-- TABLA SIMPLE Y ESPACIOSA (VISTA ÚNICA Y CLARA) -->

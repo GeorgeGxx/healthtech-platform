@@ -75,14 +75,21 @@ export class AppointmentsComponent implements OnInit {
     });
   }
 
+  getDateKey(fecha?: string): string {
+    if (!fecha) return 'Sin fecha';
+    const match = fecha.match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : fecha.slice(0, 10);
+  }
+
   selectDoctorDay(day: string): void {
     this.selectedDoctorDay.set(day);
   }
 
   formatDateLabel(dateKey: string): string {
-    if (!dateKey || dateKey === 'Sin fecha') return 'Sin fecha';
-    const parts = dateKey.split('-');
-    if (parts.length < 3) return dateKey;
+    const cleanKey = this.getDateKey(dateKey);
+    if (!cleanKey || cleanKey === 'Sin fecha') return 'Sin fecha';
+    const parts = cleanKey.split('-');
+    if (parts.length < 3) return cleanKey;
     const year = Number(parts[0]);
     const month = Number(parts[1]);
     const day = Number(parts[2]);
@@ -91,12 +98,12 @@ export class AppointmentsComponent implements OnInit {
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
     const monthName = months[(month || 1) - 1];
-    if (dateKey === '2026-10-18') {
-      return `${day} de ${monthName}, ${year} (Jornada Hoy)`;
-    } else if (dateKey === '2026-10-17') {
-      return `${day} de ${monthName}, ${year} (Ayer)`;
+    if (cleanKey === '2026-10-18') {
+      return `Día 18 de ${monthName} (Hoy)`;
+    } else if (cleanKey === '2026-10-17') {
+      return `Día 17 de ${monthName} (Ayer)`;
     }
-    return `${day} de ${monthName}, ${year}`;
+    return `Día ${day} de ${monthName}, ${year}`;
   }
 
   readonly doctorAppointments = computed(() => {
@@ -113,10 +120,14 @@ export class AppointmentsComponent implements OnInit {
     const map = new Map<string, any>();
 
     for (const app of apps) {
-      const dateKey = app.fechaInicio ? app.fechaInicio.split('T')[0] : 'Sin fecha';
+      const dateKey = this.getDateKey(app.fechaInicio);
       if (!map.has(dateKey)) {
+        const dayNumber = dateKey.split('-')[2] || '';
+        const dayLabel = dateKey === '2026-10-18' ? 'Hoy (Día 18)' : (dateKey === '2026-10-17' ? 'Ayer (Día 17)' : `Día ${dayNumber}`);
         map.set(dateKey, {
           dateKey,
+          dayNumber,
+          dayLabel,
           formattedDate: this.formatDateLabel(dateKey),
           totalPatients: 0,
           attendedCount: 0,
@@ -213,7 +224,7 @@ export class AppointmentsComponent implements OnInit {
       list = list.filter((a) => (a.idMedico || a.medico?.idMedico) === docId);
       const day = this.selectedDoctorDay();
       if (day !== 'all') {
-        list = list.filter((a) => a.fechaInicio && a.fechaInicio.startsWith(day));
+        list = list.filter((a) => this.getDateKey(a.fechaInicio) === day);
       }
     }
     return this.sortAppointmentsDesc(list);
