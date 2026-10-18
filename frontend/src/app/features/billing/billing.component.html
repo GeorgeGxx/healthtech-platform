@@ -26,7 +26,7 @@
           {{ item.metodo_pago.replace('_', ' ') }}
         </span>
         <p class="text-xl font-extrabold text-slate-900">
-          \${{ item.total_recaudado | number: '1.0-0' }} MXN
+          ${{ item.total_recaudado | number: '1.0-0' }} MXN
         </p>
         <span class="text-xs text-slate-500 block mt-1">
           {{ item.total_transacciones }} operaciones
@@ -67,13 +67,13 @@
                 {{ p.concepto?.nombre }}
               </td>
               <td class="px-5 py-3.5 text-right font-mono text-xs">
-                \${{ p.montoBruto | number: '1.2-2' }}
+                ${{ p.montoBruto | number: '1.2-2' }}
               </td>
               <td class="px-5 py-3.5 text-right font-mono text-xs text-emerald-600">
-                -\${{ p.descuentoCobertura | number: '1.2-2' }}
+                -${{ p.descuentoCobertura | number: '1.2-2' }}
               </td>
               <td class="px-5 py-3.5 text-right font-mono text-sm font-extrabold text-slate-900">
-                \${{ p.montoNeto | number: '1.2-2' }}
+                ${{ p.montoNeto | number: '1.2-2' }}
               </td>
               <td class="px-5 py-3.5 text-center">
                 <span class="inline-block px-2.5 py-0.5 text-xs font-bold font-bold rounded-full uppercase tracking-wider bg-slate-100 text-slate-700">
