@@ -30,7 +30,6 @@ export class AppointmentsComponent implements OnInit {
 
   readonly feePerConsultation = 1200;
   readonly selectedDoctorDay = signal<string>('2026-10-18');
-  readonly viewMode = signal<'cards' | 'table'>('cards');
 
   selectedDoctorId: number = 0;
   selectedDate: string = '';
@@ -44,10 +43,6 @@ export class AppointmentsComponent implements OnInit {
     fin: '',
     motivoConsulta: '',
   };
-
-  setViewMode(mode: 'cards' | 'table'): void {
-    this.viewMode.set(mode);
-  }
 
   getInitials(nombre?: string, apellido?: string): string {
     const p1 = (nombre || '').trim()[0] || '';
