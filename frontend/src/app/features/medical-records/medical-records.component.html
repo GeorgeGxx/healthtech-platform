@@ -215,12 +215,13 @@
   @if (showModal() && auth.isAdmin()) {
     <div
       (click)="closeModal()"
-      class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm overflow-y-auto p-3 sm:p-6 flex items-center justify-center min-h-screen transition-all duration-300 ease-out animate-fade-in"
+      class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm animate-fade-in"
     >
-      <div
-        (click)="$event.stopPropagation()"
-        class="relative w-full max-w-2xl my-auto bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[88vh] overflow-hidden transition-all transform duration-300 ease-out animate-modal-pop"
-      >
+      <div class="flex min-h-full items-center justify-center p-4 sm:p-6 text-center">
+        <div
+          (click)="$event.stopPropagation()"
+          class="relative w-full max-w-2xl bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[calc(100vh-3rem)] text-left overflow-hidden animate-modal-pop"
+        >
         <!-- Encabezado del Modal con Botón de Cierre -->
         <div class="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-white shrink-0">
           <div>
@@ -317,6 +318,7 @@
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   }
