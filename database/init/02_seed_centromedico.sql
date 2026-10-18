@@ -271,6 +271,45 @@ INSERT INTO pago (id_paciente, id_turno, id_internacion, id_concepto, fecha_pago
     -- Pago de Internación 2
     (3, NULL, 2, 3, '2024-02-23 12:00:00-03', 225000.00, 146250.00, 'tarjeta_debito', 'completado', 'FACT-B-0009', '{"tarjeta_ultimos4": "8812"}'::jsonb);
 
+-- ----------------------------------------------------------------------------
+-- 13. Medicamentos e Inventario de Farmacia Hospitalaria
+-- ----------------------------------------------------------------------------
+INSERT INTO medicamento (id_medicamento, nombre_comercial, principio_activo, categoria_terapeutica, presentacion, lote, caducidad, stock_actual, stock_minimo, stock_maximo, nivel_alerta, ubicacion_almacen, precio_unitario_mxn) VALUES
+    ('MED-001', 'Tempra Forte', 'Paracetamol', 'Analgésicos y Antipiréticos', 'Tabletas 500mg (Caja c/20)', 'L-2026A-01', '2027-08-30', 850, 200, 1000, 'Normal', 'Farmacia Central', 85.00),
+    ('MED-002', 'Dolac Inyectable', 'Ketorolaco Trometamina', 'Analgésicos y Antipiréticos', 'Ampolleta 30mg/ml', 'L-2026A-02', '2027-04-15', 135, 100, 400, 'Normal', 'Urgencias', 145.00),
+    ('MED-003', 'Tramal 50mg', 'Clorhidrato de Tramadol', 'Analgésicos y Antipiréticos', 'Cápsulas 50mg', 'L-2026B-05', '2026-12-15', 45, 50, 200, 'Bajo', 'Farmacia Central', 210.00),
+    ('MED-004', 'Morfina Solución IV', 'Sulfato de Morfina', 'Analgésicos Controlados UCI', 'Ampolleta 10mg/ml', 'L-2026C-09', '2027-02-28', 12, 30, 100, 'Crítico', 'Terapia Intensiva (UTI)', 380.00),
+    ('MED-005', 'Augmentin 875', 'Amoxicilina / Ácido Clavulánico', 'Antibióticos y Antimicrobianos', 'Tabletas 875/125mg', 'L-2026A-12', '2027-11-20', 320, 150, 600, 'Normal', 'Farmacia Central', 495.00),
+    ('MED-006', 'Rocephin 1g', 'Ceftriaxona Disódica', 'Antibióticos y Antimicrobianos', 'Frasco Ámpula 1g IV', 'L-2026A-18', '2027-06-30', 68, 80, 300, 'Bajo', 'Urgencias', 360.00),
+    ('MED-007', 'Merrem 1g', 'Meropenem Trihidratado', 'Antibióticos y Antimicrobianos', 'Frasco Ámpula 1g IV', 'L-2026D-01', '2027-01-10', 14, 40, 150, 'Crítico', 'Terapia Intensiva (UTI)', 1250.00),
+    ('MED-008', 'Ciproxina 500', 'Ciprofloxacino Clorhidrato', 'Antibióticos y Antimicrobianos', 'Tabletas 500mg', 'L-2026A-22', '2028-03-15', 240, 100, 500, 'Normal', 'Farmacia Central', 290.00),
+    ('MED-009', 'Cozaar 50mg', 'Losartán Potásico', 'Cardiología y Antihipertensivos', 'Comprimidos 50mg (c/30)', 'L-2026B-02', '2028-05-10', 580, 200, 800, 'Normal', 'Farmacia Central', 310.00),
+    ('MED-010', 'Norvasc 5mg', 'Besilato de Amlodipino', 'Cardiología y Antihipertensivos', 'Tabletas 5mg (c/30)', 'L-2026B-08', '2027-09-18', 420, 150, 600, 'Normal', 'Farmacia Central', 380.00),
+    ('MED-011', 'Adrenalina UCI', 'Epinefrina', 'Urgencias y Soporte Vital', 'Ampolleta 1mg/ml', 'L-2026E-01', '2026-11-30', 18, 50, 150, 'Crítico', 'Carro Rojo Urgencias', 120.00),
+    ('MED-012', 'Atropina 1mg', 'Sulfato de Atropina', 'Urgencias y Soporte Vital', 'Ampolleta 1mg/ml', 'L-2026E-03', '2027-07-22', 25, 40, 120, 'Bajo', 'Carro Rojo Urgencias', 95.00),
+    ('MED-013', 'Clexane 40mg', 'Enoxaparina Sódica', 'Hematología y Anticoagulantes', 'Jeringa Prellenada 40mg/0.4ml', 'L-2026C-11', '2027-10-15', 185, 100, 400, 'Normal', 'Farmacia Central', 540.00),
+    ('MED-014', 'Eliquis 5mg', 'Apixabán', 'Hematología y Anticoagulantes', 'Tabletas 5mg (c/60)', 'L-2026C-15', '2028-01-20', 110, 80, 250, 'Normal', 'Farmacia Central', 1650.00),
+    ('MED-015', 'Ventolin Aerosol', 'Salbutamol', 'Neumología y Vías Respiratorias', 'Inhalador 100mcg (200 dosis)', 'L-2026B-20', '2027-12-05', 95, 60, 250, 'Normal', 'Farmacia Central', 285.00),
+    ('MED-016', 'Pulmicort Turbuhaler', 'Budesonida', 'Neumología y Vías Respiratorias', 'Polvo Inhalación 200mcg', 'L-2026B-25', '2027-08-14', 40, 50, 150, 'Bajo', 'Farmacia Central', 720.00),
+    ('MED-017', 'Lantus SoloStar', 'Insulina Glargina', 'Endocrinología y Diabetes', 'Pluma Precargada 100 UI/ml', 'L-2026F-02', '2027-05-30', 88, 50, 200, 'Normal', 'Refrigerador Farmacia Central', 890.00),
+    ('MED-018', 'Glucophage 850', 'Clorhidrato de Metformina', 'Endocrinología y Diabetes', 'Tabletas 850mg (c/30)', 'L-2026F-08', '2028-06-30', 650, 200, 1000, 'Normal', 'Farmacia Central', 195.00),
+    ('MED-019', 'Fentanilo UCI', 'Citrato de Fentanilo', 'Analgésicos Controlados UCI', 'Ampolleta 0.5mg/10ml', 'L-2026C-22', '2026-10-31', 8, 25, 80, 'Crítico', 'Terapia Intensiva (UTI)', 450.00),
+    ('MED-020', 'Solución Fisiológica 0.9%', 'Cloruro de Sodio', 'Soluciones y Terapia IV', 'Bolsa 1000ml c/infusor', 'L-2026S-99', '2028-12-31', 1450, 500, 2500, 'Normal', 'Almacén General', 65.00)
+ON CONFLICT (id_medicamento) DO UPDATE SET
+    nombre_comercial = EXCLUDED.nombre_comercial,
+    principio_activo = EXCLUDED.principio_activo,
+    categoria_terapeutica = EXCLUDED.categoria_terapeutica,
+    presentacion = EXCLUDED.presentacion,
+    lote = EXCLUDED.lote,
+    caducidad = EXCLUDED.caducidad,
+    stock_actual = EXCLUDED.stock_actual,
+    stock_minimo = EXCLUDED.stock_minimo,
+    stock_maximo = EXCLUDED.stock_maximo,
+    nivel_alerta = EXCLUDED.nivel_alerta,
+    ubicacion_almacen = EXCLUDED.ubicacion_almacen,
+    precio_unitario_mxn = EXCLUDED.precio_unitario_mxn,
+    activo = EXCLUDED.activo;
+
 -- ============================================================================
 -- FIN DE LA CARGA DE DATOS (SEED)
 -- ============================================================================

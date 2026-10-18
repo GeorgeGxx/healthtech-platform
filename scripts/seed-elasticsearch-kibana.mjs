@@ -114,6 +114,9 @@ async function main() {
           paciente: { type: 'keyword' },
           estado: { type: 'keyword' },
           aseguradora: { type: 'keyword' },
+          monto_total_mxn: { type: 'float' },
+          monto_neto_mxn: { type: 'float' },
+          descuento_cobertura_mxn: { type: 'float' },
           monto_mxn: { type: 'float' },
           copago_mxn: { type: 'float' },
           '@timestamp': { type: 'date' },
@@ -241,45 +244,103 @@ async function main() {
   });
   console.log(`  ✓ ${censusData.length} camas hospitalarias sincronizadas directamente de la base de datos PostgreSQL en ${bedsIndex}`);
 
-  // 5. Poblar Operaciones Clínicas
-  console.log('\n📊 Indexando transacciones de operaciones clínicas...');
-  const specialties = ['Cardiología', 'Pediatría', 'Cirugía General', 'Medicina Interna', 'Traumatología y Ortopedia'];
-  const doctors = ['Dr. Rafael Castelo', 'Dra. Gabriela Solís', 'Dr. Héctor Morales', 'Dra. Verónica Peña', 'Dr. Arturo Beltrán'];
-  const insurers = ['GNP Seguros', 'MetLife México', 'AXA Seguros', 'Seguros Monterrey', 'Particular'];
-  const statuses = ['atendido', 'confirmado', 'programado', 'cancelado'];
-
-  let bulkOps = '';
-  for (let i = 1; i <= 50; i++) {
-    const spec = specialties[i % specialties.length];
-    const doc = doctors[i % doctors.length];
-    const ins = insurers[i % insurers.length];
-    const st = statuses[i % statuses.length];
-    const baseMonto = 950 + (i % 5) * 450;
-    const copay = ins === 'Particular' ? baseMonto : Math.round(baseMonto * 0.15);
-    const dateOffset = (i % 7) * 86400000;
-    const eventTime = new Date(Date.now() - dateOffset).toISOString();
-
-    bulkOps += JSON.stringify({ index: { _index: opsIndex, _id: `OP-${1000 + i}` } }) + '\n';
-    bulkOps += JSON.stringify({
-      operacion_id: `OP-${1000 + i}`,
-      tipo_evento: i % 4 === 0 ? 'hospitalizacion' : 'consulta_especialidad',
-      especialidad: spec,
-      medico: doc,
-      paciente: `Paciente de Registro #${i}`,
-      estado: st,
-      aseguradora: ins,
-      monto_mxn: baseMonto,
-      copago_mxn: copay,
-      '@timestamp': eventTime,
-    }) + '\n';
+  // 5. Poblar Operaciones Clínicas y Facturación desde PostgreSQL (tablas pago y turno)
+  console.log('\n📊 Sincronizando operaciones clínicas y facturación desde PostgreSQL...');
+  let billingData = [];
+  let appointmentsData = [];
+  try {
+    const [billRes, appRes] = await Promise.all([
+      fetch('http://localhost/api/billing'),
+      fetch('http://localhost/api/appointments'),
+    ]);
+    if (billRes.ok) billingData = await billRes.json();
+    if (appRes.ok) appointmentsData = await appRes.json();
+  } catch (err) {
+    console.warn('  ⚠️ Error consultando API de facturación y turnos:', err.message);
   }
 
-  await fetch(`${ES_URL}/_bulk`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-ndjson' },
-    body: bulkOps,
-  });
-  console.log(`  ✓ 50 eventos clínicos indexados en ${opsIndex}`);
+  const helperAseguradora = (afiliado, metodoPago) => {
+    if (afiliado) {
+      if (afiliado.startsWith('OSDE')) return 'OSDE 310';
+      if (afiliado.startsWith('SM')) return 'Swiss Medical';
+      if (afiliado.startsWith('GAL')) return 'Galeno Oro';
+      if (afiliado.startsWith('PAMI')) return 'PAMI Jubilados';
+    }
+    return metodoPago === 'obra_social' ? 'Obra Social' : 'Particular/Ninguno';
+  };
+
+  let bulkOps = '';
+
+  // 5.1 Indexar Pagos Reales (Tabla pago - Facturación Total $1,507,000 MXN)
+  if (billingData && billingData.length > 0) {
+    for (const p of billingData) {
+      const gross = parseFloat(p.montoBruto || '0');
+      const discount = parseFloat(p.descuentoCobertura || '0');
+      const net = parseFloat(p.montoNeto || '0');
+      const doc = p.turno?.medico
+        ? `Dr/a. ${p.turno.medico.apellido}`
+        : p.internacion
+          ? 'Equipo UCI'
+          : 'Dr/a. Médico';
+      const spec = p.turno?.especialidad?.nombre || (p.internacion ? 'Internación Hospitalaria' : (p.concepto?.nombre || 'Consulta Médica'));
+      const pat = p.paciente ? `${p.paciente.nombre} ${p.paciente.apellido}` : 'Paciente';
+      const ins = helperAseguradora(p.paciente?.numeroAfiliado, p.metodoPago);
+
+      bulkOps += JSON.stringify({ index: { _index: opsIndex, _id: p.comprobanteFiscal || `PAGO-${p.idPago}` } }) + '\n';
+      bulkOps += JSON.stringify({
+        operacion_id: p.comprobanteFiscal || `PAGO-${p.idPago}`,
+        tipo_evento: p.idInternacion ? 'internacion' : 'facturacion',
+        especialidad: spec,
+        medico: doc,
+        paciente: pat,
+        estado: p.estado || 'completado',
+        aseguradora: ins,
+        monto_total_mxn: gross,
+        monto_mxn: gross,
+        monto_neto_mxn: net,
+        copago_mxn: net,
+        descuento_cobertura_mxn: discount,
+        '@timestamp': p.fechaPago || now,
+      }) + '\n';
+    }
+  }
+
+  // 5.2 Indexar Turnos Clínicos Reales (Tabla turno - 18 Consultas)
+  if (appointmentsData && appointmentsData.length > 0) {
+    for (const t of appointmentsData) {
+      const fee = parseFloat(t.especialidad?.precioConsultaBase || '15000');
+      const doc = t.medico ? `Dr/a. ${t.medico.apellido}` : 'Dr/a. Médico';
+      const spec = t.especialidad?.nombre || 'Consulta Médica';
+      const pat = t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}` : 'Paciente';
+      const ins = helperAseguradora(t.paciente?.numeroAfiliado, null);
+
+      bulkOps += JSON.stringify({ index: { _index: opsIndex, _id: `TURNO-${t.idTurno}` } }) + '\n';
+      bulkOps += JSON.stringify({
+        operacion_id: `TURNO-${t.idTurno}`,
+        tipo_evento: 'consulta_especialidad',
+        especialidad: spec,
+        medico: doc,
+        paciente: pat,
+        estado: t.estado,
+        aseguradora: ins,
+        monto_total_mxn: fee,
+        monto_mxn: fee,
+        monto_neto_mxn: t.estado === 'cancelado' ? 0 : fee,
+        copago_mxn: t.estado === 'cancelado' ? 0 : 5000,
+        descuento_cobertura_mxn: 0,
+        '@timestamp': t.fechaInicio || now,
+      }) + '\n';
+    }
+  }
+
+  if (bulkOps) {
+    await fetch(`${ES_URL}/_bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-ndjson' },
+      body: bulkOps,
+    });
+    console.log(`  ✓ ${billingData.length} pagos y ${appointmentsData.length} turnos reales de PostgreSQL indexados en ${opsIndex}`);
+  }
 
   await fetch(`${ES_URL}/${pharmacyIndex},${bedsIndex},${opsIndex}/_refresh`, { method: 'POST' });
 
@@ -583,7 +644,7 @@ async function main() {
       }),
       kibanaSavedObjectMeta: {
         searchSourceJSON: JSON.stringify({
-          query: { query: '', language: 'kuery' },
+          query: { query: 'estado: "completado"', language: 'kuery' },
           filter: [],
           indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index',
         }),

@@ -26,6 +26,7 @@ CREATE EXTENSION IF NOT EXISTS unaccent;
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS pago CASCADE;
 DROP TABLE IF EXISTS concepto_pago CASCADE;
+DROP TABLE IF EXISTS medicamento CASCADE;
 DROP TABLE IF EXISTS internacion CASCADE;
 DROP TABLE IF EXISTS habitacion CASCADE;
 DROP TABLE IF EXISTS historia_clinica CASCADE;
@@ -351,7 +352,29 @@ CREATE INDEX ix_pago_fecha ON pago(fecha_pago);
 CREATE INDEX ix_pago_estado ON pago(estado);
 
 -- ----------------------------------------------------------------------------
--- 9. Trazabilidad y Auditoría de Acceso a PHI (HIPAA § 164.312 y NOM-024-SSA3-2012)
+-- 9. Catálogo de Farmacia y Stock de Medicamentos
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS medicamento (
+    id_medicamento        VARCHAR(20)    PRIMARY KEY,
+    nombre_comercial      VARCHAR(120)   NOT NULL,
+    principio_activo      VARCHAR(120)   NOT NULL,
+    categoria_terapeutica VARCHAR(80)    NOT NULL,
+    presentacion          VARCHAR(120)   NOT NULL,
+    lote                  VARCHAR(40)    NOT NULL,
+    caducidad             DATE           NOT NULL,
+    stock_actual          INT            NOT NULL CHECK (stock_actual >= 0),
+    stock_minimo          INT            NOT NULL CHECK (stock_minimo >= 0),
+    stock_maximo          INT            NOT NULL CHECK (stock_maximo >= stock_minimo),
+    nivel_alerta          VARCHAR(20)    NOT NULL DEFAULT 'Normal',
+    ubicacion_almacen     VARCHAR(80)    NOT NULL,
+    precio_unitario_mxn   NUMERIC(10,2)  NOT NULL CHECK (precio_unitario_mxn >= 0.00),
+    activo                BOOLEAN        NOT NULL DEFAULT TRUE
+);
+CREATE INDEX ix_medicamento_categoria ON medicamento(categoria_terapeutica);
+CREATE INDEX ix_medicamento_alerta ON medicamento(nivel_alerta);
+
+-- ----------------------------------------------------------------------------
+-- 10. Trazabilidad y Auditoría de Acceso a PHI (HIPAA § 164.312 y NOM-024-SSA3-2012)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS registro_auditoria (
     id_auditoria   BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
