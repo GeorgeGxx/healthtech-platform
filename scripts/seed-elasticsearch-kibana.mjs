@@ -270,64 +270,48 @@ async function main() {
 
   await fetch(`${ES_URL}/${pharmacyIndex},${bedsIndex},${opsIndex}/_refresh`, { method: 'POST' });
 
-  // 6. Configurar Data Views con IDs deterministas
+  // 6. Configurar Data Views con IDs deterministas tanto en Saved Objects como en Data Views
   console.log('\n👁️ Configurando Data Views deterministas en Kibana...');
   const pharmacyDvId = 'healthtech-pharmacy-dv';
   const bedsDvId = 'healthtech-beds-dv';
   const opsDvId = 'healthtech-ops-dv';
 
-  // Borrar data views anteriores si existían
-  for (const dvId of [pharmacyDvId, bedsDvId, opsDvId]) {
-    await fetch(`${KBN_URL}/api/data_views/data_view/${dvId}`, {
-      method: 'DELETE',
+  const dataViews = [
+    {
+      id: pharmacyDvId,
+      title: 'healthtech-pharmacy-stock*',
+      name: 'Farmacia - Stock y Alertas de Medicamentos',
+      timeFieldName: '@timestamp',
+    },
+    {
+      id: bedsDvId,
+      title: 'healthtech-beds-census*',
+      name: 'Censo de Camas y Ocupación Hospitalaria',
+      timeFieldName: '@timestamp',
+    },
+    {
+      id: opsDvId,
+      title: 'healthtech-clinical-operations*',
+      name: 'Operaciones Clínicas y Consultas',
+      timeFieldName: '@timestamp',
+    },
+  ];
+
+  for (const dv of dataViews) {
+    // Registrar directamente como Saved Object de tipo index-pattern
+    await fetch(`${KBN_URL}/api/saved_objects/index-pattern/${dv.id}?overwrite=true`, {
+      method: 'POST',
       headers: KBN_HEADERS,
+      body: JSON.stringify({
+        attributes: {
+          title: dv.title,
+          name: dv.name,
+          timeFieldName: dv.timeFieldName,
+        },
+      }),
     });
+    console.log(`  ✓ Data View "${dv.name}" registrado con ID: ${dv.id}`);
   }
-
-  // Crear data view Farmacia
-  await fetch(`${KBN_URL}/api/data_views/data_view`, {
-    method: 'POST',
-    headers: KBN_HEADERS,
-    body: JSON.stringify({
-      data_view: {
-        id: pharmacyDvId,
-        title: 'healthtech-pharmacy-stock*',
-        name: 'Farmacia - Stock y Alertas de Medicamentos',
-        timeFieldName: '@timestamp',
-      },
-    }),
-  });
-  console.log(`  ✓ Data View Farmacia creado con ID: ${pharmacyDvId}`);
-
-  // Crear data view Camas
-  await fetch(`${KBN_URL}/api/data_views/data_view`, {
-    method: 'POST',
-    headers: KBN_HEADERS,
-    body: JSON.stringify({
-      data_view: {
-        id: bedsDvId,
-        title: 'healthtech-beds-census*',
-        name: 'Censo de Camas y Ocupación Hospitalaria',
-        timeFieldName: '@timestamp',
-      },
-    }),
-  });
-  console.log(`  ✓ Data View Camas creado con ID: ${bedsDvId}`);
-
-  // Crear data view Operaciones
-  await fetch(`${KBN_URL}/api/data_views/data_view`, {
-    method: 'POST',
-    headers: KBN_HEADERS,
-    body: JSON.stringify({
-      data_view: {
-        id: opsDvId,
-        title: 'healthtech-clinical-operations*',
-        name: 'Operaciones Clínicas y Consultas',
-        timeFieldName: '@timestamp',
-      },
-    }),
-  });
-  console.log(`  ✓ Data View Operaciones creado con ID: ${opsDvId}`);
 
   // 7. Crear Visualizaciones Oficiales de Kibana
   console.log('\n🎨 Creando Visualizaciones Oficiales de Kibana...');
