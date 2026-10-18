@@ -7,6 +7,7 @@ import { ConceptoPago } from '../../entities/concepto-pago.entity.js';
 import { BillingCalculatorDomainService } from '../../domain/services/billing-calculator.domain-service.js';
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
 import { MetricsService } from '../../telemetry/metrics.service.js';
+import { ElasticSyncService } from '../../telemetry/elastic-sync.service.js';
 
 @Injectable()
 export class BillingService {
@@ -18,6 +19,7 @@ export class BillingService {
     @InjectRepository(ConceptoPago)
     private readonly conceptRepo: Repository<ConceptoPago>,
     private readonly metrics: MetricsService,
+    private readonly elasticSync: ElasticSyncService,
   ) {}
 
   async findAll(): Promise<Pago[]> {
@@ -231,7 +233,14 @@ export class BillingService {
       Number(calculation.basePrice),
       patient.obraSocial?.nombre ?? 'Particular',
     );
-    return await this.findOne(saved.idPago);
+    const fullPayment = await this.findOne(saved.idPago);
+    this.elasticSync.syncPayment(
+      fullPayment,
+      `${patient.nombre} ${patient.apellido}`,
+      patient.obraSocial?.nombre ?? 'Particular',
+      fullPayment.concepto?.nombre ?? 'Atención Médica'
+    ).catch(() => {});
+    return fullPayment;
   }
 
   async getRevenueSummary(): Promise<any> {

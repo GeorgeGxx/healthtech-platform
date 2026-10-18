@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStateService } from '../../core/services/auth-state.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-appointments',
@@ -14,6 +15,7 @@ import { AuthStateService } from '../../core/services/auth-state.service';
 export class AppointmentsComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
+  private readonly toast = inject(ToastService);
   readonly auth = inject(AuthStateService);
 
   readonly appointments = signal<any[]>([]);
@@ -120,16 +122,26 @@ export class AppointmentsComponent implements OnInit {
 
   changeStatus(id: number, status: string): void {
     this.api.updateAppointmentStatus(id, status).subscribe({
-      next: () => this.loadAppointments(),
-      error: (err) => alert('Error al actualizar estatus de cita: ' + err.message),
+      next: () => {
+        this.loadAppointments();
+        this.toast.success(`Cita médica actualizada a: "${status.toUpperCase()}"`);
+      },
+      error: (err) => {
+        this.toast.error('Error al actualizar estatus de cita: ' + (err.error?.message || err.message));
+      },
     });
   }
 
   cancelMyAppointment(id: number): void {
     if (confirm('¿Desea solicitar la cancelación de esta cita médica programada?')) {
       this.api.updateAppointmentStatus(id, 'cancelado').subscribe({
-        next: () => this.loadAppointments(),
-        error: (err) => alert('No se pudo cancelar la cita: ' + err.message),
+        next: () => {
+          this.loadAppointments();
+          this.toast.info('La cita médica ha sido cancelada correctamente.');
+        },
+        error: (err) => {
+          this.toast.error('No se pudo cancelar la cita: ' + (err.error?.message || err.message));
+        },
       });
     }
   }
@@ -184,12 +196,17 @@ export class AppointmentsComponent implements OnInit {
       next: () => {
         this.closeModal();
         this.loadAppointments();
+        this.toast.success(
+          this.auth.isBasicUser()
+            ? 'Tu cita médica fue solicitada exitosamente.'
+            : 'Cita médica registrada en agenda hospitalaria.'
+        );
       },
       error: (err) => {
-        this.errorMessage.set(
-          err.error?.message ||
-            'Conflicto de horario: El médico ya tiene una consulta agendada en ese rango o consultorio ocupado.',
-        );
+        const msg = err.error?.message ||
+          'Conflicto de horario: El médico ya tiene una consulta agendada en ese rango o consultorio ocupado.';
+        this.errorMessage.set(msg);
+        this.toast.error(msg);
       },
     });
   }

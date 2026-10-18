@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-hospitalizations',
@@ -11,10 +12,27 @@ import { ApiService } from '../../core/services/api.service';
 })
 export class HospitalizationsComponent implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly toast = inject(ToastService);
 
   readonly bedCensus = signal<any[]>([]);
   readonly patients = signal<any[]>([]);
   readonly doctors = signal<any[]>([]);
+
+  // Filtros reactivos de Censo Hospitalario
+  readonly selectedFloor = signal<string>('todos');
+  readonly selectedStatus = signal<string>('todos');
+
+  readonly filteredBedCensus = computed(() => {
+    const list = this.bedCensus();
+    const floor = this.selectedFloor();
+    const status = this.selectedStatus();
+
+    return list.filter((bed) => {
+      const matchFloor = floor === 'todos' || bed.piso?.toString() === floor;
+      const matchStatus = status === 'todos' || bed.estado?.toLowerCase() === status.toLowerCase();
+      return matchFloor && matchStatus;
+    });
+  });
 
   readonly showDischargeModal = signal<boolean>(false);
   readonly showAdmitModal = signal<boolean>(false);
@@ -60,8 +78,11 @@ export class HospitalizationsComponent implements OnInit {
       next: () => {
         this.closeDischargeModal();
         this.loadCensus();
+        this.toast.success('Alta médica procesada correctamente. Cama liberada para nuevo ingreso.');
       },
-      error: (err) => alert(err.error?.message || 'Error al conceder alta'),
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Error al conceder alta médica.');
+      },
     });
   }
 
@@ -84,8 +105,11 @@ export class HospitalizationsComponent implements OnInit {
       next: () => {
         this.closeAdmitModal();
         this.loadCensus();
+        this.toast.success('Ingreso hospitalario confirmado y cama asignada.');
       },
-      error: (err) => alert(err.error?.message || 'Error al admitir paciente'),
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Error al admitir paciente.');
+      },
     });
   }
 }

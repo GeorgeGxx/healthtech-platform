@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthStateService } from '../../core/services/auth-state.service';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-medical-records',
@@ -14,6 +15,7 @@ import { AuthStateService } from '../../core/services/auth-state.service';
 export class MedicalRecordsComponent implements OnInit {
   private readonly api = inject(ApiService);
   private readonly route = inject(ActivatedRoute);
+  private readonly toast = inject(ToastService);
   readonly auth = inject(AuthStateService);
 
   readonly records = signal<any[]>([]);
@@ -142,8 +144,131 @@ export class MedicalRecordsComponent implements OnInit {
       next: () => {
         this.closeModal();
         this.loadPatientRecords();
+        this.toast.success('Nota clínica y prescripción registradas en el expediente inmutable.');
       },
-      error: (err) => alert(err.error?.message || 'Error al guardar nota médica'),
+      error: (err) => {
+        this.toast.error(err.error?.message || 'Error al guardar la nota médica en el expediente.');
+      },
     });
+  }
+
+  printPrescription(r: any): void {
+    const docName = r.medico?.nombre ? `Dr/a. ${r.medico.nombre} ${r.medico.apellido}` : (r.medico || 'Cuerpo Médico');
+    const patName = r.paciente?.nombre ? `${r.paciente.nombre} ${r.paciente.apellido}` : 'Juan Pérez García';
+    const dateStr = new Date(r.fecha_atencion || r.fechaAtencion || Date.now()).toLocaleDateString('es-MX', {
+      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+    const recetas = r.receta_medicamentos || r.recetaMedicamentos || [];
+    const cie = r.diagnostico_codigo_cie || r.diagnosticoCodigoCie || 'N/A';
+    const diag = r.diagnostico_descripcion || r.diagnosticoDescripcion || 'Consulta Médica General';
+    const sv = r.signos_vitales || r.signosVitales;
+
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <title>Receta Médica Oficial - Centro Médico Nacional</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; color: #1e293b; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 15px; margin-bottom: 20px; }
+          .logo { font-size: 22px; font-weight: 900; color: #0284c7; letter-spacing: -0.5px; }
+          .sub { font-size: 11px; color: #64748b; margin-top: 3px; }
+          .badge { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: bold; }
+          .section { margin-bottom: 18px; padding: 12px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0; }
+          .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #475569; margin-bottom: 8px; letter-spacing: 0.5px; }
+          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+          th { text-align: left; padding: 8px 10px; background: #e2e8f0; font-size: 11px; text-transform: uppercase; color: #334155; }
+          td { padding: 9px 10px; border-bottom: 1px solid #e2e8f0; }
+          .footer { margin-top: 50px; display: flex; justify-content: space-between; align-items: flex-end; padding-top: 20px; border-top: 1px dashed #cbd5e1; }
+          .signature { text-align: center; width: 250px; }
+          .sig-line { border-top: 1px solid #334155; margin-top: 40px; padding-top: 5px; font-weight: bold; font-size: 12px; }
+          @media print { body { margin: 0; } .no-print { display: none; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="logo">🏥 CENTRO MÉDICO NACIONAL</div>
+            <div class="sub">Clínica de Especialidades y Hospitalización • NOM-004-SSA3-2012</div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge">RECETA CLÍNICA ELECTRÓNICA</span>
+            <div class="sub" style="margin-top: 6px;">Folio Expediente: EXP-${r.id_historia || r.idHistoria || '101'}</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Datos de la Consulta y Paciente</div>
+          <div class="grid">
+            <div><strong>Paciente:</strong> ${patName}</div>
+            <div><strong>Fecha de Atención:</strong> ${dateStr}</div>
+            <div><strong>Médico Tratante:</strong> ${docName}</div>
+            <div><strong>Diagnóstico CIE-10:</strong> [${cie}] ${diag}</div>
+          </div>
+          ${sv ? `
+            <div style="margin-top: 10px; font-size: 12px; color: #475569; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
+              <strong>Signos Vitales:</strong> TA: ${sv.presion_arterial || '120/80'} mmHg • FC: ${sv.frecuencia_cardiaca_lpm || 75} lpm • Temp: ${sv.temperatura_c || 36.6}°C • Peso: ${sv.peso_kg || 78} kg • SpO2: ${sv.oxigeno_pct || 99}%
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="section">
+          <div class="section-title">Prescripción Farmacológica e Indicaciones de Toma</div>
+          ${recetas.length > 0 ? `
+            <table>
+              <thead>
+                <tr>
+                  <th>Fármaco / Principio Activo</th>
+                  <th>Dosis</th>
+                  <th>Frecuencia</th>
+                  <th>Duración</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${recetas.map((m: any) => `
+                  <tr>
+                    <td><strong>${m.medicamento}</strong></td>
+                    <td>${m.dosis}</td>
+                    <td>${m.frecuencia}</td>
+                    <td>${m.dias} días</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          ` : '<p style="font-size: 12px; color: #64748b; margin: 5px 0;">No se indicaron fármacos específicos en esta consulta.</p>'}
+
+          ${r.tratamiento ? `
+            <div style="margin-top: 15px; font-size: 12px;">
+              <strong>Indicaciones Generales de Cuidado:</strong>
+              <p style="margin: 4px 0; color: #334155; line-height: 1.5;">${r.tratamiento}</p>
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="footer">
+          <div style="font-size: 10px; color: #94a3b8; max-width: 320px;">
+            Documento médico legal inmutable generado por Centro Médico Nacional conforme a NOM-024-SSA3-2012 y NOM-004-SSA3-2012.
+          </div>
+          <div class="signature">
+            <div class="sig-line">
+              ${docName}<br>
+              <span style="font-size: 10px; font-weight: normal; color: #64748b;">Cédula Profesional / Matrícula Médica</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="no-print" style="margin-top: 25px; text-align: center;">
+          <button onclick="window.print()" style="padding: 10px 24px; font-size: 14px; font-weight: bold; background: #0284c7; color: white; border: none; border-radius: 8px; cursor: pointer;">
+            🖨️ Imprimir / Guardar en PDF
+          </button>
+        </div>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   }
 }

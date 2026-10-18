@@ -2,6 +2,7 @@ import { Component, signal, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { HipaaSessionModalComponent } from './core/components/hipaa-session-modal.component';
+import { ToastContainerComponent } from './core/components/toast-container.component';
 import { AuthStateService } from './core/services/auth-state.service';
 
 @Component({
@@ -11,6 +12,7 @@ import { AuthStateService } from './core/services/auth-state.service';
     RouterLinkActive,
     CommonModule,
     HipaaSessionModalComponent,
+    ToastContainerComponent,
   ],
   selector: 'app-root',
   styleUrl: './app.css',
