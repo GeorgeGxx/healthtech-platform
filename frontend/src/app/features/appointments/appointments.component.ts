@@ -153,6 +153,15 @@ export class AppointmentsComponent implements OnInit {
     this.showModal.set(true);
   }
 
+  onInicioChange(): void {
+    if (this.newApp.inicio) {
+      const start = new Date(this.newApp.inicio);
+      const end = new Date(start.getTime() + 30 * 60000);
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      this.newApp.fin = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}`;
+    }
+  }
+
   closeModal(): void {
     this.showModal.set(false);
   }
