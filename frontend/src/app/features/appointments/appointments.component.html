@@ -42,7 +42,7 @@
 
   <!-- Tarjeta Ejecutiva de Honorarios Médicos del Día para la Doctora -->
   @if (auth.isDoctor()) {
-    <div class="glass-panel p-6 rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/80 via-white to-sky-50/50 shadow-sm space-y-4">
+    <div class="glass-panel p-6 rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/80 via-white to-sky-50/50 shadow-sm space-y-5">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-indigo-100">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20">
@@ -50,22 +50,66 @@
           </div>
           <div>
             <h2 class="text-base font-bold text-slate-900">
-              Estimación de Liquidación de Honorarios Médicos del Día
+              Liquidación Proporcional de Honorarios Médicos por Jornada
             </h2>
             <p class="text-xs text-slate-500">
-              Dra. Laura Gómez • Especialidad Dermatología • Base: ${{ feePerConsultation | number }} MXN por paciente atendido
+              Dra. Laura Gómez • Especialidad Cardiología • Base: ${{ feePerConsultation | number }} MXN por paciente atendido
             </p>
           </div>
         </div>
         <span class="px-3 py-1 text-xs font-extrabold rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200 self-start sm:self-auto">
-          Cálculo en Tiempo Real
+          Cálculo Proporcional Diario
         </span>
       </div>
 
-      <!-- Métricas financieras por estado de consulta -->
-      @let fin = doctorFinancialSummary();
+      <!-- Selector Rápido de Jornada Diaria -->
+      <div class="flex flex-wrap items-center gap-2 pt-1">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Filtrar por Jornada:</span>
+        @for (day of doctorDaysList(); track day.dateKey) {
+          <button
+            type="button"
+            (click)="selectDoctorDay(day.dateKey)"
+            [class]="selectedDoctorDay() === day.dateKey
+              ? 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-500/30 cursor-pointer flex items-center gap-2'
+              : 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition cursor-pointer flex items-center gap-2'"
+          >
+            <span>📅 {{ day.formattedDate }}</span>
+            <span [class]="selectedDoctorDay() === day.dateKey ? 'px-1.5 py-0.5 rounded-md bg-indigo-700/90 text-[11px] font-mono' : 'px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] font-mono'">
+              {{ day.totalPatients }} pac. • ${{ day.confirmedPayout | number }} MXN
+            </span>
+          </button>
+        }
+        <button
+          type="button"
+          (click)="selectDoctorDay('all')"
+          [class]="selectedDoctorDay() === 'all'
+            ? 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-500/30 cursor-pointer'
+            : 'px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 transition cursor-pointer'"
+        >
+          Ver Todas las Jornadas
+        </button>
+      </div>
+
+      <!-- Métricas financieras de la jornada seleccionada -->
+      @let fin = activeDoctorDaySummary();
       <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
-        <!-- Atendidos (Confirmado) -->
+        <!-- Card 1: Total Pacientes del Mismo Día -->
+        <div class="p-4 rounded-xl bg-slate-900 text-white shadow-md shadow-slate-900/10">
+          <div class="flex items-center justify-between text-slate-400">
+            <span class="text-xs font-bold uppercase tracking-wider">Total Pacientes del Día</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+          </div>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span class="text-xl sm:text-2xl font-black text-white font-mono">
+              {{ fin.totalPatients }} pacientes
+            </span>
+          </div>
+          <p class="text-[11px] text-indigo-300 mt-1 font-medium">
+            Suma total agendada: ${{ fin.totalPotential | number }} MXN potenciales
+          </p>
+        </div>
+
+        <!-- Card 2: Asistieron (Atendidos) -->
         <div class="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 shadow-xs">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Asistieron (Atendidos)</span>
@@ -82,24 +126,7 @@
           </p>
         </div>
 
-        <!-- Pendientes (Proyectado) -->
-        <div class="p-4 rounded-xl bg-sky-50/80 border border-sky-200 shadow-xs">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-sky-800 uppercase tracking-wider">Pendientes de Asistir</span>
-            <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
-          </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span class="text-xl sm:text-2xl font-black text-sky-950 font-mono">
-              ${{ fin.projectedPayout | number }} MXN
-            </span>
-            <span class="text-xs font-bold text-sky-700">{{ fin.pendingCount }} citas</span>
-          </div>
-          <p class="text-[11px] text-sky-700/90 mt-1 font-medium">
-            ⏱ Se liquidará si asisten a consulta
-          </p>
-        </div>
-
-        <!-- Cancelados ($0) -->
+        <!-- Card 3: Cancelados ($0) -->
         <div class="p-4 rounded-xl bg-rose-50/80 border border-rose-200 shadow-xs">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-rose-800 uppercase tracking-wider">Cancelaron Cita</span>
@@ -116,29 +143,89 @@
           </p>
         </div>
 
-        <!-- Total Estimado del Día -->
-        <div class="p-4 rounded-xl bg-slate-900 text-white shadow-md shadow-slate-900/10">
-          <div class="flex items-center justify-between text-slate-400">
-            <span class="text-xs font-bold uppercase tracking-wider">Total Estimado Día</span>
-            <span class="text-xs font-mono font-bold text-indigo-300">{{ fin.totalCount }} pacientes</span>
-          </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span class="text-xl sm:text-2xl font-black text-white font-mono">
-              ${{ fin.totalPotential | number }} MXN
+        <!-- Card 4: Liquidación Proporcional del Día -->
+        <div class="p-4 rounded-xl bg-indigo-50/90 border border-indigo-200 shadow-xs">
+          <div class="flex items-center justify-between text-indigo-900">
+            <span class="text-xs font-bold uppercase tracking-wider">Liquidación Proporcional</span>
+            <span class="px-2 py-0.5 text-[10px] font-black rounded-full bg-indigo-200 text-indigo-950">
+              {{ fin.attendanceRate }}% asistido
             </span>
           </div>
-          <p class="text-[11px] text-slate-300 mt-1">
-            {{ fin.confirmedPayout > 0 ? ('$' + (fin.confirmedPayout | number) + ' ya ganado hoy') : 'Pendiente de inicio de jornada' }}
-          </p>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span class="text-xl sm:text-2xl font-black text-indigo-950 font-mono">
+              ${{ fin.confirmedPayout | number }} MXN
+            </span>
+          </div>
+          <!-- Barra de progreso proporcional -->
+          <div class="w-full h-1.5 rounded-full bg-indigo-200 overflow-hidden mt-2">
+            <div class="h-full bg-indigo-600 rounded-full transition-all duration-500" [style.width.%]="fin.attendanceRate"></div>
+          </div>
         </div>
       </div>
 
-      <!-- Nota informativa del acuerdo -->
-      <div class="p-3 bg-white/80 rounded-xl border border-indigo-100 flex items-center gap-2 text-xs text-slate-600">
-        <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span>
-          <strong>Regla de Liquidación:</strong> Al marcar a un paciente como <em>"Atendido"</em> tras la consulta, el honorario de ${{ feePerConsultation | number }} MXN pasa inmediatamente a estado confirmado. Si el paciente o recepción cancela la cita, el honorario es de $0.00 MXN.
-        </span>
+      <!-- Resumen de Liquidación Proporcional por Fecha (Tabla Resumen Diaria) -->
+      <div class="p-4 rounded-xl bg-white/95 border border-indigo-100 shadow-2xs space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Desglose de Liquidación Diaria por Fecha</span>
+          <span class="text-xs text-slate-500">Suma diaria de pacientes y honorario devengado</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-indigo-50/70 text-slate-600 font-bold border-b border-indigo-100">
+              <tr>
+                <th class="px-3.5 py-2.5">Fecha de Jornada</th>
+                <th class="px-3.5 py-2.5 text-center">Suma Total Pacientes</th>
+                <th class="px-3.5 py-2.5 text-center">Asistieron</th>
+                <th class="px-3.5 py-2.5 text-center">Cancelaron</th>
+                <th class="px-3.5 py-2.5 text-center">Asistencia Proporcional</th>
+                <th class="px-3.5 py-2.5 text-right">Liquidación a Pagar</th>
+                <th class="px-3.5 py-2.5 text-center">Acción</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-indigo-50">
+              @for (d of doctorDaysList(); track d.dateKey) {
+                <tr class="hover:bg-indigo-50/40 transition" [class.bg-indigo-50/60]="selectedDoctorDay() === d.dateKey">
+                  <td class="px-3.5 py-2.5 font-bold text-slate-900">
+                    {{ d.formattedDate }}
+                  </td>
+                  <td class="px-3.5 py-2.5 text-center font-bold text-slate-800">
+                    {{ d.totalPatients }} pacientes
+                  </td>
+                  <td class="px-3.5 py-2.5 text-center font-bold text-emerald-700">
+                    {{ d.attendedCount }}
+                  </td>
+                  <td class="px-3.5 py-2.5 text-center font-medium text-rose-600">
+                    {{ d.canceledCount }}
+                  </td>
+                  <td class="px-3.5 py-2.5 text-center font-bold text-indigo-700">
+                    {{ d.attendanceRate }}%
+                  </td>
+                  <td class="px-3.5 py-2.5 text-right font-black font-mono text-emerald-800 text-sm">
+                    ${{ d.confirmedPayout | number }} MXN
+                  </td>
+                  <td class="px-3.5 py-2.5 text-center">
+                    <button
+                      type="button"
+                      (click)="selectDoctorDay(d.dateKey)"
+                      class="px-2.5 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer"
+                      [class]="selectedDoctorDay() === d.dateKey ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'"
+                    >
+                      {{ selectedDoctorDay() === d.dateKey ? 'Viendo Citas' : 'Filtrar Día' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Nota explicativa de la liquidación proporcional -->
+      <div class="p-3.5 bg-white/80 rounded-xl border border-indigo-100 flex items-start gap-2.5 text-xs text-slate-600">
+        <svg class="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div>
+          <strong>Regla de Liquidación Proporcional:</strong> Se suman todos los pacientes programados en la misma jornada ({{ fin.totalPatients }} pacientes). El pago al médico se calcula proporcionalmente según los pacientes atendidos ({{ fin.attendedCount }} de {{ fin.totalPatients }} asistieron, devengando <strong>${{ fin.confirmedPayout | number }} MXN</strong>). Las cancelaciones no generan honorarios ($0.00 MXN).
+        </div>
       </div>
     </div>
   }
@@ -195,6 +282,36 @@
 
   <!-- Tabla de Citas Médicas -->
   <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
+    @if (auth.isDoctor()) {
+      <div class="px-5 py-3.5 bg-gradient-to-r from-indigo-50 to-slate-50 border-b border-indigo-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+          <span class="text-xs font-bold text-slate-800">
+            Jornada Seleccionada: <strong class="text-indigo-950">{{ activeDoctorDaySummary().formattedDate }}</strong>
+          </span>
+          <span class="text-xs text-slate-500 font-medium">
+            (Ordenadas cronológicamente desde la más actual)
+          </span>
+        </div>
+        <div class="flex items-center gap-3 text-xs">
+          <span class="font-bold text-slate-700">
+            Suma del Día: <strong class="text-slate-900">{{ displayedAppointments().length }} pacientes</strong>
+          </span>
+          <span class="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-black font-mono">
+            Liquidación: ${{ activeDoctorDaySummary().confirmedPayout | number }} MXN
+          </span>
+          @if (selectedDoctorDay() !== 'all') {
+            <button
+              (click)="selectDoctorDay('all')"
+              class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+            >
+              Mostrar Todos
+            </button>
+          }
+        </div>
+      </div>
+    }
+
     <div class="overflow-x-auto">
       <table class="w-full text-left text-sm text-slate-600">
         <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
@@ -215,7 +332,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-          @for (t of appointments(); track t.idTurno) {
+          @for (t of displayedAppointments(); track t.idTurno) {
             <tr class="hover:bg-slate-50/70 transition-colors">
               <td class="px-5 py-3.5 font-medium text-xs text-slate-800">
                 <span class="block font-semibold text-slate-900">

@@ -34,7 +34,8 @@ export class AppointmentsService {
       .leftJoinAndSelect('t.medico', 'm')
       .leftJoinAndSelect('t.especialidad', 'e')
       .leftJoinAndSelect('t.consultorio', 'c')
-      .orderBy('t.idTurno', 'DESC');
+      .orderBy('lower(t.horario_rango)', 'DESC')
+      .addOrderBy('t.idTurno', 'DESC');
 
     if (doctorId) {
       qb.andWhere('t.idMedico = :doctorId', { doctorId });

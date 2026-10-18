@@ -29,6 +29,7 @@ export class AppointmentsComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
 
   readonly feePerConsultation = 1200;
+  readonly selectedDoctorDay = signal<string>('2026-10-18');
 
   selectedDoctorId: number = 0;
   selectedDate: string = '';
@@ -43,37 +44,156 @@ export class AppointmentsComponent implements OnInit {
     motivoConsulta: '',
   };
 
+  private sortAppointmentsDesc(list: any[]): any[] {
+    return [...list].sort((a, b) => {
+      const timeA = new Date(a.fechaInicio || a.horarioRango || 0).getTime();
+      const timeB = new Date(b.fechaInicio || b.horarioRango || 0).getTime();
+      return timeB - timeA;
+    });
+  }
+
+  selectDoctorDay(day: string): void {
+    this.selectedDoctorDay.set(day);
+  }
+
+  formatDateLabel(dateKey: string): string {
+    if (!dateKey || dateKey === 'Sin fecha') return 'Sin fecha';
+    const parts = dateKey.split('-');
+    if (parts.length < 3) return dateKey;
+    const year = Number(parts[0]);
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    const months = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    const monthName = months[(month || 1) - 1];
+    if (dateKey === '2026-10-18') {
+      return `${day} de ${monthName}, ${year} (Jornada Hoy)`;
+    } else if (dateKey === '2026-10-17') {
+      return `${day} de ${monthName}, ${year} (Ayer)`;
+    }
+    return `${day} de ${monthName}, ${year}`;
+  }
+
   readonly doctorAppointments = computed(() => {
     const list = this.appointments();
     if (this.auth.isDoctor()) {
       const docId = this.auth.currentUser().doctorId || 2;
-      return list.filter((a) => (a.idMedico || a.medico?.idMedico) === docId);
+      return this.sortAppointmentsDesc(list.filter((a) => (a.idMedico || a.medico?.idMedico) === docId));
     }
-    return list;
+    return this.sortAppointmentsDesc(list);
   });
 
-  readonly doctorFinancialSummary = computed(() => {
+  readonly doctorDaysList = computed(() => {
     const apps = this.doctorAppointments();
-    const attended = apps.filter((a) => a.estado === 'atendido');
-    const pending = apps.filter((a) => a.estado === 'pendiente' || a.estado === 'confirmado');
-    const canceled = apps.filter((a) => a.estado === 'cancelado');
+    const map = new Map<string, any>();
 
-    const confirmedPayout = attended.length * this.feePerConsultation;
-    const projectedPayout = pending.length * this.feePerConsultation;
-    const totalPotential = (attended.length + pending.length) * this.feePerConsultation;
-    const forfeitedByCancellation = canceled.length * this.feePerConsultation;
+    for (const app of apps) {
+      const dateKey = app.fechaInicio ? app.fechaInicio.split('T')[0] : 'Sin fecha';
+      if (!map.has(dateKey)) {
+        map.set(dateKey, {
+          dateKey,
+          formattedDate: this.formatDateLabel(dateKey),
+          totalPatients: 0,
+          attendedCount: 0,
+          canceledCount: 0,
+          pendingCount: 0,
+          confirmedPayout: 0,
+          projectedPayout: 0,
+          totalPotential: 0,
+          attendanceRate: 0,
+          apps: [],
+        });
+      }
+      const day = map.get(dateKey);
+      day.totalPatients++;
+      day.apps.push(app);
+      if (app.estado === 'atendido') {
+        day.attendedCount++;
+      } else if (app.estado === 'cancelado') {
+        day.canceledCount++;
+      } else {
+        day.pendingCount++;
+      }
+    }
+
+    const list = Array.from(map.values()).map((d) => {
+      d.confirmedPayout = d.attendedCount * this.feePerConsultation;
+      d.projectedPayout = (d.attendedCount + d.pendingCount) * this.feePerConsultation;
+      d.totalPotential = d.totalPatients * this.feePerConsultation;
+      d.attendanceRate = d.totalPatients > 0 ? Math.round((d.attendedCount / d.totalPatients) * 100) : 0;
+      return d;
+    });
+
+    return list.sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+  });
+
+  readonly activeDoctorDaySummary = computed(() => {
+    const selected = this.selectedDoctorDay();
+    const days = this.doctorDaysList();
+
+    if (selected !== 'all') {
+      const day = days.find((d) => d.dateKey === selected);
+      if (day) {
+        return {
+          isSingleDay: true,
+          dateKey: day.dateKey,
+          formattedDate: day.formattedDate,
+          feePerConsultation: this.feePerConsultation,
+          totalPatients: day.totalPatients,
+          attendedCount: day.attendedCount,
+          canceledCount: day.canceledCount,
+          pendingCount: day.pendingCount,
+          confirmedPayout: day.confirmedPayout,
+          projectedPayout: day.projectedPayout,
+          totalPotential: day.totalPotential,
+          attendanceRate: day.attendanceRate,
+          forfeitedByCancellation: day.canceledCount * this.feePerConsultation,
+        };
+      }
+    }
+
+    // Todas las jornadas sumadas
+    const totalPatients = days.reduce((sum, d) => sum + d.totalPatients, 0);
+    const attendedCount = days.reduce((sum, d) => sum + d.attendedCount, 0);
+    const canceledCount = days.reduce((sum, d) => sum + d.canceledCount, 0);
+    const pendingCount = days.reduce((sum, d) => sum + d.pendingCount, 0);
+    const confirmedPayout = attendedCount * this.feePerConsultation;
+    const projectedPayout = (attendedCount + pendingCount) * this.feePerConsultation;
+    const totalPotential = totalPatients * this.feePerConsultation;
+    const attendanceRate = totalPatients > 0 ? Math.round((attendedCount / totalPatients) * 100) : 0;
 
     return {
+      isSingleDay: false,
+      dateKey: 'all',
+      formattedDate: 'Todas las Jornadas Médicas',
       feePerConsultation: this.feePerConsultation,
-      totalCount: apps.length,
-      attendedCount: attended.length,
-      pendingCount: pending.length,
-      canceledCount: canceled.length,
+      totalPatients,
+      attendedCount,
+      canceledCount,
+      pendingCount,
       confirmedPayout,
       projectedPayout,
       totalPotential,
-      forfeitedByCancellation,
+      attendanceRate,
+      forfeitedByCancellation: canceledCount * this.feePerConsultation,
     };
+  });
+
+  readonly doctorFinancialSummary = computed(() => this.activeDoctorDaySummary());
+
+  readonly displayedAppointments = computed(() => {
+    let list = this.appointments();
+    if (this.auth.isDoctor()) {
+      const docId = this.auth.currentUser().doctorId || 2;
+      list = list.filter((a) => (a.idMedico || a.medico?.idMedico) === docId);
+      const day = this.selectedDoctorDay();
+      if (day !== 'all') {
+        list = list.filter((a) => a.fechaInicio && a.fechaInicio.startsWith(day));
+      }
+    }
+    return this.sortAppointmentsDesc(list);
   });
 
   constructor() {
@@ -118,8 +238,9 @@ export class AppointmentsComponent implements OnInit {
   loadAppointments(): void {
     const docId = this.selectedDoctorId > 0 ? this.selectedDoctorId : undefined;
     const date = this.selectedDate || undefined;
-    const page = this.auth.isBasicUser() ? undefined : this.currentPage();
-    const limit = this.auth.isBasicUser() ? undefined : this.pageSize();
+    const isPagingDisabled = this.auth.isBasicUser() || this.auth.isDoctor();
+    const page = isPagingDisabled ? undefined : this.currentPage();
+    const limit = isPagingDisabled ? undefined : this.pageSize();
 
     this.api.getAppointments(docId, date, page, limit).subscribe({
       next: (res) => {
@@ -133,16 +254,25 @@ export class AppointmentsComponent implements OnInit {
             const pDni = item.paciente?.dni;
             return pId === targetId || pDni === targetDni;
           });
-          this.appointments.set(filtered);
-          this.totalItems.set(filtered.length);
+          const sorted = this.sortAppointmentsDesc(filtered);
+          this.appointments.set(sorted);
+          this.totalItems.set(sorted.length);
+          this.totalPages.set(1);
+        } else if (this.auth.isDoctor()) {
+          const raw = Array.isArray(res) ? res : (res.data || []);
+          const sorted = this.sortAppointmentsDesc(raw);
+          this.appointments.set(sorted);
+          this.totalItems.set(sorted.length);
           this.totalPages.set(1);
         } else {
           if (Array.isArray(res)) {
-            this.appointments.set(res);
-            this.totalItems.set(res.length);
-            this.totalPages.set(Math.max(1, Math.ceil(res.length / this.pageSize())));
+            const sorted = this.sortAppointmentsDesc(res);
+            this.appointments.set(sorted);
+            this.totalItems.set(sorted.length);
+            this.totalPages.set(Math.max(1, Math.ceil(sorted.length / this.pageSize())));
           } else {
-            this.appointments.set(res.data || []);
+            const sorted = this.sortAppointmentsDesc(res.data || []);
+            this.appointments.set(sorted);
             this.totalItems.set(res.total || 0);
             this.totalPages.set(res.totalPages || 1);
             this.currentPage.set(res.page || 1);
