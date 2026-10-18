@@ -360,7 +360,8 @@ async function main() {
         monto_neto_mxn: net,
         copago_mxn: net,
         descuento_cobertura_mxn: discount,
-        '@timestamp': p.fechaPago || now,
+        fecha_pago: p.fechaPago,
+        '@timestamp': now,
       }) + '\n';
     }
 
@@ -506,7 +507,7 @@ async function main() {
   const dataViews = [
     { id: pharmacyDvId, title: 'healthtech-pharmacy-stock*', name: 'Farmacia - Stock y Alertas de Medicamentos' },
     { id: bedsDvId, title: 'healthtech-beds-census*', name: 'Censo de Camas y Ocupación Hospitalaria' },
-    { id: opsDvId, title: 'healthtech-clinical-operations*', name: 'Operaciones Clínicas y Consultas', timeFieldName: '@timestamp' },
+    { id: opsDvId, title: 'healthtech-clinical-operations*', name: 'Operaciones Clínicas y Consultas' },
     { id: auditDvId, title: 'healthtech-security-audit*', name: 'Seguridad y Auditoría HIPAA (NOM-024)', timeFieldName: '@timestamp' },
     { id: telemetryDvId, title: 'healthtech-telemetry-metrics*', name: 'Salud de Plataforma SRE y APM', timeFieldName: '@timestamp' },
   ];
@@ -647,7 +648,7 @@ async function main() {
         params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Recaudación total según tabla pago de PostgreSQL', fontSize: 44 } } },
         aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'monto_total_mxn', customLabel: '💵 Recaudación Total (MXN)' } }],
       }),
-      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estado: "completado"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
+      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
     references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: opsDvId }],
   };
@@ -666,7 +667,7 @@ async function main() {
           { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'aseguradora', size: 10, order: 'desc', orderBy: '1', customLabel: 'Aseguradora / Obra Social' } },
         ],
       }),
-      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estado: "completado"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
+      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
     references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: opsDvId }],
   };
@@ -1145,7 +1146,7 @@ async function main() {
         { name: 'ref_controls', type: 'visualization', id: 'vis-controls-filter' },
         { name: 'ref_beds_free', type: 'visualization', id: 'vis-metric-beds-free' },
         { name: 'ref_beds_occ', type: 'visualization', id: 'vis-metric-beds-occupied' },
-        { name: 'ref_pharm-crit', type: 'visualization', id: 'vis-metric-pharm-critical' },
+        { name: 'ref_pharm_crit', type: 'visualization', id: 'vis-metric-pharm-critical' },
         { name: 'ref_pharm_stock', type: 'visualization', id: 'vis-metric-pharm-stock-sum' },
         { name: 'ref_revenue', type: 'visualization', id: 'vis-metric-revenue' },
         { name: 'ref_bar_stock', type: 'visualization', id: 'vis-bar-stock-compare' },
