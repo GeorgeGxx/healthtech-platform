@@ -40,6 +40,109 @@
     </div>
   </div>
 
+  <!-- Tarjeta Ejecutiva de Honorarios Médicos del Día para la Doctora -->
+  @if (auth.isDoctor()) {
+    <div class="glass-panel p-6 rounded-2xl border border-indigo-200/80 bg-gradient-to-br from-indigo-50/80 via-white to-sky-50/50 shadow-sm space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-indigo-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-indigo-500/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">
+              Estimación de Liquidación de Honorarios Médicos del Día
+            </h2>
+            <p class="text-xs text-slate-500">
+              Dra. Laura Gómez • Especialidad Dermatología • Base: ${{ feePerConsultation | number }} MXN por paciente atendido
+            </p>
+          </div>
+        </div>
+        <span class="px-3 py-1 text-xs font-extrabold rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200 self-start sm:self-auto">
+          Cálculo en Tiempo Real
+        </span>
+      </div>
+
+      <!-- Métricas financieras por estado de consulta -->
+      @let fin = doctorFinancialSummary();
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+        <!-- Atendidos (Confirmado) -->
+        <div class="p-4 rounded-xl bg-emerald-50/80 border border-emerald-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Asistieron (Atendidos)</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          </div>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span class="text-xl sm:text-2xl font-black text-emerald-950 font-mono">
+              ${{ fin.confirmedPayout | number }} MXN
+            </span>
+            <span class="text-xs font-bold text-emerald-700">{{ fin.attendedCount }} consultas</span>
+          </div>
+          <p class="text-[11px] text-emerald-700/90 mt-1 font-medium">
+            ✓ Pago confirmado por el centro médico
+          </p>
+        </div>
+
+        <!-- Pendientes (Proyectado) -->
+        <div class="p-4 rounded-xl bg-sky-50/80 border border-sky-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-sky-800 uppercase tracking-wider">Pendientes de Asistir</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+          </div>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span class="text-xl sm:text-2xl font-black text-sky-950 font-mono">
+              ${{ fin.projectedPayout | number }} MXN
+            </span>
+            <span class="text-xs font-bold text-sky-700">{{ fin.pendingCount }} citas</span>
+          </div>
+          <p class="text-[11px] text-sky-700/90 mt-1 font-medium">
+            ⏱ Se liquidará si asisten a consulta
+          </p>
+        </div>
+
+        <!-- Cancelados ($0) -->
+        <div class="p-4 rounded-xl bg-rose-50/80 border border-rose-200 shadow-xs">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-rose-800 uppercase tracking-wider">Cancelaron Cita</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          </div>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span class="text-xl sm:text-2xl font-black text-rose-950 font-mono">
+              $0 MXN
+            </span>
+            <span class="text-xs font-bold text-rose-700">{{ fin.canceledCount }} canceladas</span>
+          </div>
+          <p class="text-[11px] text-rose-700/90 mt-1 font-medium">
+            ✕ Sin devengo (Citas canceladas no se pagan)
+          </p>
+        </div>
+
+        <!-- Total Estimado del Día -->
+        <div class="p-4 rounded-xl bg-slate-900 text-white shadow-md shadow-slate-900/10">
+          <div class="flex items-center justify-between text-slate-400">
+            <span class="text-xs font-bold uppercase tracking-wider">Total Estimado Día</span>
+            <span class="text-xs font-mono font-bold text-indigo-300">{{ fin.totalCount }} pacientes</span>
+          </div>
+          <div class="mt-2 flex items-baseline justify-between">
+            <span class="text-xl sm:text-2xl font-black text-white font-mono">
+              ${{ fin.totalPotential | number }} MXN
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-300 mt-1">
+            {{ fin.confirmedPayout > 0 ? ('$' + (fin.confirmedPayout | number) + ' ya ganado hoy') : 'Pendiente de inicio de jornada' }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Nota informativa del acuerdo -->
+      <div class="p-3 bg-white/80 rounded-xl border border-indigo-100 flex items-center gap-2 text-xs text-slate-600">
+        <svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>
+          <strong>Regla de Liquidación:</strong> Al marcar a un paciente como <em>"Atendido"</em> tras la consulta, el honorario de ${{ feePerConsultation | number }} MXN pasa inmediatamente a estado confirmado. Si el paciente o recepción cancela la cita, el honorario es de $0.00 MXN.
+        </span>
+      </div>
+    </div>
+  }
+
   <!-- Nota de flujo clínico para Recepción: enfermeras rotativas/comodín -->
   @if (auth.isAdmin()) {
     <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3 text-xs text-blue-900">
@@ -97,7 +200,7 @@
         <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
           <tr>
             <th class="px-5 py-3.5">Fecha y Horario</th>
-            @if (auth.isAdmin()) {
+            @if (!auth.isBasicUser()) {
               <th class="px-5 py-3.5">Paciente</th>
             }
             <th class="px-5 py-3.5">Médico Tratante</th>
@@ -105,6 +208,9 @@
             <th class="px-5 py-3.5">Consultorio</th>
             <th class="px-5 py-3.5">Motivo de Consulta</th>
             <th class="px-5 py-3.5">Estado</th>
+            @if (auth.isDoctor()) {
+              <th class="px-5 py-3.5 text-right">Honorario Estimado</th>
+            }
             <th class="px-5 py-3.5 text-right">Acciones</th>
           </tr>
         </thead>
@@ -120,7 +226,7 @@
                 </span>
               </td>
 
-              @if (auth.isAdmin()) {
+              @if (!auth.isBasicUser()) {
                 <td class="px-5 py-3.5 font-semibold text-slate-900">
                   {{ t.paciente?.nombre || t.paciente }} {{ t.paciente?.apellido }}
                   <span class="block text-xs font-normal text-slate-500">DNI: {{ t.paciente?.dni || 'N/A' }}</span>
@@ -158,29 +264,54 @@
                 </span>
               </td>
 
-              <td class="px-5 py-3.5 text-right space-x-1">
-                @if (auth.isAdmin()) {
+              @if (auth.isDoctor()) {
+                <td class="px-5 py-3.5 text-right font-mono text-xs whitespace-nowrap">
+                  @if (t.estado === 'atendido') {
+                    <span class="inline-flex items-center gap-1.5 font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded-lg border border-emerald-300">
+                      <span>+${{ feePerConsultation | number }}</span>
+                      <span class="text-[9px] uppercase px-1 rounded bg-emerald-200 text-emerald-900 font-extrabold">Devengado</span>
+                    </span>
+                  } @else if (t.estado === 'cancelado') {
+                    <span class="inline-flex items-center gap-1.5 font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                      <span class="line-through">$0 MXN</span>
+                      <span class="text-[9px] uppercase px-1 rounded bg-rose-100 text-rose-700 font-extrabold">Cancelado</span>
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1.5 font-semibold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200">
+                      <span>${{ feePerConsultation | number }}</span>
+                      <span class="text-[9px] uppercase px-1 rounded bg-sky-200 text-sky-900 font-extrabold">Si asiste</span>
+                    </span>
+                  }
+                </td>
+              }
+
+              <td class="px-5 py-3.5 text-right space-x-1 whitespace-nowrap">
+                @if (auth.isAdmin() || auth.isDoctor()) {
                   @if (t.estado !== 'atendido' && t.estado !== 'cancelado') {
                     <button
                       (click)="changeStatus(t.idTurno, 'atendido')"
-                      class="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition"
-                      title="Marcar como Atendido en Consulta"
+                      class="px-2.5 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition cursor-pointer"
+                      title="Marcar como Atendido en Consulta (Devenga Honorario)"
                     >
-                      Atendido
+                      Asistió (Atender)
                     </button>
                     <button
                       (click)="changeStatus(t.idTurno, 'cancelado')"
-                      class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
-                      title="Cancelar Cita"
+                      class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
+                      title="Marcar como Cancelada (No devenga honorario)"
                     >
                       Cancelar
                     </button>
+                  } @else {
+                    <span class="text-xs font-medium text-slate-400">
+                      {{ t.estado === 'atendido' ? '✓ Honorario liquidado' : '✕ Sin pago' }}
+                    </span>
                   }
                 } @else {
                   @if (t.estado === 'pendiente') {
                     <button
                       (click)="cancelMyAppointment(t.idTurno)"
-                      class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition"
+                      class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
                       title="Cancelar mi cita"
                     >
                       Cancelar cita
@@ -193,7 +324,7 @@
             </tr>
           } @empty {
             <tr>
-              <td [attr.colspan]="auth.isAdmin() ? 8 : 7" class="px-5 py-10 text-center text-slate-500">
+              <td [attr.colspan]="auth.isDoctor() ? 9 : (!auth.isBasicUser() ? 8 : 7)" class="px-5 py-10 text-center text-slate-500">
                 <div class="max-w-sm mx-auto space-y-1">
                   <p class="font-medium text-slate-700">No hay citas médicas para mostrar</p>
                   <p class="text-xs text-slate-400">

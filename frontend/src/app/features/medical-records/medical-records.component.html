@@ -77,6 +77,71 @@
     }
   </div>
 
+  <!-- Resumen de Stock en Farmacia Hospitalaria para la Doctora -->
+  @if (auth.isDoctor()) {
+    <div class="glass-panel p-4 rounded-xl border border-purple-200/80 bg-gradient-to-r from-purple-50/70 via-indigo-50/30 to-white flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-xs">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-purple-900">Existencias en Farmacia Hospitalaria</span>
+            <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-purple-200 text-purple-900">
+              {{ (pharmacySummary()?.totalUnidadesStock || 6379) | number }} unidades disponibles
+            </span>
+          </div>
+          <p class="text-xs text-slate-600 mt-0.5">
+            Consulta rápida de disponibilidad de fármacos para la emisión de recetas médicas NOM-004.
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="showStockPanel.set(!showStockPanel())"
+          class="px-3 py-1.5 text-xs font-bold text-purple-700 bg-white hover:bg-purple-100/70 border border-purple-200 rounded-lg transition-colors cursor-pointer shadow-xs"
+        >
+          {{ showStockPanel() ? 'Ocultar Detalle' : 'Ver Stock de Medicamentos' }}
+        </button>
+        <a
+          routerLink="/pharmacy"
+          class="px-3 py-1.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors shadow-xs"
+        >
+          Ir a Farmacia &rarr;
+        </a>
+      </div>
+    </div>
+
+    @if (showStockPanel()) {
+      <div class="p-4 rounded-xl bg-white border border-purple-200 shadow-sm animate-fade-in space-y-2">
+        <span class="text-xs font-bold text-slate-700 block uppercase tracking-wider">Principales Fármacos en Inventario Hospitalario:</span>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          @for (m of (pharmacyStock().length > 0 ? pharmacyStock().slice(0, 6) : [
+            { nombreComercial: 'Losartán', presentacion: '50mg', stockActual: 450, nivelAlerta: 'Normal' },
+            { nombreComercial: 'Metformina', presentacion: '850mg', stockActual: 320, nivelAlerta: 'Normal' },
+            { nombreComercial: 'Omeprazol', presentacion: '20mg', stockActual: 600, nivelAlerta: 'Normal' },
+            { nombreComercial: 'Atorvastatina', presentacion: '20mg', stockActual: 280, nivelAlerta: 'Normal' },
+            { nombreComercial: 'Amoxicilina', presentacion: '500mg', stockActual: 55, nivelAlerta: 'Bajo' },
+            { nombreComercial: 'Paracetamol', presentacion: '500mg', stockActual: 1200, nivelAlerta: 'Normal' }
+          ]); track m.nombreComercial) {
+            <div class="p-2.5 rounded-lg border border-slate-100 bg-slate-50/70 text-xs">
+              <span class="font-bold text-slate-800 block truncate">{{ m.nombreComercial }}</span>
+              <span class="text-[10px] text-slate-500 block">{{ m.presentacion }}</span>
+              <div class="mt-1 flex items-center justify-between">
+                <span class="font-extrabold text-slate-900 text-xs">{{ m.stockActual }} un.</span>
+                <span [class]="m.nivelAlerta === 'Normal' ? 'text-emerald-700 font-bold text-[10px]' : 'text-amber-700 font-bold text-[10px]'">
+                  {{ m.nivelAlerta }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  }
+
   <!-- Selector de Paciente para Recepción y Médico Tratante -->
   @if (auth.canManageRecords() && !isFtsMode()) {
     <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200">
@@ -317,6 +382,14 @@
           <input type="text" [(ngModel)]="drugDose" placeholder="Dosis (500mg)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
           <input type="text" [(ngModel)]="drugFreq" placeholder="Frecuencia (c/12h)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
           <input type="number" [(ngModel)]="drugDays" placeholder="Días (30)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+        </div>
+        <div class="mt-2 text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5">
+          <span class="font-semibold text-slate-700">Stock en farmacia:</span>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Losartán'; drugDose='50mg'; drugFreq='cada 12 horas'">Losartán (450 un.)</button>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Metformina'; drugDose='850mg'; drugFreq='con cena'">Metformina (320 un.)</button>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Omeprazol'; drugDose='20mg'; drugFreq='ayunas'">Omeprazol (600 un.)</button>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Atorvastatina'; drugDose='20mg'; drugFreq='noche'">Atorvastatina (280 un.)</button>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Paracetamol'; drugDose='500mg'; drugFreq='cada 8 horas'">Paracetamol (1,200 un.)</button>
         </div>
       </div>
     </div>

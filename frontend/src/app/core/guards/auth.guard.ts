@@ -44,3 +44,18 @@ export const adminGuard: CanActivateFn = () => {
 
   return router.createUrlTree(['/dashboard']);
 };
+
+/**
+ * Protege rutas clínicas y operativas accesibles tanto por Recepción como por Médicos Tratantes
+ */
+export const clinicalStaffGuard: CanActivateFn = () => {
+  const auth = inject(AuthStateService);
+  const router = inject(Router);
+
+  if (auth.isAdmin() || auth.isDoctor()) {
+    return true;
+  }
+
+  return router.createUrlTree(['/dashboard']);
+};
+

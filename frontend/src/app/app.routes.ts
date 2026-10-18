@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, adminGuard, rootRedirectGuard } from './core/guards/auth.guard';
+import { authGuard, adminGuard, clinicalStaffGuard, rootRedirectGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -62,7 +62,7 @@ export const routes: Routes = [
   },
   {
     path: 'hospitalizations',
-    canActivate: [adminGuard],
+    canActivate: [clinicalStaffGuard],
     loadComponent: () =>
       import('./features/hospitalizations/hospitalizations.component').then(
         (m) => m.HospitalizationsComponent,
@@ -83,7 +83,7 @@ export const routes: Routes = [
   },
   {
     path: 'pharmacy',
-    canActivate: [adminGuard],
+    canActivate: [clinicalStaffGuard],
     loadComponent: () =>
       import('./features/pharmacy/pharmacy.component').then(
         (m) => m.PharmacyComponent,

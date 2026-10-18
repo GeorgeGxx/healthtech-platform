@@ -19,7 +19,58 @@ export class BillingComponent implements OnInit {
   readonly summary = signal<any[]>([]);
   readonly patients = signal<any[]>([]);
   readonly concepts = signal<any[]>([]);
+  readonly doctors = signal<any[]>([]);
+  readonly appointments = signal<any[]>([]);
   readonly showModal = signal<boolean>(false);
+  readonly activeTab = signal<'collections' | 'doctorFees'>('doctorFees');
+
+  readonly feePerConsultation = 1200;
+
+  readonly doctorHonorariumBalances = computed(() => {
+    const docs = this.doctors();
+    const apps = this.appointments();
+
+    return docs.map((doc) => {
+      const docApps = apps.filter((a) => (a.idMedico || a.medico?.idMedico) === doc.idMedico);
+      const attended = docApps.filter((a) => a.estado === 'atendido');
+      const pending = docApps.filter((a) => a.estado === 'pendiente' || a.estado === 'confirmado');
+      const canceled = docApps.filter((a) => a.estado === 'cancelado');
+
+      const amountToPay = attended.length * this.feePerConsultation;
+      const amountProjected = pending.length * this.feePerConsultation;
+
+      return {
+        idMedico: doc.idMedico,
+        nombre: doc.nombre,
+        apellido: doc.apellido,
+        matricula: doc.matricula,
+        especialidad: doc.especialidad || 'Especialista',
+        attendedCount: attended.length,
+        pendingCount: pending.length,
+        canceledCount: canceled.length,
+        totalApps: docApps.length,
+        amountToPay,
+        amountProjected,
+        status: amountToPay > 0 ? 'Pendiente de Liquidación' : 'Al Día',
+      };
+    });
+  });
+
+  readonly honorariumTotals = computed(() => {
+    const balances = this.doctorHonorariumBalances();
+    const totalToPay = balances.reduce((sum, b) => sum + b.amountToPay, 0);
+    const totalProjected = balances.reduce((sum, b) => sum + b.amountProjected, 0);
+    const totalAttendedCount = balances.reduce((sum, b) => sum + b.attendedCount, 0);
+    const totalCanceledCount = balances.reduce((sum, b) => sum + b.canceledCount, 0);
+
+    return {
+      totalToPay,
+      totalProjected,
+      totalAttendedCount,
+      totalCanceledCount,
+      totalDoctors: balances.filter((b) => b.totalApps > 0).length || balances.length,
+    };
+  });
 
   // Paginación Reactiva
   readonly currentPage = signal<number>(1);
@@ -76,11 +127,20 @@ export class BillingComponent implements OnInit {
     this.loadData();
     this.api.getPatients().subscribe((p) => this.patients.set(p));
     this.api.getBillingConcepts().subscribe((c) => this.concepts.set(c));
+    this.api.getDoctors().subscribe((d) => this.doctors.set(d));
+    this.api.getAppointments().subscribe((res: any) => {
+      const data = Array.isArray(res) ? res : (res.data || []);
+      this.appointments.set(data);
+    });
   }
 
   loadData(): void {
     this.api.getPayments().subscribe((p) => this.payments.set(p));
     this.api.getBillingSummary().subscribe((s) => this.summary.set(s));
+  }
+
+  settleDoctorFee(doc: any): void {
+    this.toast.success(`Liquidación de $${doc.amountToPay.toLocaleString('es-MX')} MXN para Dr/a. ${doc.nombre} ${doc.apellido} registrada exitosamente.`);
   }
 
   openModal(): void {

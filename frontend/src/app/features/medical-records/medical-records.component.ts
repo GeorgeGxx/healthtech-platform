@@ -1,8 +1,8 @@
 import { Component, OnInit, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { ApiService } from '../../core/services/api.service';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ApiService, Medicamento, PharmacySummary } from '../../core/services/api.service';
 import { AuthStateService } from '../../core/services/auth-state.service';
 import { ToastService } from '../../core/services/toast.service';
 import { ClinicalModalComponent } from '../../shared/components/clinical-modal/clinical-modal.component';
@@ -10,7 +10,7 @@ import { ClinicalModalComponent } from '../../shared/components/clinical-modal/c
 @Component({
   selector: 'app-medical-records',
   standalone: true,
-  imports: [CommonModule, FormsModule, ClinicalModalComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ClinicalModalComponent],
   templateUrl: './medical-records.component.html',
 })
 export class MedicalRecordsComponent implements OnInit {
@@ -22,9 +22,12 @@ export class MedicalRecordsComponent implements OnInit {
   readonly records = signal<any[]>([]);
   readonly patients = signal<any[]>([]);
   readonly doctors = signal<any[]>([]);
+  readonly pharmacySummary = signal<PharmacySummary | null>(null);
+  readonly pharmacyStock = signal<Medicamento[]>([]);
   readonly isFtsMode = signal<boolean>(false);
   readonly showModal = signal<boolean>(false);
   readonly filterOnlyMyPatients = signal<boolean>(true);
+  readonly showStockPanel = signal<boolean>(false);
 
   editingRecordId: number | null = null;
   selectedPatientId: number = 1;
@@ -86,6 +89,8 @@ export class MedicalRecordsComponent implements OnInit {
 
     if (this.auth.canManageRecords()) {
       this.api.getPatients().subscribe((p) => this.patients.set(p));
+      this.api.getPharmacySummary().subscribe((s) => this.pharmacySummary.set(s));
+      this.api.getMedicamentos().subscribe((m) => this.pharmacyStock.set(m));
     }
     this.api.getDoctors().subscribe((d) => this.doctors.set(d));
   }

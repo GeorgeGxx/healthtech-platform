@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -28,6 +28,8 @@ export class AppointmentsComponent implements OnInit {
   readonly showModal = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
 
+  readonly feePerConsultation = 1200;
+
   selectedDoctorId: number = 0;
   selectedDate: string = '';
 
@@ -41,10 +43,46 @@ export class AppointmentsComponent implements OnInit {
     motivoConsulta: '',
   };
 
+  readonly doctorAppointments = computed(() => {
+    const list = this.appointments();
+    if (this.auth.isDoctor()) {
+      const docId = this.auth.currentUser().doctorId || 2;
+      return list.filter((a) => (a.idMedico || a.medico?.idMedico) === docId);
+    }
+    return list;
+  });
+
+  readonly doctorFinancialSummary = computed(() => {
+    const apps = this.doctorAppointments();
+    const attended = apps.filter((a) => a.estado === 'atendido');
+    const pending = apps.filter((a) => a.estado === 'pendiente' || a.estado === 'confirmado');
+    const canceled = apps.filter((a) => a.estado === 'cancelado');
+
+    const confirmedPayout = attended.length * this.feePerConsultation;
+    const projectedPayout = pending.length * this.feePerConsultation;
+    const totalPotential = (attended.length + pending.length) * this.feePerConsultation;
+    const forfeitedByCancellation = canceled.length * this.feePerConsultation;
+
+    return {
+      feePerConsultation: this.feePerConsultation,
+      totalCount: apps.length,
+      attendedCount: attended.length,
+      pendingCount: pending.length,
+      canceledCount: canceled.length,
+      confirmedPayout,
+      projectedPayout,
+      totalPotential,
+      forfeitedByCancellation,
+    };
+  });
+
   constructor() {
     effect(() => {
-      // Reacciona automáticamente si se conmuta entre Recepción y Paciente Juan Pérez
+      // Reacciona automáticamente si se conmuta entre Recepción, Médico o Paciente
       const user = this.auth.currentUser();
+      if (this.auth.isDoctor() && user.doctorId) {
+        this.selectedDoctorId = user.doctorId;
+      }
       this.loadAppointments();
     });
   }

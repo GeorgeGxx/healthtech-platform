@@ -152,7 +152,7 @@
         } @else if (auth.isDoctor()) {
           <!-- Vistas para Médico Tratante Especialista (Dra. Laura Gómez) -->
           <div class="px-3 py-2 text-xs font-bold text-indigo-900 bg-indigo-50/90 rounded-xl mb-3 border border-indigo-200/80 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
+            <svg class="w-3.5 h-3.5 text-indigo-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.789l1.599.799L9 4.323V3a1 1 0 011-1z" clip-rule="evenodd"/></svg>
             <span>Área Médica • Dra. Laura Gómez</span>
           </div>
 
@@ -178,6 +178,23 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
             </div>
             <span>Mis Pacientes & Consultas</span>
+          </a>
+
+          <a
+            routerLink="/pharmacy"
+            routerLinkActive="bg-indigo-50 text-indigo-700 font-bold border border-indigo-200/80 shadow-xs"
+            (click)="closeMobileMenu()"
+            class="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100/90 hover:text-slate-900 transition-all group"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+              </div>
+              <span>Stock de Medicamentos</span>
+            </div>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-100 text-purple-800">
+              6,379 un.
+            </span>
           </a>
 
           <a
