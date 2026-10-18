@@ -212,14 +212,15 @@
   </div>
 </div>
 
-<!-- Panel Lateral Deslizable de Nueva Nota de Evolución (NOM-004) -->
+<!-- Modal Clínico Estandarizado de Nueva Nota de Evolución (NOM-004) -->
 <app-clinical-modal
   [isOpen]="showModal() && auth.isAdmin()"
   title="Nueva Nota Médica de Evolución"
   subtitle="Registro clínico para el expediente del paciente conforme a la norma NOM-004-SSA3-2012."
   badgeText="NOM-004"
   badgeColor="indigo"
-  variant="drawer"
+  variant="center"
+  maxWidth="max-w-2xl"
   (close)="closeModal()"
 >
   <form (submit)="submitRecord($event)" class="flex-1 flex flex-col min-h-0">

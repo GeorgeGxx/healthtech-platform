@@ -179,14 +179,15 @@
     </form>
   </app-clinical-modal>
 
-  <!-- Panel Deslizable de Nueva Admisión Hospitalaria (Slide-Over Clínico) -->
+  <!-- Modal Clínico Estandarizado de Nueva Admisión Hospitalaria -->
   <app-clinical-modal
     [isOpen]="showAdmitModal()"
     title="Nueva Admisión Hospitalaria"
     subtitle="Asignación de cama y apertura de episodio de internación conforme a NOM-004."
     badgeText="Admisión"
     badgeColor="rose"
-    variant="drawer"
+    variant="center"
+    maxWidth="max-w-xl"
     (close)="closeAdmitModal()"
   >
     <form (submit)="confirmAdmit($event)" class="flex-1 flex flex-col min-h-0">
