@@ -30,6 +30,13 @@ export class AppointmentsComponent implements OnInit {
 
   readonly feePerConsultation = 1200;
   readonly selectedDoctorDay = signal<string>('2026-10-18');
+  readonly calendarYear = signal<number>(2026);
+  readonly calendarMonth = signal<number>(10); // 1 = Enero, 10 = Octubre
+
+  readonly monthNames = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
 
   selectedDoctorId: number = 0;
   selectedDate: string = '';
@@ -43,6 +50,38 @@ export class AppointmentsComponent implements OnInit {
     fin: '',
     motivoConsulta: '',
   };
+
+  prevMonth(): void {
+    if (this.calendarMonth() === 1) {
+      this.calendarMonth.set(12);
+      this.calendarYear.update((y) => y - 1);
+    } else {
+      this.calendarMonth.update((m) => m - 1);
+    }
+  }
+
+  nextMonth(): void {
+    if (this.calendarMonth() === 12) {
+      this.calendarMonth.set(1);
+      this.calendarYear.update((y) => y + 1);
+    } else {
+      this.calendarMonth.update((m) => m + 1);
+    }
+  }
+
+  goToToday(): void {
+    this.calendarYear.set(2026);
+    this.calendarMonth.set(10);
+    this.selectedDoctorDay.set('2026-10-18');
+  }
+
+  selectDoctorDay(day: string): void {
+    this.selectedDoctorDay.set(day);
+  }
+
+  selectFullMonth(): void {
+    this.selectedDoctorDay.set('month');
+  }
 
   getInitials(nombre?: string, apellido?: string): string {
     const p1 = (nombre || '').trim()[0] || '';
@@ -81,10 +120,6 @@ export class AppointmentsComponent implements OnInit {
     return match ? match[1] : fecha.slice(0, 10);
   }
 
-  selectDoctorDay(day: string): void {
-    this.selectedDoctorDay.set(day);
-  }
-
   formatDateLabel(dateKey: string): string {
     const cleanKey = this.getDateKey(dateKey);
     if (!cleanKey || cleanKey === 'Sin fecha') return 'Sin fecha';
@@ -93,11 +128,7 @@ export class AppointmentsComponent implements OnInit {
     const year = Number(parts[0]);
     const month = Number(parts[1]);
     const day = Number(parts[2]);
-    const months = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    const monthName = months[(month || 1) - 1];
+    const monthName = this.monthNames[(month || 1) - 1];
     if (cleanKey === '2026-10-18') {
       return `Día 18 de ${monthName} (Hoy)`;
     } else if (cleanKey === '2026-10-17') {
@@ -163,55 +194,218 @@ export class AppointmentsComponent implements OnInit {
     return list.sort((a, b) => b.dateKey.localeCompare(a.dateKey));
   });
 
-  readonly activeDoctorDaySummary = computed(() => {
+  // Calendario mensual minimalista con días activos únicamente cuando hay pacientes
+  readonly calendarDays = computed(() => {
+    const year = this.calendarYear();
+    const month = this.calendarMonth();
+    const apps = this.doctorAppointments();
     const selected = this.selectedDoctorDay();
-    const days = this.doctorDaysList();
 
-    if (selected !== 'all') {
-      const day = days.find((d) => d.dateKey === selected);
-      if (day) {
-        return {
-          isSingleDay: true,
-          dateKey: day.dateKey,
-          formattedDate: day.formattedDate,
-          feePerConsultation: this.feePerConsultation,
-          totalPatients: day.totalPatients,
-          attendedCount: day.attendedCount,
-          canceledCount: day.canceledCount,
-          pendingCount: day.pendingCount,
-          confirmedPayout: day.confirmedPayout,
-          projectedPayout: day.projectedPayout,
-          totalPotential: day.totalPotential,
-          attendanceRate: day.attendanceRate,
-          forfeitedByCancellation: day.canceledCount * this.feePerConsultation,
-        };
+    // Mapa de estadísticas por fecha
+    const dayStats = new Map<string, { totalPatients: number; attendedCount: number; canceledCount: number; confirmedPayout: number }>();
+    for (const app of apps) {
+      const dateKey = this.getDateKey(app.fechaInicio);
+      if (!dayStats.has(dateKey)) {
+        dayStats.set(dateKey, { totalPatients: 0, attendedCount: 0, canceledCount: 0, confirmedPayout: 0 });
+      }
+      const st = dayStats.get(dateKey)!;
+      st.totalPatients++;
+      if (app.estado === 'atendido') {
+        st.attendedCount++;
+      } else if (app.estado === 'cancelado') {
+        st.canceledCount++;
+      }
+      st.confirmedPayout = st.attendedCount * this.feePerConsultation;
+    }
+
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const firstDayIndex = new Date(year, month - 1, 1).getDay(); // 0 = Domingo, 1 = Lunes
+    const leadingOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1; // Ajuste para inicio de semana en Lunes
+
+    const prevMonthDays = new Date(year, month - 1, 0).getDate();
+    const cells: any[] = [];
+
+    // Días del mes anterior (inactivos)
+    for (let i = leadingOffset - 1; i >= 0; i--) {
+      cells.push({
+        dayNumber: prevMonthDays - i,
+        isCurrentMonth: false,
+        hasPatients: false,
+        dateKey: '',
+        totalPatients: 0,
+        attendedCount: 0,
+        canceledCount: 0,
+        confirmedPayout: 0,
+        isToday: false,
+        isSelected: false,
+      });
+    }
+
+    // Días del mes actual
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const stats = dayStats.get(dateKey);
+      const hasPatients = !!stats && stats.totalPatients > 0;
+      const isToday = (dateKey === '2026-10-18');
+      const isSelected = (selected === dateKey);
+
+      cells.push({
+        dayNumber: day,
+        isCurrentMonth: true,
+        hasPatients,
+        dateKey,
+        totalPatients: stats?.totalPatients || 0,
+        attendedCount: stats?.attendedCount || 0,
+        canceledCount: stats?.canceledCount || 0,
+        confirmedPayout: stats?.confirmedPayout || 0,
+        isToday,
+        isSelected,
+      });
+    }
+
+    // Días del siguiente mes para completar la cuadrícula (múltiplo de 7)
+    const remainder = cells.length % 7;
+    if (remainder > 0) {
+      const trailingCount = 7 - remainder;
+      for (let day = 1; day <= trailingCount; day++) {
+        cells.push({
+          dayNumber: day,
+          isCurrentMonth: false,
+          hasPatients: false,
+          dateKey: '',
+          totalPatients: 0,
+          attendedCount: 0,
+          canceledCount: 0,
+          confirmedPayout: 0,
+          isToday: false,
+          isSelected: false,
+        });
       }
     }
 
-    // Todas las jornadas sumadas
-    const totalPatients = days.reduce((sum, d) => sum + d.totalPatients, 0);
-    const attendedCount = days.reduce((sum, d) => sum + d.attendedCount, 0);
-    const canceledCount = days.reduce((sum, d) => sum + d.canceledCount, 0);
-    const pendingCount = days.reduce((sum, d) => sum + d.pendingCount, 0);
-    const confirmedPayout = attendedCount * this.feePerConsultation;
-    const projectedPayout = (attendedCount + pendingCount) * this.feePerConsultation;
+    return cells;
+  });
+
+  // Resumen del Mes Completo
+  readonly monthlySummary = computed(() => {
+    const year = this.calendarYear();
+    const month = this.calendarMonth();
+    const prefix = `${year}-${String(month).padStart(2, '0')}`;
+    const apps = this.doctorAppointments().filter((a) => this.getDateKey(a.fechaInicio).startsWith(prefix));
+
+    const totalPatients = apps.length;
+    let attendedCount = 0;
+    let canceledCount = 0;
+    let pendingCount = 0;
+
+    for (const a of apps) {
+      if (a.estado === 'atendido') attendedCount++;
+      else if (a.estado === 'cancelado') canceledCount++;
+      else pendingCount++;
+    }
+
+    const totalConfirmedPayout = attendedCount * this.feePerConsultation;
     const totalPotential = totalPatients * this.feePerConsultation;
+    const totalLostByCancellation = canceledCount * this.feePerConsultation;
     const attendanceRate = totalPatients > 0 ? Math.round((attendedCount / totalPatients) * 100) : 0;
 
     return {
-      isSingleDay: false,
-      dateKey: 'all',
-      formattedDate: 'Todas las Jornadas Médicas',
-      feePerConsultation: this.feePerConsultation,
+      year,
+      month,
+      monthName: `${this.monthNames[month - 1]} ${year}`,
       totalPatients,
       attendedCount,
       canceledCount,
       pendingCount,
-      confirmedPayout,
-      projectedPayout,
+      totalConfirmedPayout,
       totalPotential,
+      totalLostByCancellation,
       attendanceRate,
-      forfeitedByCancellation: canceledCount * this.feePerConsultation,
+    };
+  });
+
+  // Correlación proporcional entre el día seleccionado y el total del mes
+  readonly correlationSummary = computed(() => {
+    const monthSum = this.monthlySummary();
+    const selected = this.selectedDoctorDay();
+    const days = this.doctorDaysList();
+
+    if (selected !== 'all' && selected !== 'month') {
+      const day = days.find((d) => d.dateKey === selected);
+      if (day) {
+        const payoutPercentage = monthSum.totalConfirmedPayout > 0
+          ? Math.round((day.confirmedPayout / monthSum.totalConfirmedPayout) * 100)
+          : 0;
+        const patientPercentage = monthSum.totalPatients > 0
+          ? Math.round((day.totalPatients / monthSum.totalPatients) * 100)
+          : 0;
+
+        return {
+          isSingleDay: true,
+          dateKey: day.dateKey,
+          label: day.formattedDate,
+          dayLabel: day.dayLabel,
+          dayPatients: day.totalPatients,
+          dayAttended: day.attendedCount,
+          dayCanceled: day.canceledCount,
+          dayPending: day.pendingCount,
+          dayPayout: day.confirmedPayout,
+          dayPotential: day.totalPotential,
+          dayAttendanceRate: day.attendanceRate,
+          payoutShareOfTotal: payoutPercentage,
+          patientsShareOfTotal: patientPercentage,
+          monthlyPayout: monthSum.totalConfirmedPayout,
+          monthlyPatients: monthSum.totalPatients,
+          monthlyAttended: monthSum.attendedCount,
+          monthlyCanceled: monthSum.canceledCount,
+          monthlyPotential: monthSum.totalPotential,
+          monthlyAttendanceRate: monthSum.attendanceRate,
+          forfeitedToday: day.canceledCount * this.feePerConsultation,
+        };
+      }
+    }
+
+    // Modo: Mes Completo
+    return {
+      isSingleDay: false,
+      dateKey: 'month',
+      label: `Mes Completo (${monthSum.monthName})`,
+      dayLabel: monthSum.monthName,
+      dayPatients: monthSum.totalPatients,
+      dayAttended: monthSum.attendedCount,
+      dayCanceled: monthSum.canceledCount,
+      dayPending: monthSum.pendingCount,
+      dayPayout: monthSum.totalConfirmedPayout,
+      dayPotential: monthSum.totalPotential,
+      dayAttendanceRate: monthSum.attendanceRate,
+      payoutShareOfTotal: 100,
+      patientsShareOfTotal: 100,
+      monthlyPayout: monthSum.totalConfirmedPayout,
+      monthlyPatients: monthSum.totalPatients,
+      monthlyAttended: monthSum.attendedCount,
+      monthlyCanceled: monthSum.canceledCount,
+      monthlyPotential: monthSum.totalPotential,
+      monthlyAttendanceRate: monthSum.attendanceRate,
+      forfeitedToday: monthSum.totalLostByCancellation,
+    };
+  });
+
+  readonly activeDoctorDaySummary = computed(() => {
+    const corr = this.correlationSummary();
+    return {
+      isSingleDay: corr.isSingleDay,
+      dateKey: corr.dateKey,
+      formattedDate: corr.label,
+      feePerConsultation: this.feePerConsultation,
+      totalPatients: corr.dayPatients,
+      attendedCount: corr.dayAttended,
+      canceledCount: corr.dayCanceled,
+      pendingCount: corr.dayPending,
+      confirmedPayout: corr.dayPayout,
+      projectedPayout: (corr.dayAttended + corr.dayPending) * this.feePerConsultation,
+      totalPotential: corr.dayPotential,
+      attendanceRate: corr.dayAttendanceRate,
+      forfeitedByCancellation: corr.forfeitedToday,
     };
   });
 
@@ -223,8 +417,13 @@ export class AppointmentsComponent implements OnInit {
       const docId = this.auth.currentUser().doctorId || 2;
       list = list.filter((a) => (a.idMedico || a.medico?.idMedico) === docId);
       const day = this.selectedDoctorDay();
-      if (day !== 'all') {
+      if (day !== 'all' && day !== 'month') {
         list = list.filter((a) => this.getDateKey(a.fechaInicio) === day);
+      } else {
+        const y = this.calendarYear();
+        const m = String(this.calendarMonth()).padStart(2, '0');
+        const prefix = `${y}-${m}`;
+        list = list.filter((a) => this.getDateKey(a.fechaInicio).startsWith(prefix));
       }
     }
     return this.sortAppointmentsDesc(list);
