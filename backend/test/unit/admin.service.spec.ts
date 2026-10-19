@@ -30,10 +30,21 @@ describe('AdminService (Hospital Governance & Microservices Health)', () => {
       }),
     };
 
-    adminService = new AdminService(mockDataSource);
+    const mockDashboardService: any = {
+      getExecutiveMetrics: vi.fn().mockResolvedValue({
+        kpis: {
+          totalPatients: 10,
+          totalAppointments: 25,
+          totalRevenue: 8500.50,
+          occupiedBeds: 3,
+        },
+      }),
+    };
+
+    adminService = new AdminService(mockDataSource, mockDashboardService);
   });
 
-  it('debe devolver el estado consolidado de la infraestructura incluyendo Keycloak 26.8.1, Redis 8.8.1 y Kong 3.14.0.16', async () => {
+  it('debe devolver el estado consolidado de la infraestructura incluyendo Keycloak 26.8.1, Redis 8.8.1 y Kong 3.9.4', async () => {
     const status = await adminService.getSystemStatus();
 
     expect(status.status).toBe('healthy');
@@ -41,7 +52,7 @@ describe('AdminService (Hospital Governance & Microservices Health)', () => {
     expect(status.services.redis.version).toBe('8.8.1-alpine');
     expect(status.services.keycloak.version).toBe('26.8.1');
     expect(status.services.keycloak.realm).toBe('healthtech-realm');
-    expect(status.services.kong.version).toBe('3.14.0.16');
+    expect(status.services.kong.version).toBe('3.9.4');
     expect(status.services.elasticsearch.version).toBe('9.5.5');
   });
 

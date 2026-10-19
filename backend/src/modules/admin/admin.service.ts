@@ -62,7 +62,7 @@ export class AdminService {
         },
         kong: {
           name: 'Kong API Gateway (DB-less)',
-          version: '3.14.0.16',
+          version: '3.9.4',
           status: 'ok',
           mode: 'Declarative YAML',
           proxyPort: 8000,

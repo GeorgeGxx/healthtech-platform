@@ -15,7 +15,7 @@ Plataforma web hospitalaria y ambulatoria de grado productivo para México, desa
 | **Observabilidad** | **Elastic 9.5.5 & OpenTelemetry** | **Elasticsearch 9.5.5** (single-node), **Kibana 9.5.5**, **Elastic Agent 9.5.5** (APM & OTLP), Metrics, Logs ECS y Traces nativos. |
 | **Identidad & IAM** | **Keycloak 26.8.1 en Postgres 18** | Gestión de identidades conectada a PostgreSQL 18. Tres perfiles: `admin` (Keycloak master), `admin_user` (Gestión hospitalaria total y Panel Admin), `basic_user` (Portal Paciente). |
 | **Caché Distribuido** | **Redis 8.8.1-alpine** | Almacenamiento en caché de alta velocidad para catálogos médicos y sesiones con fallback resiliente en memoria. |
-| **API Gateway** | **Kong Gateway 3.14.0.16** | Gateway empresarial en modo **DB-less declarativo** (`kong.yml`) con Rate Limiting, CORS, Prometheus y ruteo unificado (:8000). |
+| **API Gateway** | **Kong Gateway 3.9.4** | Gateway empresarial en modo **DB-less declarativo** (`kong.yml`) con Rate Limiting, CORS, Prometheus y ruteo unificado (:8000). |
 | **Normativa Clínica** | **HIPAA & NOM-024** | Auto-logout por inactividad a los 15 minutos, bitácora inmutable de acceso a PHI (`registro_auditoria`). |
 | **Arquitectura** | **DDD & Multistage** | Bounded Contexts, Value Objects, Domain Services, Dockerfiles multi-stage con imágenes seguras de producción. |
 | **Calidad / Pruebas** | **TDD & Vitest** | Pruebas unitarias automáticas para reglas de facturación, cobertura, solapamientos, auditoría y panel admin (18 tests). |
@@ -69,7 +69,7 @@ healthtech-platform/
 │       └── 03_centromedico_practice_queries.sql
 │
 ├── kong/
-│   └── kong.yml                            # Configuración declarativa DB-less de Kong Gateway 3.14
+│   └── kong.yml                            # Configuración declarativa DB-less de Kong Gateway 3.9.4
 │
 ├── observability/
 │   └── elastic-agent.yml                   # Configuración de Elastic Agent 9.5.5 con APM & OTLP
@@ -110,7 +110,7 @@ La plataforma implementa los 3 pilares de la observabilidad moderna mediante dep
 
 ## ⚡ Despliegue de la Plataforma Completa
 
-### 1. Iniciar con Docker Compose (PostgreSQL 18, Redis 8.8.1, Keycloak 26.8.1, Kong 3.14, Elastic 9.5.5, Kibana, NestJS 12 y Nginx)
+### 1. Iniciar con Docker Compose (PostgreSQL 18, Redis 8.8.1, Keycloak 26.8.1, Kong 3.9.4, Elastic 9.5.5, Kibana, NestJS 12 y Nginx)
 ```powershell
 cd c:\Users\jorge\codegxx\healthtech-platform
 docker compose up -d --build

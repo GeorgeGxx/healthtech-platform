@@ -479,7 +479,7 @@ async function main() {
     { name: 'backend', port: 3000, type: 'NestJS 12 API', baseLat: 16.5, rpm: 120, cpu: 14.2, mem: 168 },
     { name: 'postgres', port: 5432, type: 'PostgreSQL 18 DB', baseLat: 3.2, rpm: 450, cpu: 11.5, mem: 210 },
     { name: 'redis', port: 6379, type: 'Redis 8.8 Cache', baseLat: 0.8, rpm: 600, cpu: 4.8, mem: 48 },
-    { name: 'kong-gateway', port: 8000, type: 'Kong 3.14 Proxy', baseLat: 2.1, rpm: 750, cpu: 8.9, mem: 95 },
+    { name: 'kong-gateway', port: 8000, type: 'Kong 3.9.4 Proxy', baseLat: 2.1, rpm: 750, cpu: 8.9, mem: 95 },
     { name: 'keycloak', port: 8080, type: 'Keycloak 26.8 IAM', baseLat: 24.0, rpm: 45, cpu: 18.0, mem: 420 },
     { name: 'elastic-agent', port: 8200, type: 'OTel Collector', baseLat: 4.5, rpm: 320, cpu: 6.2, mem: 180 },
   ];
