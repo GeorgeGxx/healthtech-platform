@@ -66,7 +66,7 @@ export class BillingService {
         incluye: ['Historia clínica inicial', 'Exploración física básica', 'Emisión de receta médica oficial NOM-024'],
         tiempoEstimado: '30-45 min',
         coberturaAplica: true,
-        imagenUrl: '/images/services/general-consult.jpg',
+        imagenUrl: '/images/services/consultation.jpg',
       },
       {
         id: 'srv-derma-02',
@@ -79,7 +79,7 @@ export class BillingService {
         incluye: ['Revisión con dermatoscopio digital', 'Diagnóstico diferencial de lunares', 'Pauta de tratamiento tópico/sistémico'],
         tiempoEstimado: '40 min',
         coberturaAplica: true,
-        imagenUrl: '/images/services/dermatology.jpg',
+        imagenUrl: '/images/services/consultation.jpg',
       },
       {
         id: 'srv-cardio-03',
