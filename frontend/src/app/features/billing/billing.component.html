@@ -172,7 +172,8 @@
                     {{ doc.status }}
                   </span>
                 </td>
-                <td class="px-5 py-4 text-center">
+                <td class="px-5 py-4 text-center whitespace-nowrap">
+                  <button type="button" (click)="openDoctorSettlement(doc.idMedico)" class="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition cursor-pointer mr-1 inline-flex items-center gap-1" title="Ver desglose de liquidación 80/20"><span>⚖️</span><span>Liquidación 80/20</span></button>
                   @if (doc.amountToPay > 0) {
                     <button
                       type="button"
@@ -391,4 +392,61 @@
       </div>
     </form>
   </app-clinical-modal>
+
+  <!-- Modal de Liquidación de Honorarios Médicos 80/20 (Pilar 4) -->
+  @if (showSettlementModal() && selectedSettlement()) {
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+              ⚖️
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-800">Liquidación de Honorarios Médicos</h3>
+              <p class="text-xs text-slate-500">Motor de Aranceles: 80% Profesional / 20% Clínica</p>
+            </div>
+          </div>
+          <button (click)="closeSettlementModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
+        </div>
+
+        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5 text-xs">
+          <div class="flex justify-between py-1 border-b border-slate-200/50">
+            <span class="text-slate-500 font-medium">Médico Especialista:</span>
+            <span class="font-bold text-slate-800">{{ selectedSettlement()?.medico?.nombre }}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-200/50">
+            <span class="text-slate-500 font-medium">Matrícula / Cédula:</span>
+            <span class="font-mono text-slate-700">{{ selectedSettlement()?.medico?.matricula }}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-200/50">
+            <span class="text-slate-500 font-medium">Consultas Asistidas:</span>
+            <span class="font-bold text-emerald-700">{{ selectedSettlement()?.consultasAsistidas }} consultas</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-200/50">
+            <span class="text-slate-500 font-medium">Monto Bruto Facturado:</span>
+            <span class="font-mono font-bold text-slate-800">{{ selectedSettlement()?.montoBruto }}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-200/50">
+            <span class="text-slate-500 font-medium">Comisión Retención Clínica (20%):</span>
+            <span class="font-mono font-bold text-rose-600">-{{ selectedSettlement()?.comisionClinica }}</span>
+          </div>
+          <div class="flex justify-between py-1.5 bg-emerald-100/70 p-2 rounded-lg border border-emerald-200">
+            <span class="text-emerald-900 font-bold">Honorario Neto a Pagar (80%):</span>
+            <span class="font-mono font-black text-emerald-900 text-sm">{{ selectedSettlement()?.honorarioNetoMedico }}</span>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button
+            type="button"
+            (click)="closeSettlementModal()"
+            class="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+          >
+            Cerrar Desglose
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

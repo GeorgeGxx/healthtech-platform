@@ -133,7 +133,7 @@ services:
   # ============================================================================
   # 7. API Gateway: Kong Gateway 3.9.4 (DB-less mode)
   # ============================================================================
-  kong-gateway:
+  kong:
     image: kong:3.9.4
     container_name: kong
     environment:
@@ -152,48 +152,14 @@ services:
     volumes:
       - ./kong/kong.yml:/etc/kong/kong.yml:ro
     depends_on:
-      - backend
-      - frontend
       - keycloak
-    restart: unless-stopped
-
-  # ============================================================================
-  # 8. Backend: NestJS 12 (Multi-stage + OpenTelemetry + Keycloak RBAC)
-  # ============================================================================
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: georgegxx/backend:latest
-    container_name: backend
-    environment:
-      PORT: 3000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DB_NAME: centromedico
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
-      OTEL_SERVICE_NAME: backend
-      ELASTICSEARCH_URL: http://elasticsearch:9200
-      DEV_AUTH_ENABLED: ${DEV_AUTH_ENABLED:-true}
-    ports:
-      - "3000:3000"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O - http://localhost:3000/api || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
+      - notification-service
+      - appointment-service
+      - patient-service
+      - billing-service
+      - pharmacy-service
+      - staff-service
+      - clinical-records-service
     restart: unless-stopped
 
   # ============================================================================
@@ -214,7 +180,253 @@ services:
       retries: 5
       start_period: 10s
     depends_on:
-      backend:
+      - kong
+    restart: unless-stopped
+
+  # ============================================================================
+  # 10. Event Backbone: Apache Kafka 8.x / Confluent (Modo KRaft Autónomo)
+  # ============================================================================
+  kafka:
+    image: confluentinc/cp-kafka:8.3.2
+    container_name: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:29092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/9092' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ============================================================================
+  # 11. Monitoreo y Administración de Eventos: Kafka UI
+  # ============================================================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+      KAFKA_CLUSTERS_0_NAME: centromedico-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8085:8080"
+    depends_on:
+      - kafka
+    restart: unless-stopped
+
+  # ============================================================================
+  # 12. Worker de Eventos Asíncronos: Notification-Service (NestJS 12 + Kafka)
+  # ============================================================================
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    image: georgegxx/notification-service:latest
+    container_name: notification-service
+    environment:
+      PORT: 3005
+      KAFKA_BROKER: kafka:9092
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
+      OTEL_SERVICE_NAME: notification-service
+    ports:
+      - "3005:3005"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================================================
+  # 13. Microservicio Autónomo: Appointment-Service (NestJS 12 + Sagas + Kafka)
+  # ============================================================================
+  appointment-service:
+    build:
+      context: ./appointment-service
+      dockerfile: Dockerfile
+    image: georgegxx/appointment-service:latest
+    container_name: appointment-service
+    environment:
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: centromedico
+      KAFKA_BROKER: kafka:9092
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
+      OTEL_SERVICE_NAME: appointment-service
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================================================
+  # 14. Microservicio Autónomo: Patient-Service (NestJS 12 + PostgreSQL 18 + Kafka)
+  # ============================================================================
+  patient-service:
+    build:
+      context: ./patient-service
+      dockerfile: Dockerfile
+    image: georgegxx/patient-service:latest
+    container_name: patient-service
+    environment:
+      PORT: 3002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: centromedico
+      KAFKA_BROKER: kafka:9092
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
+      OTEL_SERVICE_NAME: patient-service
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================================================
+  # 15. Microservicio Autónomo: Billing-Service (NestJS 12 + PostgreSQL 18 + Kafka)
+  # ============================================================================
+  billing-service:
+    build:
+      context: ./billing-service
+      dockerfile: Dockerfile
+    image: georgegxx/billing-service:latest
+    container_name: billing-service
+    environment:
+      PORT: 3003
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: centromedico
+      KAFKA_BROKER: kafka:9092
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
+      OTEL_SERVICE_NAME: billing-service
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================================================
+  # 16. Microservicio Autónomo: Pharmacy-Service (NestJS 12 + PostgreSQL 18 + Kafka)
+  # ============================================================================
+  pharmacy-service:
+    build:
+      context: ./pharmacy-service
+      dockerfile: Dockerfile
+    image: georgegxx/pharmacy-service:latest
+    container_name: pharmacy-service
+    environment:
+      PORT: 3004
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: centromedico
+      KAFKA_BROKER: kafka:9092
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
+      OTEL_SERVICE_NAME: pharmacy-service
+    ports:
+      - "3004:3004"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================================================
+  # 17. Microservicio Autónomo: Staff-Service (NestJS 12 + PostgreSQL 18 + Redis)
+  # ============================================================================
+  staff-service:
+    build:
+      context: ./staff-service
+      dockerfile: Dockerfile
+    image: georgegxx/staff-service:latest
+    container_name: staff-service
+    environment:
+      PORT: 3007
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: centromedico
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
+      OTEL_SERVICE_NAME: staff-service
+    ports:
+      - "3007:3007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ============================================================================
+  # 18. Microservicio Autónomo: Clinical-Records-Service (NestJS 12 + ECE + HIPAA)
+  # ============================================================================
+  clinical-records-service:
+    build:
+      context: ./clinical-records-service
+      dockerfile: Dockerfile
+    image: georgegxx/clinical-records-service:latest
+    container_name: clinical-records-service
+    environment:
+      PORT: 3006
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: centromedico
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://elastic-agent:8200
+      OTEL_SERVICE_NAME: clinical-records-service
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
     restart: unless-stopped
 
@@ -222,3 +434,5 @@ volumes:
   pgdata:
   redis_data:
   elasticsearch_data:
+  kafka_data:
+

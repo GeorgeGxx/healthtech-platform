@@ -28,6 +28,11 @@ export class MedicalRecordsComponent implements OnInit {
   readonly showModal = signal<boolean>(false);
   readonly filterOnlyMyPatients = signal<boolean>(true);
   readonly showStockPanel = signal<boolean>(false);
+  readonly fhirEncounterData = signal<any | null>(null);
+  readonly showFhirModal = signal<boolean>(false);
+  readonly digitalPrescriptionData = signal<any | null>(null);
+  readonly showPrescriptionModal = signal<boolean>(false);
+  readonly isGeneratingPrescription = signal<boolean>(false);
 
   editingRecordId: number | null = null;
   selectedPatientId: number = 1;
@@ -364,5 +369,93 @@ export class MedicalRecordsComponent implements OnInit {
       </html>
     `);
     printWindow.document.close();
+  }
+
+  openFhirModal(record: any): void {
+    const id = record.idHistoria || record.id_historia || 1;
+    this.api.getEncounterFhir(id).subscribe({
+      next: (data) => {
+        this.fhirEncounterData.set(data);
+        this.showFhirModal.set(true);
+      },
+      error: (err) => {
+        this.toast.error('No se pudo cargar el recurso HL7 FHIR: ' + (err.error?.message || err.message));
+      },
+    });
+  }
+
+  closeFhirModal(): void {
+    this.showFhirModal.set(false);
+    this.fhirEncounterData.set(null);
+  }
+
+  copyFhirJson(): void {
+    if (this.fhirEncounterData() && navigator?.clipboard) {
+      navigator.clipboard.writeText(JSON.stringify(this.fhirEncounterData(), null, 2));
+      this.toast.success('Recurso HL7 FHIR R4 Encounter copiado al portapapeles');
+    }
+  }
+
+  emitDigitalPrescription(record: any): void {
+    const idPaciente = record.idPaciente || record.id_paciente || this.selectedPatientId;
+    const idMedico = record.idMedico || record.id_medico || (this.auth.currentUser().doctorId || 2);
+    const diag = record.diagnosticoDescripcion || record.diagnostico_descripcion || 'Consulta Médica General';
+    const meds = (record.recetaMedicamentos || []).map((m: any) => ({
+      nombre: m.medicamento || m.nombre || 'Medicamento',
+      dosis: m.dosis || '1 cápsula',
+      frecuencia: m.frecuencia || 'Cada 8 hrs',
+      duracionDias: m.dias || m.duracionDias || 30,
+    }));
+
+    if (meds.length === 0) {
+      meds.push({
+        nombre: 'Paracetamol',
+        dosis: '500mg',
+        frecuencia: 'Cada 8 hrs en caso de dolor o fiebre',
+        duracionDias: 5,
+      });
+    }
+
+    this.isGeneratingPrescription.set(true);
+    this.api.createDigitalPrescription({
+      idPaciente,
+      idMedico,
+      diagnostico: diag,
+      medicamentos: meds,
+      vigenciaDias: 30,
+    }).subscribe({
+      next: (res) => {
+        this.digitalPrescriptionData.set(res);
+        this.showPrescriptionModal.set(true);
+        this.isGeneratingPrescription.set(false);
+        this.toast.success('Receta digital firmada criptográficamente (HMAC-SHA256).');
+      },
+      error: (err) => {
+        this.isGeneratingPrescription.set(false);
+        this.toast.error('Error al emitir receta digital: ' + (err.error?.message || err.message));
+      },
+    });
+  }
+
+  closePrescriptionModal(): void {
+    this.showPrescriptionModal.set(false);
+    this.digitalPrescriptionData.set(null);
+  }
+
+  verifyPrescription(): void {
+    const code = this.digitalPrescriptionData()?.codigoVerif;
+    if (!code) return;
+    this.api.verifyDigitalPrescription(code).subscribe({
+      next: (res) => {
+        if (res.firmaValida) {
+          this.toast.success(`Firma Criptográfica VÁLIDA: Certificado por ${res.medico?.nombre}`);
+        } else {
+          this.toast.error('Alerta: Firma inválida o documento alterado.');
+        }
+      },
+      error: (err) => {
+        this.toast.error('Error en verificación de firma: ' + (err.error?.message || err.message));
+      },
+    });
   }
 }

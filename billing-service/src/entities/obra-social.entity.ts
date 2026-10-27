@@ -1,0 +1,25 @@
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+
+@Entity('obra_social')
+export class ObraSocial {
+  @PrimaryGeneratedColumn('identity', { name: 'id_obra_social' })
+  idObraSocial!: number;
+
+  @Column({ name: 'nombre', type: 'varchar', length: 120, unique: true })
+  nombre!: string;
+
+  @Column({ name: 'codigo_seguro', type: 'varchar', length: 30, unique: true })
+  codigoSeguro!: string;
+
+  @Column({
+    name: 'porcentaje_cobertura',
+    type: 'numeric',
+    precision: 5,
+    scale: 2,
+    default: 0.0,
+  })
+  porcentajeCobertura!: number;
+
+  @Column({ name: 'activo', type: 'boolean', default: true })
+  activo!: boolean;
+}

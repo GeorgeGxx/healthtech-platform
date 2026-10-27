@@ -210,7 +210,25 @@
             <span class="text-xs font-medium text-slate-500">
               {{ (r.fecha_atencion || r.fechaAtencion) | date: 'dd/MM/yyyy HH:mm' }} hrs
             </span>
+            <button
+              type="button"
+              (click)="openFhirModal(r)"
+              class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors cursor-pointer border border-teal-200/60"
+              title="Ver Recurso Interoperable HL7 FHIR R4 Encounter"
+            >
+              <span>🧬</span>
+              <span>HL7 FHIR</span>
+            </button>
             @if (auth.canManageRecords()) {
+              <button
+                type="button"
+                (click)="emitDigitalPrescription(r)"
+                class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors cursor-pointer border border-emerald-200/60"
+                title="Emitir Receta Médica Criptográfica con Verificación QR (Pilar 2)"
+              >
+                <span>🔐</span>
+                <span>Receta Digital QR</span>
+              </button>
               <button
                 type="button"
                 (click)="openEditModal(r)"
@@ -404,4 +422,116 @@
     </div>
   </form>
 </app-clinical-modal>
+
+<!-- Modal de Interoperabilidad HL7 FHIR R4 (Pilar 2) -->
+@if (showFhirModal() && fhirEncounterData()) {
+  <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-xl">
+            🧬
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-800">Recurso HL7 FHIR R4 Encounter</h3>
+            <p class="text-xs text-slate-500">Estándar internacional de interoperabilidad clínica</p>
+          </div>
+        </div>
+        <button (click)="closeFhirModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
+      </div>
+
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-600">Representación JSON canónica:</span>
+          <button
+            type="button"
+            (click)="copyFhirJson()"
+            class="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition border border-teal-200/60 cursor-pointer"
+          >
+            Copiar FHIR JSON
+          </button>
+        </div>
+        <pre class="bg-slate-900 text-teal-300 p-4 rounded-xl text-xs font-mono max-h-80 overflow-y-auto leading-relaxed border border-slate-800 select-all">{{ fhirEncounterData() | json }}</pre>
+      </div>
+
+      <div class="flex justify-end pt-2">
+        <button
+          type="button"
+          (click)="closeFhirModal()"
+          class="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal de Receta Digital Criptográfica HMAC-SHA256 (Pilar 2) -->
+@if (showPrescriptionModal() && digitalPrescriptionData()) {
+  <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl">
+            🔐
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-800">Receta Médica Digital Certificada</h3>
+            <p class="text-xs text-slate-500">Firma criptográfica HMAC-SHA256 & Validación QR</p>
+          </div>
+        </div>
+        <button (click)="closePrescriptionModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
+      </div>
+
+      <div class="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/80 space-y-2 text-xs">
+        <div class="flex justify-between py-1 border-b border-emerald-200/50">
+          <span class="text-slate-600 font-medium">Código de Verificación QR:</span>
+          <span class="font-mono font-bold text-emerald-900">{{ digitalPrescriptionData()?.codigoVerif }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-emerald-200/50">
+          <span class="text-slate-600 font-medium">Estado de la Receta:</span>
+          <span class="font-semibold text-emerald-700">{{ digitalPrescriptionData()?.estado || 'EMITIDA' }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-emerald-200/50">
+          <span class="text-slate-600 font-medium">Vigencia Legal:</span>
+          <span class="font-semibold text-slate-700">Hasta {{ digitalPrescriptionData()?.fechaVencimiento | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="py-1">
+          <span class="text-slate-600 font-medium block mb-1">Hash de Firma Criptográfica:</span>
+          <span class="font-mono text-[10px] text-slate-600 break-all bg-white/80 p-2 rounded block border border-emerald-100">{{ digitalPrescriptionData()?.firmaDigitalSha256 }}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <button
+          type="button"
+          (click)="verifyPrescription()"
+          class="px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5"
+        >
+          <span>🔍</span>
+          <span>Verificar Integridad de Firma</span>
+        </button>
+
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="closePrescriptionModal()"
+            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+          >
+            Cerrar
+          </button>
+          <a
+            [href]="digitalPrescriptionData()?.qrCheckUrl"
+            target="_blank"
+            class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition inline-flex items-center gap-1 cursor-pointer"
+          >
+            <span>Verificar QR en API</span>
+            <span>↗</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+}
 </div>

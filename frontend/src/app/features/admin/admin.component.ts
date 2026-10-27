@@ -2,6 +2,8 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { AuthStateService } from '../../core/services/auth-state.service';
+import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
 
 interface AuditItem {
   idAuditoria: number;
@@ -30,6 +32,8 @@ interface ClinicalServiceStatus {
 })
 export class AdminComponent implements OnInit {
   private http = inject(HttpClient);
+  private api = inject(ApiService);
+  private toast = inject(ToastService);
   readonly auth = inject(AuthStateService);
 
   readonly loading = signal<boolean>(true);
@@ -37,8 +41,66 @@ export class AdminComponent implements OnInit {
   readonly clinicalServices = signal<ClinicalServiceStatus[]>([]);
   readonly userRoles = signal<any[]>([]);
 
+  readonly sagas = signal<any[]>([]);
+  readonly outboxStats = signal<any>({ total: 0, pendientes: 0, publicados: 0, fallidos: 0 });
+  readonly dlqItems = signal<any[]>([]);
+  readonly relayingOutbox = signal<boolean>(false);
+
   ngOnInit(): void {
     this.cargarDatosAuditoria();
+    this.cargarSagasYOutbox();
+  }
+
+  cargarSagasYOutbox(): void {
+    this.api.getSagas().subscribe({
+      next: (s) => this.sagas.set(s || []),
+      error: () => {},
+    });
+
+    this.api.getOutboxStats().subscribe({
+      next: (stats) => this.outboxStats.set(stats || { total: 0, pendientes: 0, publicados: 0, fallidos: 0 }),
+      error: () => {},
+    });
+
+    this.api.getNotificationsDlq().subscribe({
+      next: (dlq) => this.dlqItems.set(dlq?.items || []),
+      error: () => {},
+    });
+  }
+
+  reintentarOutboxFallidos(): void {
+    this.api.retryFailedOutbox().subscribe({
+      next: (res) => {
+        this.toast.success(res.mensaje || 'Eventos marcados para reintento');
+        this.cargarSagasYOutbox();
+      },
+      error: (err) => this.toast.error('Error al reintentar outbox: ' + err.message),
+    });
+  }
+
+  forzarRelay(): void {
+    this.relayingOutbox.set(true);
+    this.api.relayOutboxNow().subscribe({
+      next: (res) => {
+        this.toast.success(res.mensaje || 'Outbox relay ejecutado');
+        this.relayingOutbox.set(false);
+        this.cargarSagasYOutbox();
+      },
+      error: (err) => {
+        this.relayingOutbox.set(false);
+        this.toast.error('Error en outbox relay: ' + err.message);
+      },
+    });
+  }
+
+  reintentarDlq(id: string): void {
+    this.api.retryDlqNotification(id).subscribe({
+      next: (res) => {
+        this.toast.success(`Notificación ${id} re-enviada`);
+        this.cargarSagasYOutbox();
+      },
+      error: (err) => this.toast.error('Error al reintentar DLQ: ' + err.message),
+    });
   }
 
   cargarDatosAuditoria(): void {

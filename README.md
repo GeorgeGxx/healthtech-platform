@@ -16,9 +16,12 @@ Plataforma web hospitalaria y ambulatoria de grado productivo para México, desa
 | **Identidad & IAM** | **Keycloak 26.8.1 en Postgres 18** | Gestión de identidades conectada a PostgreSQL 18. Tres perfiles: `admin` (Keycloak master), `admin_user` (Gestión hospitalaria total y Panel Admin), `basic_user` (Portal Paciente). |
 | **Caché Distribuido** | **Redis 8.8.1-alpine** | Almacenamiento en caché de alta velocidad para catálogos médicos y sesiones con fallback resiliente en memoria. |
 | **API Gateway** | **Kong Gateway 3.9.4** | Gateway empresarial en modo **DB-less declarativo** (`kong.yml`) con Rate Limiting, CORS, Prometheus y ruteo unificado (:8000). |
+| **Event Backbone** | **Apache Kafka 8.3.2 (KRaft)** | Clúster de eventos en modo nativo sin ZooKeeper, tópicos particionados, Kafka UI (:8085) y Transactional Outbox CDC. |
+| **Patrón Saga** | **Coreográfica & Orquestada** | Sagas reactivas para notificaciones y Sagas orquestadas con compensación automática reversa (LIFO) para admisiones/reservas. |
+| **Microservicio Notif.** | **Notification-Service** | Microservicio NestJS 12 + Kafka transport + Redis 8.8 (idempotencia) con despacho multicanal (Email, SMS, Push). |
 | **Normativa Clínica** | **HIPAA & NOM-024** | Auto-logout por inactividad a los 15 minutos, bitácora inmutable de acceso a PHI (`registro_auditoria`). |
-| **Arquitectura** | **DDD & Multistage** | Bounded Contexts, Value Objects, Domain Services, Dockerfiles multi-stage con imágenes seguras de producción. |
-| **Calidad / Pruebas** | **TDD & Vitest** | Pruebas unitarias automáticas para reglas de facturación, cobertura, solapamientos, auditoría y panel admin (18 tests). |
+| **Arquitectura** | **DDD & EDA Microservices** | Bounded Contexts, Value Objects, Domain Services, Dockerfiles multi-stage con imágenes seguras de producción. |
+| **Calidad / Pruebas** | **TDD & Vitest** | Pruebas unitarias automáticas para reglas de facturación, cobertura, solapamientos, auditoría, panel admin y orquestador de sagas. |
 | **Proxy Inverso** | **Nginx** | Servidor web para SPA Angular 21, compresión Gzip, cabeceras de seguridad y fallback SPA routing (:80). |
 
 ---
@@ -27,30 +30,60 @@ Plataforma web hospitalaria y ambulatoria de grado productivo para México, desa
 
 ```
 healthtech-platform/
-├── backend/
-│   ├── src/
-│   │   ├── domain/                         # Capa de Dominio (Pura, sin dependencias de framework)
-│   │   │   ├── value-objects/              # AppointmentSlot (validación de rangos y solapamientos)
-│   │   │   └── services/                   # BillingCalculatorDomainService (cálculo de coberturas)
-│   │   ├── telemetry/                      # Observabilidad Nativa (OpenTelemetry + Elastic ECS)
-│   │   │   ├── tracer.ts                   # Bootstrap de NodeSDK, OTLP Trace y Metric Exporters
-│   │   │   ├── logger.service.ts           # Logger Winston estructurado en Elastic Common Schema (ECS)
-│   │   │   └── metrics.service.ts          # Métricas de negocio y de latencia clínica
-│   │   ├── auth/                           # Capa de Seguridad e Identidad Keycloak
-│   │   │   ├── keycloak.guard.ts           # JWT Token Validator y decodificación de roles
-│   │   │   └── roles.guard.ts              # Guard RBAC hospitalario
-│   │   ├── redis/                          # Servicio de Caché Distribuido (ioredis con fallback)
-│   │   ├── entities/                       # Entidades TypeORM para PostgreSQL 18
-│   │   └── modules/                        # Bounded Contexts (Aplicación & Presentación)
-│   │       ├── clinical-scheduling/        # Citas Médicas, Especialistas, Consultorios
-│   │       ├── patient-care/               # Padrón de Pacientes, Aseguradoras y CURP
-│   │       ├── medical-records/            # Expediente Clínico (ECE NOM-004), JSONB y FTS
-│   │       ├── hospital-stay/              # Censo de Camas, Habitaciones e Internaciones
-│   │       ├── billing-and-claims/         # Facturación, Coaseguros y Liquidaciones
-│   │       ├── audit/                      # Trazabilidad y Bitácora de Acceso PHI (HIPAA)
-│   │       ├── admin/                      # Gestión de Infraestructura, Microservicios y Directorio
-│   │       └── analytics/                  # Tablero de Indicadores en tiempo real
-│   └── test/unit/                          # Pruebas TDD ejecutadas con Vitest (18 tests pasando)
+├── kong/                                   # API Gateway Kong 3.9 (DB-less declarativo en :8000)
+│   └── kong.yml                            # Ruteo centralizado, rate-limiting, CORS y Prometheus
+│
+├── appointment-service/                    # Microservicio Autónomo de Turnos y Agenda Asistencial (:3001)
+│   ├── Dockerfile                          # Multi-stage Dockerfile de producción
+│   └── src/
+│       ├── main.ts                         # Bootstrap (:3001), Swagger (/api/appointments/docs)
+│       ├── domain/                         # Value Objects (AppointmentSlot anti-solapamiento)
+│       ├── kafka/                          # Outbox & Saga Orchestrator SEC
+│       └── appointments/                   # Citas Médicas, Sagas y Eventos Coreográficos
+│
+├── patient-service/                        # Microservicio Autónomo de Pacientes y Aseguradoras (:3002)
+│   ├── Dockerfile                          # Multi-stage Dockerfile de producción
+│   └── src/
+│       ├── main.ts                         # Bootstrap (:3002), Swagger (/api/patients/docs)
+│       ├── kafka/                          # Emisor Kafka (patient.registered, profile_updated)
+│       └── patients/                       # Padrón de Pacientes, Catálogo de Aseguradoras y Países
+│
+├── billing-service/                        # Microservicio Autónomo de Caja y Facturación (:3003)
+│   ├── Dockerfile                          # Multi-stage Dockerfile de producción
+│   └── src/
+│       ├── main.ts                         # Bootstrap (:3003), Swagger (/api/billing/docs)
+│       ├── domain/                         # BillingCalculatorDomainService (coaseguros y copagos)
+│       ├── kafka/                          # Emisor Kafka (billing.payment_received)
+│       └── billing/                        # Facturación, Conceptos y Tarifas Hospitalarias
+│
+├── pharmacy-service/                       # Microservicio Autónomo de Farmacia y Existencias (:3004)
+│   ├── Dockerfile                          # Multi-stage Dockerfile de producción
+│   └── src/
+│       ├── main.ts                         # Bootstrap (:3004), Swagger (/api/pharmacy/docs)
+│       ├── kafka/                          # Emisor Kafka (pharmacy.medication_dispensed, stock_low)
+│       └── pharmacy/                       # Catálogo de Fármacos, Dispensación y Almacenes
+│
+├── notification-service/                   # Microservicio Autónomo de Notificaciones (:3005)
+│   ├── Dockerfile                          # Multi-stage Dockerfile de producción
+│   └── src/
+│       ├── main.ts                         # App Híbrida: Servidor HTTP (:3005) + Kafka Consumer
+│       ├── redis/                          # Control de Idempotencia distribuido
+│       └── notifications/                  # Despachador multicanal (Email, SMS, In-App)
+│
+├── clinical-records-service/               # Microservicio Autónomo de Expediente Clínico (ECE), Censo y HIPAA (:3006)
+│   ├── Dockerfile                          # Multi-stage Dockerfile de producción
+│   └── src/
+│       ├── main.ts                         # Bootstrap (:3006), Swagger (/api/clinical-records/docs)
+│       ├── medical-records/                # ECE NOM-004, FTS PostgreSQL en español y Signos Vitales
+│       ├── hospitalizations/               # Censo de Camas, Habitaciones y Sincronización Elasticsearch
+│       └── audit/                          # Bitácora Inmutable HIPAA § 164.312 y NOM-024
+│
+├── staff-service/                          # Microservicio Autónomo de Personal Médico y Consultorios (:3007)
+│   ├── Dockerfile                          # Multi-stage Dockerfile de producción
+│   └── src/
+│       ├── main.ts                         # Bootstrap (:3007), Swagger (/api/doctors/docs)
+│       ├── redis/                          # Servicio de Caché Distribuido para Catálogos Médicos
+│       └── doctors/                        # Médicos, Especialidades, Consultorios y Jerarquía WITH RECURSIVE
 │
 ├── frontend/                               # Angular 21 (HTML y TS 100% desacoplados)
 │   ├── nginx.conf                          # Archivo ÚNICO Nginx con compresión GZIP y Rate Limiting
@@ -66,7 +99,10 @@ healthtech-platform/
 │       ├── 00_init_keycloak_db.sql         # Creación de base de datos 'keycloak'
 │       ├── 01_schema_centromedico.sql      # DDL Centro Médico + Tabla registro_auditoria
 │       ├── 02_seed_centromedico.sql        # Población inicial de médicos, pacientes y camas
-│       └── 03_centromedico_practice_queries.sql
+│       ├── 03_centromedico_practice_queries.sql
+│       ├── 03_seed_hipaa_audit.sql
+│       ├── 04_schema_saga_outbox.sql       # Tablas outbox_evento e instancia_saga
+│       └── 05_schema_service_isolation.sql # Esquemas aislados por servicio y vistas
 │
 ├── kong/
 │   └── kong.yml                            # Configuración declarativa DB-less de Kong Gateway 3.9.4
@@ -121,11 +157,34 @@ docker compose up -d --build
 .\scripts\bootstrap-keycloak.ps1
 ```
 
+### 3. Ejecutar Suite de Verificación E2E (Sagas, Outbox CDC, Notificaciones e Idempotencia)
+```powershell
+node .\scripts\verify-e2e-microservices.mjs
+```
+
 ### 🌐 URLs y Puertos de la Topología:
 * **API Gateway Kong (DB-less):** [http://localhost:8000](http://localhost:8000) (Proxy unificado) y [http://localhost:8001](http://localhost:8001) (Admin API)
 * **Plataforma Web (Angular 21 + Nginx):** [http://localhost](http://localhost) (Puerto 80)
-* **Backend API (NestJS 12):** [http://localhost:3000/api](http://localhost:3000/api)
-* **Swagger OpenAPI Docs:** [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+* **Backend Monolito Estrangulado (NestJS 12):** [http://localhost:3000/api](http://localhost:3000/api)
+  - Swagger OpenAPI Docs: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+  - Panel Admin Sagas & Outbox: `GET /api/admin/sagas`, `GET /api/admin/outbox/stats`
+* **Microservicio de Citas (Appointment-Service):** [http://localhost:3001/api/appointments](http://localhost:3001/api/appointments)
+  - Swagger OpenAPI Docs: [http://localhost:3001/api/appointments/docs](http://localhost:3001/api/appointments/docs)
+  - Saga Orquestada de Reserva: `POST /api/appointments/saga-booking`
+* **Microservicio de Pacientes (Patient-Service):** [http://localhost:3002/api/patients](http://localhost:3002/api/patients)
+  - Swagger OpenAPI Docs: [http://localhost:3002/api/patients/docs](http://localhost:3002/api/patients/docs)
+* **Microservicio de Facturación (Billing-Service):** [http://localhost:3003/api/billing](http://localhost:3003/api/billing)
+  - Swagger OpenAPI Docs: [http://localhost:3003/api/billing/docs](http://localhost:3003/api/billing/docs)
+  - Cálculo de Coaseguros & Eventos Kafka: `POST /api/billing`, `GET /api/billing/tariffs`
+* **Microservicio de Farmacia (Pharmacy-Service):** [http://localhost:3004/api/pharmacy](http://localhost:3004/api/pharmacy)
+  - Swagger OpenAPI Docs: [http://localhost:3004/api/pharmacy/docs](http://localhost:3004/api/pharmacy/docs)
+  - Dispensación & Alertas de Stock: `POST /api/pharmacy/:id/dispense`, `GET /api/pharmacy/summary`
+* **Microservicio de Notificaciones (Notification-Service):** [http://localhost:3005/api/notifications](http://localhost:3005/api/notifications)
+  - Server-Sent Events (SSE Real-Time Stream): `GET /api/notifications/stream`
+  - Dead-Letter Queue (DLQ Buffer & Reintento): `GET /api/notifications/dlq`, `POST /api/notifications/dlq/:id/retry`
+  - Health & Métricas de Despacho: `GET /api/notifications/health`, `GET /api/notifications/history`
+* **Apache Kafka 8.3.2 (KRaft Mode):** `localhost:9092` (externo: `localhost:29092`)
+* **Kafka UI Dashboard:** [http://localhost:8085](http://localhost:8085) (Inspección de tópicos, particiones y offsets)
 * **Keycloak 26.8.1 IAM (en PostgreSQL 18):** [http://localhost:8080](http://localhost:8080)
   - Master Admin: `admin` / `admin`
   - App Admin: `admin_user` / `Admin123!` (Acceso total + Panel de Administración)
@@ -135,3 +194,4 @@ docker compose up -d --build
 * **Elastic Agent 9.5.5 (APM & OTLP Collector):** [http://localhost:8200](http://localhost:8200)
 * **Redis 8.8.1-alpine:** `localhost:6379`
 * **PostgreSQL 18:** `localhost:5432` (`centromedico` y `keycloak`)
+

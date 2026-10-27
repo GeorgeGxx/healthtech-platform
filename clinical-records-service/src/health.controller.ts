@@ -1,0 +1,45 @@
+import { Controller, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { DataSource } from 'typeorm';
+
+@ApiTags('Health Check')
+@Controller(['health', 'clinical-records/health'])
+export class HealthController {
+  constructor(private readonly dataSource: DataSource) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Health check del microservicio de expediente clínico y censo hospitalario' })
+  check() {
+    return {
+      status: 'ok',
+      service: 'clinical-records-service',
+      version: '1.0.0',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('liveness')
+  @ApiOperation({ summary: 'Liveness probe (K8s)' })
+  liveness() {
+    return { status: 'ok', service: 'clinical-records-service' };
+  }
+
+  @Get('readiness')
+  @ApiOperation({ summary: 'Readiness probe (PostgreSQL)' })
+  async readiness() {
+    let dbStatus = 'UP';
+    let ok = true;
+    try {
+      await this.dataSource.query('SELECT 1');
+    } catch (err: any) {
+      dbStatus = `DOWN: ${err.message}`;
+      ok = false;
+    }
+    return {
+      ok,
+      timestamp: new Date().toISOString(),
+      checks: { database: dbStatus },
+    };
+  }
+}

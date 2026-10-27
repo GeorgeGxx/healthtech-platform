@@ -6,18 +6,19 @@ _format_version: "3.0"
 # ============================================================================
 
 services:
-  # 1. API Backend NestJS 12
-  - name: backend
-    url: http://backend:3000/api
+  # 1. Microservicio de Citas y Turnos Médicos (NestJS 12 + Sagas)
+  - name: appointment-service
+    url: http://appointment-service:3001/api/appointments
     routes:
-      - name: api-healthtech-route
+      - name: appointments-route
         paths:
-          - /api
-        strip_path: false
+          - /api/appointments
+        strip_path: true
+        regex_priority: 10
     plugins:
       - name: rate-limiting
         config:
-          minute: 180
+          minute: 120
           policy: local
       - name: cors
         config:
@@ -34,7 +35,187 @@ services:
             - "*"
           credentials: true
 
-  # 2. Servidor de Identidad Keycloak 26.8.1
+  # 2. Panel Admin: Sagas Orquestadas y Outbox CDC (appointment-service)
+  - name: admin-service
+    url: http://appointment-service:3001/api/admin
+    routes:
+      - name: admin-route
+        paths:
+          - /api/admin
+        strip_path: true
+        regex_priority: 10
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
+  # 3. Microservicio de Pacientes y Aseguradoras (NestJS 12)
+  - name: patient-service
+    url: http://patient-service:3002/api/patients
+    routes:
+      - name: patients-route
+        paths:
+          - /api/patients
+        strip_path: true
+        regex_priority: 10
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 120
+          policy: local
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
+  # 4. Microservicio de Notificaciones (NestJS 12 + Kafka 8.x)
+  - name: notification-service
+    url: http://notification-service:3005/api/notifications
+    routes:
+      - name: notifications-route
+        paths:
+          - /api/notifications
+        strip_path: true
+        regex_priority: 10
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
+  # 5. Microservicio de Caja y Facturación (NestJS 12 + Kafka)
+  - name: billing-service
+    url: http://billing-service:3003/api/billing
+    routes:
+      - name: billing-route
+        paths:
+          - /api/billing
+        strip_path: true
+        regex_priority: 10
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
+  # 6. Microservicio de Farmacia y Existencias (NestJS 12 + Kafka)
+  - name: pharmacy-service
+    url: http://pharmacy-service:3004/api/pharmacy
+    routes:
+      - name: pharmacy-route
+        paths:
+          - /api/pharmacy
+        strip_path: true
+        regex_priority: 10
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PATCH
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
+  # 7. Microservicio de Personal Médico y Especialidades (NestJS 12)
+  - name: staff-service
+    url: http://staff-service:3007/api/doctors
+    routes:
+      - name: doctors-route
+        paths:
+          - /api/doctors
+        strip_path: true
+        regex_priority: 10
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
+  # 8. Microservicio de Expediente Clínico Electrónico (ECE), Censo y Auditoría (NestJS 12)
+  - name: clinical-records-service
+    url: http://clinical-records-service:3006
+    routes:
+      - name: medical-records-route
+        paths:
+          - /api/medical-records
+        strip_path: false
+        regex_priority: 10
+      - name: hospitalizations-route
+        paths:
+          - /api/hospitalizations
+        strip_path: false
+        regex_priority: 10
+      - name: audit-route
+        paths:
+          - /api/audit
+        strip_path: false
+        regex_priority: 10
+      - name: clinical-records-health-route
+        paths:
+          - /api/clinical-records/health
+        strip_path: false
+        regex_priority: 10
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - POST
+            - PUT
+            - PATCH
+            - DELETE
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
+  # 7. Servidor de Identidad Keycloak 26.8.1
   - name: keycloak-auth
     url: http://keycloak:8080
     routes:
@@ -45,7 +226,7 @@ services:
           - /admin
         strip_path: false
 
-  # 3. Aplicación Web Frontend Angular 21 (Nginx SPA)
+  # 4. Aplicación Web Frontend Angular 21 (Nginx SPA)
   - name: frontend
     url: http://frontend:80
     routes:
@@ -57,3 +238,15 @@ services:
 # Plugins globales
 plugins:
   - name: prometheus
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      generator: uuid
+      echo_downstream: true
+  - name: response-transformer
+    config:
+      add:
+        headers:
+          - "X-Content-Type-Options: nosniff"
+          - "X-Frame-Options: SAMEORIGIN"
+          - "X-XSS-Protection: 1; mode=block"

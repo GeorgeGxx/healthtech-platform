@@ -154,7 +154,7 @@ export class ApiService {
   // URL base dinámica (soporta desarrollo local en puerto 3000 o Reverse Proxy Nginx en /api)
   private readonly baseUrl =
     typeof window !== 'undefined' && window.location.port === '4200'
-      ? 'http://localhost:3000/api'
+      ? 'http://localhost:8000/api'
       : '/api';
 
   // Signals globales
@@ -599,5 +599,117 @@ export class ApiService {
         });
       })
     );
+  }
+
+  // --- Sagas Orquestadas y Outbox CDC ---
+  executeBookingSaga(data: {
+    idPaciente: number;
+    idMedico: number;
+    idEspecialidad: number;
+    inicio: string;
+    fin: string;
+    motivoConsulta?: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/appointments/saga-booking`, data);
+  }
+
+  getSagas(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/admin/sagas`).pipe(
+      catchError(() => of([])),
+    );
+  }
+
+  getSagaById(id: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/admin/sagas/${id}`);
+  }
+
+  getOutboxStats(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/admin/outbox/stats`).pipe(
+      catchError(() => of({ total: 0, pendientes: 0, publicados: 0, fallidos: 0 })),
+    );
+  }
+
+  retryFailedOutbox(): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/admin/outbox/retry-failed`, {});
+  }
+
+  relayOutboxNow(): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/admin/outbox/relay-now`, {});
+  }
+
+  // --- Farmacia: Dispensación y Ajuste de Stock ---
+  dispenseMedication(id: string, cantidad: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/pharmacy/${id}/dispense`, { cantidad });
+  }
+
+  adjustMedicationStock(id: string, nuevoStock: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/pharmacy/${id}/stock`, { nuevoStock });
+  }
+
+  // --- Notificaciones: Dead-Letter Queue (DLQ) ---
+  getNotificationsDlq(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/notifications/dlq`).pipe(
+      catchError(() => of({ totalEnDlq: 0, items: [] })),
+    );
+  }
+
+  retryDlqNotification(id: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/notifications/dlq/${id}/retry`, {});
+  }
+
+  // --- Telemedicina WebRTC (Pilar 4) ---
+  createVirtualRoom(appointmentId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/appointments/${appointmentId}/virtual-room`, {});
+  }
+
+  getVirtualRoom(roomId: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/appointments/virtual-room/${roomId}`);
+  }
+
+  // --- Receta Médica Digital & Criptografía HMAC-SHA256 (Pilar 2) ---
+  createDigitalPrescription(data: {
+    idPaciente: number;
+    idMedico: number;
+    diagnostico: string;
+    medicamentos: Array<{ nombre: string; dosis: string; frecuencia: string; duracionDias: number }>;
+    vigenciaDias?: number;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/medical-records/prescriptions`, data);
+  }
+
+  verifyDigitalPrescription(code: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/medical-records/prescriptions/${code}/verify`);
+  }
+
+  // --- HL7 FHIR R4 Interoperabilidad Médica (Pilar 2) ---
+  getPatientFhir(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/patients/${id}/fhir`);
+  }
+
+  getPatientsFhirBundle(search?: string, page?: number, limit?: number): Observable<any> {
+    let url = `${this.baseUrl}/patients/fhir?page=${page || 1}&limit=${limit || 20}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    return this.http.get<any>(url);
+  }
+
+  getEncounterFhir(recordId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/medical-records/${recordId}/fhir`);
+  }
+
+  // --- Finanzas: Liquidación de Honorarios Médicos 80/20 (Pilar 4) ---
+  getDoctorSettlement(doctorId: number, periodo?: string): Observable<any> {
+    let url = `${this.baseUrl}/billing/doctors/${doctorId}/settlement`;
+    if (periodo) url += `?periodo=${periodo}`;
+    return this.http.get<any>(url);
+  }
+
+  // --- Notificaciones Multicanal WhatsApp / Email (Pilar 4) ---
+  triggerMultichannelReminder(data: {
+    idTurno: number;
+    pacienteNombre: string;
+    medicoNombre: string;
+    especialidad: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/notifications/reminders/trigger`, data);
   }
 }

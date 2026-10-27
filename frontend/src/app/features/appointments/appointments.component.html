@@ -505,6 +505,22 @@
               <!-- Acciones -->
               <td class="px-5 py-4 text-right space-x-1 whitespace-nowrap">
                 @if (auth.isAdmin() || auth.isDoctor()) {
+                  <button
+                    (click)="startTelemedicine(t)"
+                    class="px-2.5 py-1.5 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition cursor-pointer inline-flex items-center gap-1"
+                    title="Iniciar Sesión de Telemedicina WebRTC Cifrada"
+                  >
+                    <span>📹</span>
+                    <span>Telemedicina</span>
+                  </button>
+                  <button
+                    (click)="sendAppointmentReminder(t)"
+                    class="px-2.5 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl transition cursor-pointer inline-flex items-center gap-1"
+                    title="Enviar Recordatorio WhatsApp & Email"
+                  >
+                    <span>📲</span>
+                    <span>Avisar</span>
+                  </button>
                   @if (t.estado !== 'atendido' && t.estado !== 'cancelado') {
                     <button
                       (click)="changeStatus(t.idTurno, 'atendido')"
@@ -527,6 +543,13 @@
                     </span>
                   }
                 } @else {
+                  <button
+                    (click)="startTelemedicine(t)"
+                    class="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition cursor-pointer inline-flex items-center gap-1 mr-1"
+                    title="Ingresar a la Consulta Virtual WebRTC"
+                  >
+                    <span>📹 Sala Virtual</span>
+                  </button>
                   @if (t.estado === 'pendiente') {
                     <button
                       (click)="cancelMyAppointment(t.idTurno)"
@@ -766,4 +789,82 @@
       </div>
     </form>
   </app-clinical-modal>
+
+  <!-- Modal de Sala Virtual WebRTC (Pilar 4) -->
+  @if (showVirtualRoomModal() && virtualRoomData()) {
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-xl">
+              📹
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-800">Sala Virtual de Telemedicina WebRTC</h3>
+              <p class="text-xs text-slate-500">Sesión P2P cifrada de extremo a extremo</p>
+            </div>
+          </div>
+          <button (click)="closeVirtualRoomModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
+        </div>
+
+        <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200/70 text-xs">
+          <div class="flex justify-between py-1 border-b border-slate-200/50">
+            <span class="text-slate-500 font-medium">ID Sala:</span>
+            <span class="font-mono font-bold text-teal-800">{{ virtualRoomData()?.idSala }}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-200/50">
+            <span class="text-slate-500 font-medium">Paciente:</span>
+            <span class="font-semibold text-slate-700">{{ virtualRoomData()?.paciente }}</span>
+          </div>
+          <div class="flex justify-between py-1 border-b border-slate-200/50">
+            <span class="text-slate-500 font-medium">Médico / Especialidad:</span>
+            <span class="font-semibold text-slate-700">{{ virtualRoomData()?.medico }} ({{ virtualRoomData()?.especialidad }})</span>
+          </div>
+          <div class="flex justify-between py-1">
+            <span class="text-slate-500 font-medium">Servidores STUN / ICE:</span>
+            <span class="font-mono text-emerald-700 font-semibold">{{ virtualRoomData()?.iceServers?.length || 2 }} servidores activos</span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-slate-700">Enlace de Acceso Seguro (Paciente / Médico):</label>
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              readonly
+              [value]="virtualRoomData()?.accesoPaciente"
+              class="flex-1 px-3 py-2 text-xs font-mono bg-slate-100 rounded-lg border border-slate-200 text-slate-700 select-all"
+            />
+            <button
+              type="button"
+              (click)="copyRoomUrl(virtualRoomData()?.accesoPaciente)"
+              class="px-3 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition cursor-pointer"
+              title="Copiar enlace"
+            >
+              Copiar
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400">Token firmado con expiración temporal de 60 minutos.</p>
+        </div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="closeVirtualRoomModal()"
+            class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+          >
+            Cerrar
+          </button>
+          <a
+            [href]="virtualRoomData()?.accesoPaciente"
+            target="_blank"
+            class="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 rounded-xl shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Ingresar a Sala Virtual</span>
+            <span>→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  }
 </div>

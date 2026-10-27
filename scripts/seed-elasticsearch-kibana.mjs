@@ -112,6 +112,7 @@ async function main() {
         properties: {
           operacion_id: { type: 'keyword' },
           tipo_evento: { type: 'keyword' },
+          modalidad: { type: 'keyword' },
           especialidad: { type: 'keyword' },
           medico: { type: 'keyword' },
           paciente: { type: 'keyword' },
@@ -122,6 +123,10 @@ async function main() {
           descuento_cobertura_mxn: { type: 'float' },
           monto_mxn: { type: 'float' },
           copago_mxn: { type: 'float' },
+          honorario_medico_mxn: { type: 'float' },
+          comision_clinica_mxn: { type: 'float' },
+          receta_digital_estado: { type: 'keyword' },
+          firma_digital_valida: { type: 'boolean' },
           '@timestamp': { type: 'date' },
         },
       },
@@ -175,6 +180,10 @@ async function main() {
           latencia_ms: { type: 'float' },
           peticiones_por_minuto: { type: 'integer' },
           estado_salud: { type: 'keyword' },
+          estandar_fhir: { type: 'keyword' },
+          protocolo: { type: 'keyword' },
+          correlation_id: { type: 'keyword' },
+          dlq_pendientes: { type: 'integer' },
           uso_cpu_pct: { type: 'float' },
           uso_memoria_mb: { type: 'float' },
           '@timestamp': { type: 'date' },
@@ -346,10 +355,16 @@ async function main() {
       const pat = p.paciente ? `${p.paciente.nombre} ${p.paciente.apellido}` : 'Paciente';
       const ins = helperAseguradora(p.paciente?.numeroAfiliado, p.metodoPago);
 
+      const modalidad = (p.idPago % 3 === 0) ? 'Telemedicina WebRTC' : 'Consulta Presencial';
+      const docFee = Math.round(gross * 0.8 * 100) / 100;
+      const clinicFee = Math.round(gross * 0.2 * 100) / 100;
+      const rxStatus = (p.idPago % 2 === 0) ? 'DISPENSADA' : 'EMITIDA';
+
       bulkOps += JSON.stringify({ index: { _index: opsIndex, _id: p.comprobanteFiscal || `PAGO-${p.idPago}` } }) + '\n';
       bulkOps += JSON.stringify({
         operacion_id: p.comprobanteFiscal || `PAGO-${p.idPago}`,
         tipo_evento: p.idInternacion ? 'internacion' : 'facturacion',
+        modalidad,
         especialidad: spec,
         medico: doc,
         paciente: pat,
@@ -360,6 +375,10 @@ async function main() {
         monto_neto_mxn: net,
         copago_mxn: net,
         descuento_cobertura_mxn: discount,
+        honorario_medico_mxn: docFee,
+        comision_clinica_mxn: clinicFee,
+        receta_digital_estado: rxStatus,
+        firma_digital_valida: true,
         fecha_pago: p.fechaPago,
         '@timestamp': now,
       }) + '\n';
@@ -476,31 +495,41 @@ async function main() {
   // 7. Poblar Métricas de Telemetría SRE / APM (Pilar 3)
   console.log('\n⚙️ Generando telemetría de rendimiento y salud de microservicios (SRE / APM)...');
   const servicesList = [
-    { name: 'backend', port: 3000, type: 'NestJS 12 API', baseLat: 16.5, rpm: 120, cpu: 14.2, mem: 168 },
+    { name: 'appointment-service', port: 3001, type: 'NestJS Microservice', baseLat: 12.5, rpm: 180, cpu: 11.2, mem: 145 },
+    { name: 'patient-service', port: 3002, type: 'NestJS Microservice', baseLat: 10.4, rpm: 160, cpu: 9.8, mem: 138 },
+    { name: 'billing-service', port: 3003, type: 'NestJS Microservice', baseLat: 14.1, rpm: 110, cpu: 10.5, mem: 142 },
+    { name: 'pharmacy-service', port: 3004, type: 'NestJS Microservice', baseLat: 9.2, rpm: 140, cpu: 8.7, mem: 135 },
+    { name: 'notification-service', port: 3005, type: 'NestJS Microservice', baseLat: 8.6, rpm: 210, cpu: 12.1, mem: 152 },
+    { name: 'clinical-records-service', port: 3006, type: 'NestJS Microservice', baseLat: 15.3, rpm: 130, cpu: 13.4, mem: 160 },
+    { name: 'staff-service', port: 3007, type: 'NestJS Microservice', baseLat: 7.8, rpm: 95, cpu: 7.9, mem: 130 },
+    { name: 'kong-gateway', port: 8000, type: 'Kong Gateway 3.9.4', baseLat: 2.1, rpm: 850, cpu: 8.9, mem: 95 },
+    { name: 'kafka', port: 9092, type: 'Apache Kafka 8.3 (KRaft)', baseLat: 1.5, rpm: 900, cpu: 14.0, mem: 512 },
     { name: 'postgres', port: 5432, type: 'PostgreSQL 18 DB', baseLat: 3.2, rpm: 450, cpu: 11.5, mem: 210 },
-    { name: 'redis', port: 6379, type: 'Redis 8.8 Cache', baseLat: 0.8, rpm: 600, cpu: 4.8, mem: 48 },
-    { name: 'kong-gateway', port: 8000, type: 'Kong 3.9.4 Proxy', baseLat: 2.1, rpm: 750, cpu: 8.9, mem: 95 },
+    { name: 'redis', port: 6379, type: 'Redis 8.8 Cache & Idemp', baseLat: 0.8, rpm: 600, cpu: 4.8, mem: 48 },
     { name: 'keycloak', port: 8080, type: 'Keycloak 26.8 IAM', baseLat: 24.0, rpm: 45, cpu: 18.0, mem: 420 },
-    { name: 'elastic-agent', port: 8200, type: 'OTel Collector', baseLat: 4.5, rpm: 320, cpu: 6.2, mem: 180 },
   ];
 
   const endpointsList = [
-    { ep: '/api/patients', method: 'GET', baseLat: 14.2, status: 200 },
-    { ep: '/api/appointments', method: 'GET', baseLat: 18.5, status: 200 },
-    { ep: '/api/appointments', method: 'POST', baseLat: 22.1, status: 201 },
-    { ep: '/api/pharmacy', method: 'GET', baseLat: 11.8, status: 200 },
-    { ep: '/api/pharmacy/summary', method: 'GET', baseLat: 9.4, status: 200 },
-    { ep: '/api/hospitalizations/bed-census', method: 'GET', baseLat: 21.0, status: 200 },
-    { ep: '/api/billing', method: 'GET', baseLat: 17.5, status: 200 },
-    { ep: '/api/billing', method: 'POST', baseLat: 24.0, status: 201 },
-    { ep: '/api/dashboard/metrics', method: 'GET', baseLat: 28.2, status: 200 },
-    { ep: '/realms/healthtech', method: 'POST', baseLat: 32.0, status: 200 },
-    { ep: '/api/audit', method: 'GET', baseLat: 15.0, status: 200 },
-    { ep: '/api/auth/login', method: 'POST', baseLat: 45.0, status: 200 },
-    { ep: '/api/auth/login', method: 'POST', baseLat: 42.0, status: 401 },
-    { ep: '/api/patients/9999', method: 'GET', baseLat: 13.0, status: 404 },
-    { ep: '/api/appointments/999/status', method: 'PATCH', baseLat: 12.0, status: 404 },
-    { ep: '/api/admin/metrics-summary', method: 'GET', baseLat: 26.5, status: 200 },
+    { ep: '/api/patients', method: 'GET', baseLat: 14.2, status: 200, svc: 'patient-service' },
+    { ep: '/api/patients/1/fhir', method: 'GET', baseLat: 18.1, status: 200, svc: 'patient-service', fhir: 'FHIR_PATIENT_R4' },
+    { ep: '/api/patients/fhir', method: 'GET', baseLat: 22.4, status: 200, svc: 'patient-service', fhir: 'FHIR_BUNDLE' },
+    { ep: '/api/appointments', method: 'GET', baseLat: 16.5, status: 200, svc: 'appointment-service' },
+    { ep: '/api/appointments', method: 'POST', baseLat: 24.1, status: 201, svc: 'appointment-service' },
+    { ep: '/api/appointments/1/virtual-room', method: 'POST', baseLat: 28.5, status: 200, svc: 'appointment-service', proto: 'WebRTC Signal' },
+    { ep: '/api/medical-records/1/fhir', method: 'GET', baseLat: 21.0, status: 200, svc: 'clinical-records-service', fhir: 'FHIR_ENCOUNTER_R4' },
+    { ep: '/api/medical-records/prescriptions', method: 'POST', baseLat: 31.0, status: 201, svc: 'clinical-records-service' },
+    { ep: '/api/medical-records/prescriptions/verify', method: 'GET', baseLat: 15.2, status: 200, svc: 'clinical-records-service' },
+    { ep: '/api/billing', method: 'GET', baseLat: 13.5, status: 200, svc: 'billing-service' },
+    { ep: '/api/billing/doctors/2/settlement', method: 'GET', baseLat: 25.0, status: 200, svc: 'billing-service' },
+    { ep: '/api/pharmacy', method: 'GET', baseLat: 11.8, status: 200, svc: 'pharmacy-service' },
+    { ep: '/api/pharmacy/summary', method: 'GET', baseLat: 9.4, status: 200, svc: 'pharmacy-service' },
+    { ep: '/api/hospitalizations/bed-census', method: 'GET', baseLat: 21.0, status: 200, svc: 'clinical-records-service' },
+    { ep: '/api/notifications/reminders/trigger', method: 'POST', baseLat: 12.0, status: 200, svc: 'notification-service' },
+    { ep: '/api/notifications/dlq', method: 'GET', baseLat: 6.5, status: 200, svc: 'notification-service' },
+    { ep: '/api/doctors', method: 'GET', baseLat: 8.5, status: 200, svc: 'staff-service' },
+    { ep: '/api/auth/login', method: 'POST', baseLat: 42.0, status: 200, svc: 'keycloak' },
+    { ep: '/api/auth/login', method: 'POST', baseLat: 38.0, status: 401, svc: 'keycloak' },
+    { ep: '/api/patients/9999', method: 'GET', baseLat: 11.0, status: 404, svc: 'patient-service' },
   ];
 
   let bulkTelemetry = '';
@@ -516,7 +545,7 @@ async function main() {
 
       bulkTelemetry += JSON.stringify({ index: { _index: telemetryIndex, _id: `TEL-${telId++}` } }) + '\n';
       bulkTelemetry += JSON.stringify({
-        servicio: 'backend',
+        servicio: ep.svc || 'backend',
         endpoint: ep.ep,
         metodo_http: ep.method,
         codigo_estado: ep.status,
@@ -524,6 +553,10 @@ async function main() {
         latencia_ms: lat,
         peticiones_por_minuto: rpm,
         estado_salud: 'Healthy',
+        estandar_fhir: ep.fhir,
+        protocolo: ep.proto || 'REST / HTTP 1.1',
+        correlation_id: `CORR-${m}-${Math.floor(Math.random() * 90000 + 10000)}`,
+        dlq_pendientes: 0,
         uso_cpu_pct: Math.round((14.5 + Math.random() * 4) * 10) / 10,
         uso_memoria_mb: Math.round((172 + Math.random() * 10) * 10) / 10,
         '@timestamp': metricTime,
@@ -735,6 +768,57 @@ async function main() {
     references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: opsDvId }],
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-pie-revenue-by-insurer?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visRevenueByInsurer) });
+
+  // KPI Dinámico: Honorarios Médicos Netos (80%)
+  const visMetricDoctorPayout = {
+    attributes: {
+      title: 'KPI Dinámico - Honorarios Médicos Netos Acumulados',
+      visState: JSON.stringify({
+        title: 'Honorarios Médicos (80%)',
+        type: 'metric',
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Honorarios a liquidar según balance médico', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'honorario_medico_mxn', customLabel: '👨‍⚕️ Honorarios Médicos (MXN)' } }],
+      }),
+      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: opsDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-doctor-payout?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visMetricDoctorPayout) });
+
+  // KPI Dinámico: Margen Retención Clínica 20%
+  const visMetricClinicMargin = {
+    attributes: {
+      title: 'KPI Dinámico - Margen Retención Clínica 20%',
+      visState: JSON.stringify({
+        title: 'Margen Centro Médico (20%)',
+        type: 'metric',
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Comisión del 20% para operación hospitalaria', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'comision_clinica_mxn', customLabel: '🏥 Margen Clínica (MXN)' } }],
+      }),
+      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: opsDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-clinic-margin?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visMetricClinicMargin) });
+
+  // Gráfica de Dona: Modalidad Telemedicina WebRTC vs Consulta Presencial
+  const visPieModality = {
+    attributes: {
+      title: 'Gráfica de Dona - Modalidad de Consulta: Telemedicina WebRTC vs Presencial',
+      visState: JSON.stringify({
+        title: 'Modalidad de Consulta',
+        type: 'pie',
+        params: { type: 'pie', addTooltip: true, addLegend: true, legendPosition: 'right', isDonut: true },
+        aggs: [
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Total Consultas' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'modalidad', size: 5, order: 'desc', orderBy: '1', customLabel: 'Modalidad Asistencial' } },
+        ],
+      }),
+      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: opsDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-pie-modality?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visPieModality) });
 
   // Gráfica de Barras Stock Actual vs Mínimo
   const visBarStock = {
@@ -1108,6 +1192,36 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-sre-rpm?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visMetricSreRpm) });
 
+  const visMetricFhirCalls = {
+    attributes: {
+      title: 'KPI SRE - Peticiones Estándar HL7 FHIR R4',
+      visState: JSON.stringify({
+        title: 'HL7 FHIR R4 Calls',
+        type: 'metric',
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Interoperabilidad internacional activa', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🌐 Recursos FHIR Consultados' } }],
+      }),
+      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estandar_fhir: *', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: telemetryDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-fhir-calls?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visMetricFhirCalls) });
+
+  const visMetricDlqStatus = {
+    attributes: {
+      title: 'KPI SRE - Resiliencia Kafka Dead Letter Queue',
+      visState: JSON.stringify({
+        title: 'Kafka DLQ Pendientes',
+        type: 'metric',
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: '0 eventos pendientes en Dead Letter Queue', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'dlq_pendientes', customLabel: '🛡️ DLQ Eventos Pendientes' } }],
+      }),
+      kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
+    },
+    references: [{ name: 'kibanaSavedObjectMeta.searchSourceJSON.index', type: 'index-pattern', id: telemetryDvId }],
+  };
+  await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-dlq-status?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visMetricDlqStatus) });
+
   const visBarSreEndpoints = {
     attributes: {
       title: 'Gráfica de Barras - Latencia Media por Endpoint',
@@ -1157,12 +1271,12 @@ async function main() {
       visState: JSON.stringify({
         title: 'Matriz de Salud de Microservicios',
         type: 'table',
-        params: { perPage: 10, showPartialRows: false, showMetricsAtAllLevels: false, showTotal: false },
+        params: { perPage: 15, showPartialRows: false, showMetricsAtAllLevels: false, showTotal: false },
         aggs: [
           { id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'latencia_ms', customLabel: 'Latencia (ms)' } },
           { id: '2', enabled: true, type: 'avg', schema: 'metric', params: { field: 'uso_cpu_pct', customLabel: 'CPU (%)' } },
           { id: '3', enabled: true, type: 'avg', schema: 'metric', params: { field: 'uso_memoria_mb', customLabel: 'Memoria (MB)' } },
-          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'servicio', size: 10, order: 'asc', orderBy: '_key', customLabel: 'Microservicio' } },
+          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'servicio', size: 15, order: 'asc', orderBy: '_key', customLabel: 'Microservicio' } },
           { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'estado_salud', size: 5, order: 'desc', orderBy: '1', customLabel: 'Estado Salud' } },
         ],
       }),
@@ -1196,20 +1310,26 @@ async function main() {
     } catch {}
   }
 
-  // --- DASHBOARD 1: NEGOCIO (Camas, Farmacia & Facturación) ---
+  // --- DASHBOARD 1: NEGOCIO (Camas, Farmacia, Facturación & Telemedicina) ---
   const panelsOps = [
     { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-header' }, panelIndex: 'p-header', panelRefName: 'ref_header', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 0, y: 4, w: 48, h: 6, i: 'p-controls' }, panelIndex: 'p-controls', panelRefName: 'ref_controls', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 0, y: 10, w: 10, h: 7, i: 'p-beds-free' }, panelIndex: 'p-beds-free', panelRefName: 'ref_beds_free', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 10, y: 10, w: 9, h: 7, i: 'p-beds-occ' }, panelIndex: 'p-beds-occ', panelRefName: 'ref_beds_occ', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 19, y: 10, w: 9, h: 7, i: 'p-pharm-crit' }, panelIndex: 'p-pharm-crit', panelRefName: 'ref_pharm-crit', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 28, y: 10, w: 10, h: 7, i: 'p-pharm-stock' }, panelIndex: 'p-pharm-stock', panelRefName: 'ref_pharm-stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 38, y: 10, w: 10, h: 7, i: 'p-revenue' }, panelIndex: 'p-revenue', panelRefName: 'ref_revenue', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila Scorecard de 7 KPIs Ejecutivos (Negocio Hospitalario)
+    { gridData: { x: 0, y: 10, w: 7, h: 7, i: 'p-beds-free' }, panelIndex: 'p-beds-free', panelRefName: 'ref_beds_free', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 7, y: 10, w: 7, h: 7, i: 'p-beds-occ' }, panelIndex: 'p-beds-occ', panelRefName: 'ref_beds_occ', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 14, y: 10, w: 7, h: 7, i: 'p-pharm-crit' }, panelIndex: 'p-pharm-crit', panelRefName: 'ref_pharm-crit', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 21, y: 10, w: 7, h: 7, i: 'p-pharm-stock' }, panelIndex: 'p-pharm-stock', panelRefName: 'ref_pharm-stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 28, y: 10, w: 7, h: 7, i: 'p-revenue' }, panelIndex: 'p-revenue', panelRefName: 'ref_revenue', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 35, y: 10, w: 7, h: 7, i: 'p-doc-payout' }, panelIndex: 'p-doc-payout', panelRefName: 'ref_doc_payout', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 42, y: 10, w: 6, h: 7, i: 'p-clinic-margin' }, panelIndex: 'p-clinic-margin', panelRefName: 'ref_clinic_margin', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Gráficas fila 2 (Comparativa de Stock y Camas por Piso)
     { gridData: { x: 0, y: 17, w: 24, h: 14, i: 'p-bar-stock' }, panelIndex: 'p-bar-stock', panelRefName: 'ref_bar_stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 24, y: 17, w: 24, h: 14, i: 'p-bar-beds' }, panelIndex: 'p-bar-beds', panelRefName: 'ref_bar_beds', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Gráficas fila 3 (Donuts de Negocio, Farmacia y Modalidad Telemedicina)
     { gridData: { x: 0, y: 31, w: 16, h: 12, i: 'p-beds-donut' }, panelIndex: 'p-beds-donut', panelRefName: 'ref_beds_donut', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 16, y: 31, w: 16, h: 12, i: 'p-pharm-pie' }, panelIndex: 'p-pharm-pie', panelRefName: 'ref_pharm_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 32, y: 31, w: 16, h: 12, i: 'p-rev-ins' }, panelIndex: 'p-rev-ins', panelRefName: 'ref_rev_ins', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 32, y: 31, w: 16, h: 12, i: 'p-modality-pie' }, panelIndex: 'p-modality-pie', panelRefName: 'ref_modality_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Tablas fila 4 (Farmacia y Censo Dinámico de Camas)
     { gridData: { x: 0, y: 43, w: 24, h: 16, i: 'p-table-pharm' }, panelIndex: 'p-table-pharm', panelRefName: 'ref_table_pharm', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 24, y: 43, w: 24, h: 16, i: 'p-table-beds' }, panelIndex: 'p-table-beds', panelRefName: 'ref_table_beds', version: '9.5.5', embeddableConfig: { enhancements: {} } },
   ];
@@ -1220,7 +1340,7 @@ async function main() {
     body: JSON.stringify({
       attributes: {
         title: '1. Dashboard Negocio: Camas, Farmacia & Facturación',
-        description: 'Dashboard de Negocio Hospitalario: Censo y ocupación de camas, control de inventario de medicamentos y facturación en MXN.',
+        description: 'Dashboard de Negocio Hospitalario: Censo y ocupación de camas, control de inventario de medicamentos, facturación en MXN, liquidación de honorarios médicos y telemedicina.',
         timeRestore: true,
         timeFrom: 'now-24h',
         timeTo: 'now',
@@ -1234,11 +1354,13 @@ async function main() {
         { name: 'ref_pharm-crit', type: 'visualization', id: 'vis-metric-pharm-critical' },
         { name: 'ref_pharm-stock', type: 'visualization', id: 'vis-metric-pharm-stock-sum' },
         { name: 'ref_revenue', type: 'visualization', id: 'vis-metric-revenue' },
+        { name: 'ref_doc_payout', type: 'visualization', id: 'vis-metric-doctor-payout' },
+        { name: 'ref_clinic_margin', type: 'visualization', id: 'vis-metric-clinic-margin' },
         { name: 'ref_bar_stock', type: 'visualization', id: 'vis-bar-stock-compare' },
         { name: 'ref_bar_beds', type: 'visualization', id: 'vis-bar-beds-by-floor' },
         { name: 'ref_beds_donut', type: 'visualization', id: 'vis-beds-donut' },
         { name: 'ref_pharm_pie', type: 'visualization', id: 'vis-pharmacy-pie' },
-        { name: 'ref_rev_ins', type: 'visualization', id: 'vis-pie-revenue-by-insurer' },
+        { name: 'ref_modality_pie', type: 'visualization', id: 'vis-pie-modality' },
         { name: 'ref_table_pharm', type: 'visualization', id: 'vis-table-pharmacy-dynamic' },
         { name: 'ref_table_beds', type: 'visualization', id: 'vis-table-beds-dynamic' },
       ],
@@ -1246,28 +1368,30 @@ async function main() {
   });
   console.log('  ✓ Dashboard 1: "1. Dashboard Negocio: Camas, Farmacia & Facturación" registrado.');
 
-  // --- DASHBOARD 2: TECH (Salud del Sistema, SRE / APM, Seguridad & Auditoría HIPAA) ---
+  // --- DASHBOARD 2: TECH (Salud del Sistema, SRE / APM, 7 Microservicios, Seguridad & Auditoría HIPAA) ---
   const panelsTech = [
     { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-tech-hdr' }, panelIndex: 'p-tech-hdr', panelRefName: 'ref_tech_hdr', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 0, y: 4, w: 48, h: 6, i: 'p-tech-ctrl' }, panelIndex: 'p-tech-ctrl', panelRefName: 'ref_tech_ctrl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Fila unificada de 7 KPIs (Salud SRE + Seguridad HIPAA)
-    { gridData: { x: 0, y: 10, w: 7, h: 7, i: 'p-sre-upt' }, panelIndex: 'p-sre-upt', panelRefName: 'ref_sre_upt', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 7, y: 10, w: 7, h: 7, i: 'p-sre-lat' }, panelIndex: 'p-sre-lat', panelRefName: 'ref_sre_lat', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 14, y: 10, w: 7, h: 7, i: 'p-sre-rpm' }, panelIndex: 'p-sre-rpm', panelRefName: 'ref_sre_rpm', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 21, y: 10, w: 7, h: 7, i: 'p-hipaa-tot' }, panelIndex: 'p-hipaa-tot', panelRefName: 'ref_hipaa_tot', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 28, y: 10, w: 7, h: 7, i: 'p-hipaa-phi' }, panelIndex: 'p-hipaa-phi', panelRefName: 'ref_hipaa_phi', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 35, y: 10, w: 7, h: 7, i: 'p-hipaa-fail' }, panelIndex: 'p-hipaa-fail', panelRefName: 'ref_hipaa_fail', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 42, y: 10, w: 6, h: 7, i: 'p-hipaa-log' }, panelIndex: 'p-hipaa-log', panelRefName: 'ref_hipaa_log', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Fila unificada de 9 KPIs SRE, Interoperabilidad FHIR & Seguridad HIPAA
+    { gridData: { x: 0, y: 10, w: 6, h: 7, i: 'p-sre-upt' }, panelIndex: 'p-sre-upt', panelRefName: 'ref_sre_upt', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 6, y: 10, w: 5, h: 7, i: 'p-sre-lat' }, panelIndex: 'p-sre-lat', panelRefName: 'ref_sre_lat', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 11, y: 10, w: 5, h: 7, i: 'p-sre-rpm' }, panelIndex: 'p-sre-rpm', panelRefName: 'ref_sre_rpm', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 16, y: 10, w: 6, h: 7, i: 'p-sre-fhir' }, panelIndex: 'p-sre-fhir', panelRefName: 'ref_sre_fhir', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 22, y: 10, w: 5, h: 7, i: 'p-sre-dlq' }, panelIndex: 'p-sre-dlq', panelRefName: 'ref_sre_dlq', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 27, y: 10, w: 6, h: 7, i: 'p-hipaa-tot' }, panelIndex: 'p-hipaa-tot', panelRefName: 'ref_hipaa_tot', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 33, y: 10, w: 5, h: 7, i: 'p-hipaa-phi' }, panelIndex: 'p-hipaa-phi', panelRefName: 'ref_hipaa_phi', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 38, y: 10, w: 5, h: 7, i: 'p-hipaa-fail' }, panelIndex: 'p-hipaa-fail', panelRefName: 'ref_hipaa_fail', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 43, y: 10, w: 5, h: 7, i: 'p-hipaa-log' }, panelIndex: 'p-hipaa-log', panelRefName: 'ref_hipaa_log', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     // Visualizaciones SRE / APM
     { gridData: { x: 0, y: 17, w: 28, h: 14, i: 'p-sre-bar' }, panelIndex: 'p-sre-bar', panelRefName: 'ref_sre_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 28, y: 17, w: 20, h: 14, i: 'p-sre-pie' }, panelIndex: 'p-sre-pie', panelRefName: 'ref_sre_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Tabla de microservicios y estado de salud
-    { gridData: { x: 0, y: 31, w: 48, h: 13, i: 'p-sre-tbl' }, panelIndex: 'p-sre-tbl', panelRefName: 'ref_sre_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    // Tabla Matriz de Salud de los 7 Microservicios e Infraestructura
+    { gridData: { x: 0, y: 31, w: 48, h: 14, i: 'p-sre-tbl' }, panelIndex: 'p-sre-tbl', panelRefName: 'ref_sre_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     // Visualizaciones Seguridad & HIPAA
-    { gridData: { x: 0, y: 44, w: 26, h: 14, i: 'p-hipaa-bar' }, panelIndex: 'p-hipaa-bar', panelRefName: 'ref_hipaa_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    { gridData: { x: 26, y: 44, w: 22, h: 14, i: 'p-hipaa-pie' }, panelIndex: 'p-hipaa-pie', panelRefName: 'ref_hipaa_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 0, y: 45, w: 26, h: 14, i: 'p-hipaa-bar' }, panelIndex: 'p-hipaa-bar', panelRefName: 'ref_hipaa_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 26, y: 45, w: 22, h: 14, i: 'p-hipaa-pie' }, panelIndex: 'p-hipaa-pie', panelRefName: 'ref_hipaa_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     // Tabla Forense Inmutable de Seguridad HIPAA
-    { gridData: { x: 0, y: 58, w: 48, h: 16, i: 'p-hipaa-tbl' }, panelIndex: 'p-hipaa-tbl', panelRefName: 'ref_hipaa_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
+    { gridData: { x: 0, y: 59, w: 48, h: 16, i: 'p-hipaa-tbl' }, panelIndex: 'p-hipaa-tbl', panelRefName: 'ref_hipaa_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
   ];
 
   await fetch(`${KBN_URL}/api/saved_objects/dashboard/tech-sre-security-dashboard?overwrite=true`, {
@@ -1276,7 +1400,7 @@ async function main() {
     body: JSON.stringify({
       attributes: {
         title: '2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA',
-        description: 'Dashboard Técnico Unificado: Telemetría de microservicios (uptime, latencias p95, RPM, códigos HTTP), seguridad perimetral Keycloak y registro forense inmutable HIPAA (NOM-024).',
+        description: 'Dashboard Técnico Unificado: Telemetría de los 7 microservicios autónomos (uptime 99.98%, latencias p95, RPM, códigos HTTP), interoperabilidad HL7 FHIR R4, seguridad perimetral Kong Gateway y registro forense inmutable HIPAA (NOM-024).',
         timeRestore: true,
         timeFrom: 'now-24h',
         timeTo: 'now',
@@ -1288,6 +1412,8 @@ async function main() {
         { name: 'ref_sre_upt', type: 'visualization', id: 'vis-metric-sre-uptime' },
         { name: 'ref_sre_lat', type: 'visualization', id: 'vis-metric-sre-latency' },
         { name: 'ref_sre_rpm', type: 'visualization', id: 'vis-metric-sre-rpm' },
+        { name: 'ref_sre_fhir', type: 'visualization', id: 'vis-metric-fhir-calls' },
+        { name: 'ref_sre_dlq', type: 'visualization', id: 'vis-metric-dlq-status' },
         { name: 'ref_hipaa_tot', type: 'visualization', id: 'vis-metric-audit-total' },
         { name: 'ref_hipaa_phi', type: 'visualization', id: 'vis-metric-audit-phi' },
         { name: 'ref_hipaa_fail', type: 'visualization', id: 'vis-metric-audit-failed' },
@@ -1301,6 +1427,7 @@ async function main() {
       ],
     }),
   });
+  console.log('  ✓ Dashboard 2: "2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA" registrado.');
   console.log('  ✓ Dashboard 2: "2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA" registrado.');
 
   // 11. Exportar la suite de los 2 Dashboards a ./observability/

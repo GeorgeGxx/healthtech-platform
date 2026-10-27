@@ -27,6 +27,9 @@ export class AppointmentsComponent implements OnInit {
   readonly offices = signal<any[]>([]);
   readonly showModal = signal<boolean>(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly virtualRoomData = signal<any | null>(null);
+  readonly showVirtualRoomModal = signal<boolean>(false);
+  readonly isGeneratingRoom = signal<boolean>(false);
 
   readonly feePerConsultation = 1200;
   readonly selectedDoctorDay = signal<string>('2026-10-18');
@@ -562,6 +565,65 @@ export class AppointmentsComponent implements OnInit {
         },
       });
     }
+  }
+
+  startTelemedicine(appointment: any): void {
+    const idTurno = appointment.idTurno || appointment.id;
+    this.isGeneratingRoom.set(true);
+    this.api.createVirtualRoom(idTurno).subscribe({
+      next: (res) => {
+        this.virtualRoomData.set({
+          ...res,
+          paciente: appointment.paciente?.nombre ? `${appointment.paciente.nombre} ${appointment.paciente.apellido}` : 'Paciente',
+          medico: appointment.medico?.nombre ? `Dr(a). ${appointment.medico.nombre} ${appointment.medico.apellido}` : 'Médico Especialista',
+          especialidad: appointment.especialidad?.nombre || 'Consulta Médica',
+        });
+        this.showVirtualRoomModal.set(true);
+        this.isGeneratingRoom.set(false);
+        this.toast.success('Sala de Telemedicina WebRTC creada con éxito.');
+      },
+      error: (err) => {
+        this.isGeneratingRoom.set(false);
+        this.toast.error('No se pudo generar la sala virtual: ' + (err.error?.message || err.message));
+      },
+    });
+  }
+
+  closeVirtualRoomModal(): void {
+    this.showVirtualRoomModal.set(false);
+    this.virtualRoomData.set(null);
+  }
+
+  copyRoomUrl(url: string): void {
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(url);
+      this.toast.success('Enlace de telemedicina copiado al portapapeles');
+    }
+  }
+
+  sendAppointmentReminder(appointment: any): void {
+    const idTurno = appointment.idTurno || appointment.id;
+    const pacienteNombre = appointment.paciente?.nombre
+      ? `${appointment.paciente.nombre} ${appointment.paciente.apellido}`
+      : 'Paciente';
+    const medicoNombre = appointment.medico?.nombre
+      ? `Dr(a). ${appointment.medico.nombre} ${appointment.medico.apellido}`
+      : 'Médico Tratante';
+    const especialidad = appointment.especialidad?.nombre || 'Medicina General';
+
+    this.api.triggerMultichannelReminder({
+      idTurno,
+      pacienteNombre,
+      medicoNombre,
+      especialidad,
+    }).subscribe({
+      next: (res) => {
+        this.toast.success(`Recordatorios automáticos enviados vía WhatsApp y Correo (${res.totalGenerados} notificaciones encoladas).`);
+      },
+      error: (err) => {
+        this.toast.error('Error al enviar recordatorio multicanal: ' + (err.error?.message || err.message));
+      },
+    });
   }
 
   openModal(): void {

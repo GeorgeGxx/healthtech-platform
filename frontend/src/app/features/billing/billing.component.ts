@@ -23,6 +23,9 @@ export class BillingComponent implements OnInit {
   readonly appointments = signal<any[]>([]);
   readonly showModal = signal<boolean>(false);
   readonly activeTab = signal<'collections' | 'doctorFees'>('doctorFees');
+  readonly selectedSettlement = signal<any | null>(null);
+  readonly showSettlementModal = signal<boolean>(false);
+  readonly isLoadingSettlement = signal<boolean>(false);
 
   readonly feePerConsultation = 1200;
 
@@ -264,5 +267,25 @@ export class BillingComponent implements OnInit {
       </html>
     `);
     printWindow.document.close();
+  }
+
+  openDoctorSettlement(doctorId: number): void {
+    this.isLoadingSettlement.set(true);
+    this.api.getDoctorSettlement(doctorId).subscribe({
+      next: (res) => {
+        this.selectedSettlement.set(res);
+        this.showSettlementModal.set(true);
+        this.isLoadingSettlement.set(false);
+      },
+      error: (err) => {
+        this.isLoadingSettlement.set(false);
+        this.toast.error('Error al calcular liquidación médica: ' + (err.error?.message || err.message));
+      },
+    });
+  }
+
+  closeSettlementModal(): void {
+    this.showSettlementModal.set(false);
+    this.selectedSettlement.set(null);
   }
 }

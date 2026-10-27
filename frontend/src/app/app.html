@@ -423,6 +423,73 @@
           </button>
         </div>
 
+        <!-- Campana de Notificaciones en Tiempo Real (SSE + Kafka) -->
+        @if (!auth.isGuest()) {
+          <div class="relative">
+            <button
+              type="button"
+              (click)="toggleNotificationDropdown()"
+              class="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              title="Notificaciones en tiempo real (SSE)"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+              @if (sse.unreadCount() > 0) {
+                <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-black text-white ring-2 ring-white animate-pulse">
+                  {{ sse.unreadCount() > 9 ? '9+' : sse.unreadCount() }}
+                </span>
+              }
+            </button>
+
+            <!-- Dropdown flotante de Notificaciones -->
+            @if (isNotificationOpen()) {
+              <div
+                class="absolute right-0 mt-2 w-80 sm:w-96 glass-panel rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden animate-fade-in bg-white"
+              >
+                <div class="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-900">Notificaciones en Vivo</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold" [ngClass]="sse.isConnected() ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'">
+                      {{ sse.isConnected() ? '● SSE Conectado' : '○ Reconectando' }}
+                    </span>
+                  </div>
+                  @if (sse.notifications().length > 0) {
+                    <button
+                      type="button"
+                      (click)="sse.markAllAsRead()"
+                      class="text-[11px] text-emerald-700 hover:text-emerald-900 font-semibold cursor-pointer"
+                    >
+                      Marcar leídas
+                    </button>
+                  }
+                </div>
+
+                <div class="max-h-80 overflow-y-auto divide-y divide-slate-100 text-xs">
+                  @for (n of sse.notifications(); track n.id) {
+                    <div
+                      class="p-3 hover:bg-slate-50/80 transition-colors"
+                      [class.bg-emerald-50/30]="!n.leido"
+                    >
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-[11px] text-slate-800 line-clamp-1">{{ n.asunto }}</span>
+                        <span class="text-[10px] text-slate-400">{{ n.fechaEnvio | date: 'HH:mm:ss' }}</span>
+                      </div>
+                      <p class="text-[11px] text-slate-600 leading-snug line-clamp-2">{{ n.contenido }}</p>
+                      <div class="mt-1 flex items-center gap-2 text-[10px] text-slate-400">
+                        <span class="uppercase font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">{{ n.canal }}</span>
+                        <span>{{ n.destinatario }}</span>
+                      </div>
+                    </div>
+                  } @empty {
+                    <div class="p-8 text-center text-slate-400 italic">
+                      No hay notificaciones recientes en el flujo de eventos.
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
         <!-- Botón de Iniciar Sesión / Cerrar Sesión -->
         @if (auth.isGuest()) {
           <a

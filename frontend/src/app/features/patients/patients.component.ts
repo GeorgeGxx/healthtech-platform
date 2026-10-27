@@ -20,6 +20,9 @@ export class PatientsComponent implements OnInit {
   readonly insurances = signal<any[]>([]);
   readonly countries = signal<any[]>([]);
   readonly showModal = signal<boolean>(false);
+  readonly fhirPatientData = signal<any | null>(null);
+  readonly showFhirPatientModal = signal<boolean>(false);
+  readonly isFhirLoading = signal<boolean>(false);
 
   searchQuery: string = '';
 
@@ -169,5 +172,32 @@ export class PatientsComponent implements OnInit {
       },
       error: (err) => console.error('Error al registrar paciente:', err),
     });
+  }
+
+  openFhirPatientModal(patient: any): void {
+    const id = patient.idPaciente || patient.id || 1;
+    this.isFhirLoading.set(true);
+    this.api.getPatientFhir(id).subscribe({
+      next: (res) => {
+        this.fhirPatientData.set(res);
+        this.showFhirPatientModal.set(true);
+        this.isFhirLoading.set(false);
+      },
+      error: (err) => {
+        this.isFhirLoading.set(false);
+        console.error('Error al obtener HL7 FHIR Patient:', err);
+      },
+    });
+  }
+
+  closeFhirPatientModal(): void {
+    this.showFhirPatientModal.set(false);
+    this.fhirPatientData.set(null);
+  }
+
+  copyFhirPatientJson(): void {
+    if (this.fhirPatientData() && navigator?.clipboard) {
+      navigator.clipboard.writeText(JSON.stringify(this.fhirPatientData(), null, 2));
+    }
   }
 }

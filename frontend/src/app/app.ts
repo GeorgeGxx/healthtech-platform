@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { HipaaSessionModalComponent } from './core/components/hipaa-session-modal.component';
 import { ToastContainerComponent } from './core/components/toast-container.component';
 import { AuthStateService } from './core/services/auth-state.service';
+import { SseNotificationService } from './core/services/sse-notification.service';
 
 @Component({
   imports: [
@@ -20,9 +21,19 @@ import { AuthStateService } from './core/services/auth-state.service';
 })
 export class App {
   readonly auth = inject(AuthStateService);
+  readonly sse = inject(SseNotificationService);
   private router = inject(Router);
 
   readonly isMobileMenuOpen = signal<boolean>(false);
+  readonly isNotificationOpen = signal<boolean>(false);
+
+  toggleNotificationDropdown(): void {
+    this.isNotificationOpen.update((v) => !v);
+  }
+
+  closeNotificationDropdown(): void {
+    this.isNotificationOpen.set(false);
+  }
 
   switchUser(role: 'admin_user' | 'doctor_user' | 'basic_user' | 'guest'): void {
     if (role === 'admin_user') {
