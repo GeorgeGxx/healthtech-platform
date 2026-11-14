@@ -36,5 +36,8 @@
     "@types/node": "^24.0.0",
     "typescript": "^6.0.2",
     "vitest": "^4.1.12"
+  },
+  "overrides": {
+    "ioredis": "$ioredis"
   }
 }
