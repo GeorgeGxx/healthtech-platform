@@ -47,11 +47,8 @@ resource "azurerm_kubernetes_cluster" "this" {
     }
   }
 
-  dynamic "api_server_access_profile" {
-    for_each = var.private_cluster_enabled ? [] : [1]
-    content {
-      authorized_ip_ranges = var.api_server_authorized_ip_ranges
-    }
+  api_server_access_profile {
+    authorized_ip_ranges = var.private_cluster_enabled ? null : var.api_server_authorized_ip_ranges
   }
 
   node_provisioning_profile {
