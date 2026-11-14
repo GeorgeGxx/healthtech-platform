@@ -3,9 +3,9 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthStateService } from '../services/auth-state.service';
 
 /**
- * Controla el acceso a la raíz ('') que es el Home público del centro médico:
- * - Usuario autenticado -> /dashboard
- * - Visitante / Guest -> Permite el acceso directo en http://localhost/ (sin redirigir la URL)
+ * Controls access to the root ('') route, which is the medical center's public home:
+ * - Authenticated user -> /dashboard
+ * - Visitor / Guest -> Allows direct access at http://localhost/ (without redirecting the URL)
  */
 export const rootRedirectGuard: CanActivateFn = () => {
   const auth = inject(AuthStateService);
@@ -18,7 +18,7 @@ export const rootRedirectGuard: CanActivateFn = () => {
 };
 
 /**
- * Protege rutas que requieren inicio de sesión (Paciente o Recepción)
+ * Protects routes that require sign-in (Patient or Reception)
  */
 export const authGuard: CanActivateFn = (route, state) => {
   const auth = inject(AuthStateService);
@@ -32,7 +32,7 @@ export const authGuard: CanActivateFn = (route, state) => {
 };
 
 /**
- * Protege rutas administrativas exclusivas de Recepción / Staff
+ * Protects administrative routes exclusive to Reception / Staff
  */
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(AuthStateService);
@@ -46,7 +46,7 @@ export const adminGuard: CanActivateFn = () => {
 };
 
 /**
- * Protege rutas clínicas y operativas accesibles tanto por Recepción como por Médicos Tratantes
+ * Protects clinical and operational routes accessible by both Reception and Attending Physicians
  */
 export const clinicalStaffGuard: CanActivateFn = () => {
   const auth = inject(AuthStateService);

@@ -10,7 +10,7 @@ export class HealthController {
   constructor(private readonly dataSource: DataSource) {}
 
   @Get()
-  @ApiOperation({ summary: 'Health check del microservicio de expediente clínico y censo hospitalario' })
+  @ApiOperation({ summary: 'Health check for the clinical records and hospital stay microservice' })
   check() {
     return {
       status: 'ok',

@@ -43,7 +43,7 @@ export class MedicalRecordsComponent implements OnInit {
   drugFreq = '';
   drugDays = 30;
 
-  // Pacientes asignados al médico actual (Dra. Laura Gómez o tratante)
+  // Patients assigned to the current physician (Dr. Laura Gomez or attending)
   readonly assignedPatientIds = computed<number[]>(() => [1, 2, 4]);
 
   readonly filteredPatients = computed<any[]>(() => {
@@ -72,7 +72,7 @@ export class MedicalRecordsComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      // Reacciona al cambio de rol en el switcher superior
+      // Reacts to role change in the top switcher
       if (this.auth.isBasicUser()) {
         this.selectedPatientId = this.auth.currentUser().patientId || 1;
       } else if (this.auth.isDoctor()) {
@@ -108,7 +108,7 @@ export class MedicalRecordsComponent implements OnInit {
 
     this.api.getRecordsByPatient(targetId).subscribe({
       next: (data) => this.records.set(data || []),
-      error: (err) => console.error('Error al cargar historial médico:', err),
+      error: (err) => console.error('Error loading medical records:', err),
     });
   }
 

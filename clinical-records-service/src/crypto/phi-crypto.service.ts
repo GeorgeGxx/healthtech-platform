@@ -16,13 +16,13 @@ export class PhiCryptoService {
 
     if (isProd && (!rawKey || !rawHmac)) {
       throw new Error(
-        'CRÍTICO HIPAA: PHI_ENCRYPTION_KEY y PRESCRIPTION_HMAC_SECRET son obligatorios en producción.',
+        'CRITICAL HIPAA: PHI_ENCRYPTION_KEY and PRESCRIPTION_HMAC_SECRET are required in production.',
       );
     }
 
     if (!rawKey || !rawHmac) {
       this.logger.warn(
-        '⚠️ Usando llaves criptográficas de desarrollo. Define PHI_ENCRYPTION_KEY y PRESCRIPTION_HMAC_SECRET en .env.',
+        '⚠️ Using development cryptographic keys. Define PHI_ENCRYPTION_KEY and PRESCRIPTION_HMAC_SECRET in .env.',
       );
     }
 
@@ -34,8 +34,8 @@ export class PhiCryptoService {
   }
 
   /**
-   * Cifra datos médicos protegidos (PHI) mediante AES-256-GCM.
-   * Retorna cadena en formato: gcm:iv:authTag:encryptedData (hex)
+   * Encrypts Protected Health Information (PHI) using AES-256-GCM.
+   * Returns string in format: gcm:iv:authTag:encryptedData (hex)
    */
   encryptPhi(plainText: string): string {
     if (!plainText) return '';
@@ -49,20 +49,20 @@ export class PhiCryptoService {
   }
 
   /**
-   * Descifra datos PHI cifrados con AES-256-GCM.
-   * Rechaza explícitamente si un registro cifrado falla la verificación de integridad (AuthTag).
+   * Decrypts PHI data encrypted with AES-256-GCM.
+   * Explicitly rejects if an encrypted record fails integrity verification (AuthTag).
    */
   decryptPhi(cipherText: string): string {
     if (!cipherText) return cipherText;
     if (!cipherText.startsWith(this.cipherPrefix)) {
-      // Compatibilidad controlada para registros históricos previos sin prefijo gcm:
+      // Controlled compatibility for legacy historical records without gcm: prefix
       return cipherText;
     }
 
     const payload = cipherText.slice(this.cipherPrefix.length);
     const [ivHex, authTagHex, encryptedHex] = payload.split(':');
     if (!ivHex || !authTagHex || !encryptedHex) {
-      throw new InternalServerErrorException('Formato de dato PHI cifrado inválido');
+      throw new InternalServerErrorException('Invalid encrypted PHI data format');
     }
 
     try {
@@ -80,14 +80,14 @@ export class PhiCryptoService {
       return decrypted;
     } catch {
       throw new InternalServerErrorException(
-        'Fallo de integridad criptográfica (AuthTag) al descifrar registro PHI',
+        'Cryptographic integrity failure (AuthTag) while decrypting PHI record',
       );
     }
   }
 
   /**
-   * Enmascara identificadores y nombres para bitácoras forenses HIPAA
-   * Ej: "28456123" -> "28****23", "Juan Pérez" -> "J*** P****"
+   * Masks identifiers and names for HIPAA forensic audit logs
+   * Ex: "28456123" -> "28****23", "Juan Pérez" -> "J*** P****"
    */
   maskIdentifier(id: string): string {
     if (!id || id.length <= 4) return '****';
@@ -105,7 +105,7 @@ export class PhiCryptoService {
   }
 
   /**
-   * Genera una representación JSON canónica con llaves ordenadas determinísticamente
+   * Generates a canonical JSON representation with deterministically sorted keys
    */
   canonicalJson(obj: any): string {
     if (obj === null || typeof obj !== 'object') {
@@ -119,7 +119,7 @@ export class PhiCryptoService {
   }
 
   /**
-   * Genera firma criptográfica HMAC-SHA256 para validación de Recetas Médicas Digitales
+   * Generates an HMAC-SHA256 cryptographic signature for Digital Medical Prescription validation
    */
   generatePrescriptionSignature(payload: string): string {
     return createHmac('sha256', this.hmacSecret).update(payload).digest('hex');

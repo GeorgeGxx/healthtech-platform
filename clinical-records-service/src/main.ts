@@ -31,12 +31,12 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('HealthTech Platform - Clinical Records & Hospital Stay Service')
     .setDescription(
-      'Microservicio Autónomo de Expediente Clínico Electrónico (ECE NOM-004), Censo Hospitalario y Auditoría HIPAA (§ 164.312)',
+      'Autonomous Microservice for Electronic Health Records (EHR NOM-004), Hospital Bed Census, and HIPAA Audit Trail (§ 164.312)',
     )
     .setVersion('1.0.0')
-    .addTag('Historias Clínicas (Medical Records & EHR)')
-    .addTag('Internaciones y Censo de Camas (Hospital Stay)')
-    .addTag('Auditoría y Trazabilidad HIPAA (Audit Trail)')
+    .addTag('Medical Records & EHR')
+    .addTag('Hospitalizations & Bed Census (Hospital Stay)')
+    .addTag('HIPAA Audit & Traceability (Audit Trail)')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -44,8 +44,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3006;
   await app.listen(port);
-  logger.log(`🚀 Clinical-Records-Service ejecutándose en http://localhost:${port}/api`);
-  logger.log(`📑 Swagger Docs disponible en http://localhost:${port}/api/clinical-records/docs`);
+  logger.log(`🚀 Clinical-Records-Service running at http://localhost:${port}/api`);
+  logger.log(`📑 Swagger Docs available at http://localhost:${port}/api/clinical-records/docs`);
 }
 
 bootstrap();

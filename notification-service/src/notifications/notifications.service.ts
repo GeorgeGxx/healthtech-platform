@@ -36,16 +36,16 @@ export class NotificationsService {
   }
 
   /**
-   * Procesa evento de cita médica con garantía de idempotencia
+   * Processes medical appointment event with idempotency guarantee
    */
   async processAppointmentEvent(event: any): Promise<DispatchedNotification[]> {
     const eventId = event.eventId || String(Date.now());
     const eventType = event.eventType;
     const payload = event.payload || {};
 
-    // 1. Verificación de Idempotencia
+    // 1. Idempotency Verification
     if (await this.redis.isEventProcessed(eventId)) {
-      this.logger.warn(`🛑 Evento duplicado detectado y descartado por idempotencia: ${eventId}`);
+      this.logger.warn(`🛑 Duplicate event detected and discarded by idempotency: ${eventId}`);
       return [
         {
           id: `dup-${eventId}`,
@@ -74,7 +74,7 @@ export class NotificationsService {
         idTurno: payload.idTurno || '0',
       });
 
-      // Canal 1: Email
+      // Channel 1: Email
       const emailNotif: DispatchedNotification = {
         id: `email-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         eventId,
@@ -88,7 +88,7 @@ export class NotificationsService {
       };
       notifications.push(emailNotif);
 
-      // Canal 2: SMS / WhatsApp
+      // Channel 2: SMS / WhatsApp
       const smsNotif: DispatchedNotification = {
         id: `sms-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         eventId,
@@ -120,13 +120,13 @@ export class NotificationsService {
       });
     }
 
-    // Registrar en histórico y marcar procesado en Redis
+    // Record in history and mark as processed in Redis
     for (const notif of notifications) {
       this.history.unshift(notif);
       this.totalEnviados++;
       this.stream$.next(notif);
       this.logger.log(
-        `✉️ [${notif.canal}] Notificación enviada a ${notif.destinatario} | Asunto: "${notif.asunto}"`,
+        `✉️ [${notif.canal}] Notification sent to ${notif.destinatario} | Subject: "${notif.asunto}"`,
       );
     }
 
@@ -139,7 +139,7 @@ export class NotificationsService {
   }
 
   /**
-   * Procesa evento de farmacia / stock crítico
+   * Processes pharmacy / critical stock event
    */
   async processPharmacyEvent(event: any): Promise<DispatchedNotification[]> {
     const eventId = event.eventId || String(Date.now());
@@ -169,12 +169,12 @@ export class NotificationsService {
     this.totalEnviados++;
     this.stream$.next(notif);
     await this.redis.markEventProcessed(eventId);
-    this.logger.warn(`🚨 Notificación de Alerta de Stock despachada: ${template.asunto}`);
+    this.logger.warn(`🚨 Stock Alert Notification dispatched: ${template.asunto}`);
     return [notif];
   }
 
   /**
-   * Procesa eventos de Facturación y Cobranza
+   * Processes Billing and Collection events
    */
   async processBillingEvent(event: any): Promise<DispatchedNotification[]> {
     const eventId = event.eventId || String(Date.now());
@@ -206,12 +206,12 @@ export class NotificationsService {
     this.totalEnviados++;
     this.stream$.next(notif);
     await this.redis.markEventProcessed(eventId);
-    this.logger.log(`💳 Notificación de Pago recibida y despachada a ${notif.destinatario}`);
+    this.logger.log(`💳 Payment Notification received and dispatched to ${notif.destinatario}`);
     return [notif];
   }
 
   /**
-   * Procesa eventos de Sagas Orquestadas
+   * Processes Orchestrated Saga events
    */
   async processSagaEvent(event: any): Promise<DispatchedNotification[]> {
     const eventId = event.eventId || String(Date.now());
@@ -240,7 +240,7 @@ export class NotificationsService {
     this.totalEnviados++;
     this.stream$.next(notif);
     await this.redis.markEventProcessed(eventId);
-    this.logger.log(`🧬 Notificación de Saga procesada: ${template.asunto}`);
+    this.logger.log(`🧬 Saga Notification processed: ${template.asunto}`);
     return [notif];
   }
 
@@ -268,7 +268,7 @@ export class NotificationsService {
       resuelto: false,
     });
     await this.dlqRepo.save(entry);
-    this.logger.error(`☠️ [DLQ Persistente] Evento ${notif.eventId} guardado en notifications.bitacora_dlq (Motivo: ${motivo})`);
+    this.logger.error(`☠️ [Persistent DLQ] Event ${notif.eventId} saved in notifications.bitacora_dlq (Reason: ${motivo})`);
   }
 
   async retryDlqItem(id: string): Promise<DispatchedNotification | null> {
@@ -293,7 +293,7 @@ export class NotificationsService {
     this.history.unshift(dispatched);
     this.totalEnviados++;
     this.stream$.next(dispatched);
-    this.logger.log(`♻️ [DLQ Retry] Registro #${id} re-despachado y marcado resuelto en PostgreSQL`);
+    this.logger.log(`♻️ [DLQ Retry] Record #${id} re-dispatched and marked resolved in PostgreSQL`);
     return dispatched;
   }
 

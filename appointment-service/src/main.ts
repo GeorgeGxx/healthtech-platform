@@ -30,9 +30,9 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Appointment Service - HealthTech Platform')
-    .setDescription('Microservicio autónomo de Agenda Asistencial, Slots Médicos y Sagas Orquestadas')
+    .setDescription('Autonomous microservice for Medical Scheduling, Appointment Slots, and Orchestrated Sagas')
     .setVersion('1.0.0')
-    .addTag('Turnos y Citas Médicas (Appointment Service)')
+    .addTag('Appointments and Medical Scheduling (Appointment Service)')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -40,8 +40,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  logger.log(`🚀 Appointment-Service ejecutándose en http://localhost:${port}/api/appointments`);
-  logger.log(`📑 Swagger Docs disponible en http://localhost:${port}/api/appointments/docs`);
+  logger.log(`🚀 Appointment-Service running on http://localhost:${port}/api/appointments`);
+  logger.log(`📑 Swagger Docs available at http://localhost:${port}/api/appointments/docs`);
 }
 
 bootstrap();

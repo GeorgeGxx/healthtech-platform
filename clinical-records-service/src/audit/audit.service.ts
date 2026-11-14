@@ -29,12 +29,12 @@ export class AuditService {
     const guardado = await this.auditRepo.save(registro);
 
     this.logger.log(
-      `[HIPAA/NOM-024 AUDIT] Acción '${dto.accion}' sobre '${dto.entidad}' (ID: ${dto.idEntidad}) ejecutada por usuario ${dto.usuarioId || 'system'}`,
+      `[HIPAA/NOM-024 AUDIT] Action '${dto.accion}' on '${dto.entidad}' (ID: ${dto.idEntidad}) executed by user ${dto.usuarioId || 'system'}`,
     );
 
-    // Sincronización forense asíncrona hacia Elasticsearch para Kibana Tech/HIPAA
+    // Asynchronous forensic sync to Elasticsearch for Kibana Tech/HIPAA
     this.syncAuditToElasticsearch(guardado).catch((err) =>
-      this.logger.warn(`No se pudo indexar auditoría en Elasticsearch: ${err?.message}`),
+      this.logger.warn(`Failed to index audit log in Elasticsearch: ${err?.message}`),
     );
 
     return guardado;

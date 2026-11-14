@@ -21,14 +21,14 @@ export class TariffsComponent implements OnInit {
   readonly selectedCategory = signal<string>('todos');
   readonly searchQuery = signal<string>('');
 
-  // Simulador interactivo de copago
+  // Interactive copay simulator
   readonly simServiceId = signal<string>('srv-card-02');
-  readonly simInsuranceId = signal<number>(1); // GNP Seguros por defecto
+  readonly simInsuranceId = signal<number>(1); // GNP Insurance by default
 
   readonly currentPage = signal<number>(1);
   readonly pageSize = signal<number>(6);
 
-  // Lista filtrada reactiva
+  // Reactive filtered list
   readonly filteredTariffs = computed(() => {
     const list = this.tariffs();
     const cat = this.selectedCategory();
@@ -82,7 +82,7 @@ export class TariffsComponent implements OnInit {
   }
 
 
-  // Cálculos del simulador de copago
+  // Copay simulator calculations
   readonly selectedSimService = computed(() => {
     return this.tariffs().find((t) => t.id === this.simServiceId()) || this.tariffs()[0];
   });
@@ -131,7 +131,7 @@ export class TariffsComponent implements OnInit {
 
   selectForSimulation(serviceId: string): void {
     this.simServiceId.set(serviceId);
-    // Scroll suave hacia el simulador
+    // Smooth scroll to simulator
     const el = document.getElementById('simulador-costos');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });

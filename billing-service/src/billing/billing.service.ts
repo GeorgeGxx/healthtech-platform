@@ -44,7 +44,7 @@ export class BillingService {
       },
     });
     if (!payment) {
-      throw new NotFoundException(`Pago con ID ${id} no encontrado`);
+      throw new NotFoundException(`Payment with ID ${id} not found`);
     }
     return payment;
   }
@@ -142,7 +142,7 @@ export class BillingService {
       relations: { obraSocial: true },
     });
     if (!patient) {
-      throw new NotFoundException(`Paciente con ID ${dto.idPaciente} no encontrado`);
+      throw new NotFoundException(`Patient with ID ${dto.idPaciente} not found`);
     }
 
     const coveragePct = patient.obraSocial
@@ -177,7 +177,7 @@ export class BillingService {
     const saved = await this.paymentRepo.save(payment);
     const fullPayment = await this.findOne(saved.idPago);
 
-    // Emisión de evento coreográfico a Kafka
+    // Emit choreographed event to Kafka
     await this.kafka.emit('billing.payment_received', fullPayment.idPago, {
       idPago: fullPayment.idPago,
       idPaciente: fullPayment.idPaciente,
@@ -251,7 +251,7 @@ export class BillingService {
     const ausentes = parseInt(row.ausentes || '0', 10);
     const montoBruto = parseFloat(row.monto_bruto || '0');
 
-    // 20% retención del centro médico / 80% liquidación neta al médico
+    // 20% clinic retention / 80% net settlement to doctor
     const comisionClinica = Math.round(montoBruto * 0.20 * 100) / 100;
     const montoNetoMedico = Math.round(montoBruto * 0.80 * 100) / 100;
 

@@ -75,7 +75,7 @@ export class PatientsService {
     });
 
     if (!patient) {
-      throw new NotFoundException(`Paciente con ID ${id} no encontrado`);
+      throw new NotFoundException(`Patient with ID ${id} not found`);
     }
 
     return {
@@ -88,7 +88,7 @@ export class PatientsService {
   async create(dto: CreatePatientDto): Promise<Paciente> {
     const existing = await this.patientRepo.findOne({ where: { dni: dto.dni } });
     if (existing) {
-      throw new ConflictException(`Ya existe un paciente registrado con el DNI ${dto.dni}`);
+      throw new ConflictException(`A patient is already registered with national ID ${dto.dni}`);
     }
 
     if (dto.idPais) {
@@ -101,7 +101,7 @@ export class PatientsService {
     if (dto.idObraSocial) {
       const insurance = await this.insuranceRepo.findOne({ where: { idObraSocial: dto.idObraSocial } });
       if (!insurance) {
-        throw new NotFoundException(`Obra Social con ID ${dto.idObraSocial} no existe`);
+        throw new NotFoundException(`Insurance provider with ID ${dto.idObraSocial} does not exist`);
       }
     }
 
@@ -112,7 +112,7 @@ export class PatientsService {
 
     const saved = await this.patientRepo.save(newPatient);
 
-    // Emisión de evento a Kafka
+    // Emit event to Kafka
     await this.kafka.emit('patient.registered', saved.idPaciente, {
       idPaciente: saved.idPaciente,
       dni: saved.dni,

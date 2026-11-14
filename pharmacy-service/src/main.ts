@@ -30,9 +30,9 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('HealthTech Platform - Pharmacy Service')
-    .setDescription('Microservicio Autónomo de Farmacia, Existencias y Almacén Hospitalario')
+    .setDescription('Autonomous Microservice for Pharmacy, Inventory, and Hospital Warehouse')
     .setVersion('1.0.0')
-    .addTag('Farmacia & Existencias Hospitalarias (Pharmacy Service)')
+    .addTag('Pharmacy & Hospital Inventory (Pharmacy Service)')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -40,8 +40,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3004;
   await app.listen(port);
-  logger.log(`🚀 Pharmacy-Service ejecutándose en http://localhost:${port}/api/pharmacy`);
-  logger.log(`📑 Swagger Docs disponible en http://localhost:${port}/api/pharmacy/docs`);
+  logger.log(`🚀 Pharmacy-Service running on http://localhost:${port}/api/pharmacy`);
+  logger.log(`📑 Swagger Docs available at http://localhost:${port}/api/pharmacy/docs`);
 }
 
 bootstrap();

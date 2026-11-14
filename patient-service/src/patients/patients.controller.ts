@@ -13,7 +13,7 @@ import { PatientsService } from './patients.service.js';
 import { CreatePatientDto, UpdatePatientDto } from './dto/create-patient.dto.js';
 import { Public, Roles } from '../auth/auth.decorators.js';
 
-@ApiTags('Pacientes (Patient Care - Microservicio)')
+@ApiTags('Patients (Patient Care - Microservice)')
 @Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 @Controller('patients')
 export class PatientsController {
@@ -21,7 +21,7 @@ export class PatientsController {
 
   @Public()
   @Get('health')
-  @ApiOperation({ summary: 'Health check del microservicio patient-service' })
+  @ApiOperation({ summary: 'Health check for the patient-service microservice' })
   health() {
     return {
       status: 'UP',
@@ -33,21 +33,21 @@ export class PatientsController {
 
   @Public()
   @Get('health/liveness')
-  @ApiOperation({ summary: 'Liveness probe (K8s / Orquestador)' })
+  @ApiOperation({ summary: 'Liveness probe (K8s / Orchestrator)' })
   liveness() {
     return { status: 'UP', service: 'patient-service' };
   }
 
   @Public()
   @Get('health/readiness')
-  @ApiOperation({ summary: 'Readiness probe (PostgreSQL y Kafka connectivity)' })
+  @ApiOperation({ summary: 'Readiness probe (PostgreSQL and Kafka connectivity)' })
   async readiness() {
     const check = await this.patientsService.checkReadiness();
     return check;
   }
 
   @Get('fhir')
-  @ApiOperation({ summary: 'Listado de pacientes en formato estándar HL7 FHIR R4 Bundle' })
+  @ApiOperation({ summary: 'List patients in HL7 FHIR R4 Bundle standard format' })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -62,27 +62,27 @@ export class PatientsController {
   }
 
   @Get(':id/fhir')
-  @ApiOperation({ summary: 'Obtener recurso HL7 FHIR R4 Patient por ID' })
+  @ApiOperation({ summary: 'Get HL7 FHIR R4 Patient resource by ID' })
   async findOneFhir(@Param('id', ParseIntPipe) id: number) {
     return await this.patientsService.findOneFhir(id);
   }
 
   @Public()
   @Get('catalogs/insurances')
-  @ApiOperation({ summary: 'Obtener catálogo de aseguradoras / obras sociales' })
+  @ApiOperation({ summary: 'Get catalog of insurance providers / health plans' })
   findInsurances() {
     return this.patientsService.findInsurances();
   }
 
   @Public()
   @Get('catalogs/countries')
-  @ApiOperation({ summary: 'Obtener catálogo de países' })
+  @ApiOperation({ summary: 'Get catalog of countries' })
   findCountries() {
     return this.patientsService.findCountries();
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar pacientes con filtro opcional de búsqueda y paginación' })
+  @ApiOperation({ summary: 'List patients with optional search filter and pagination' })
   @ApiQuery({ name: 'search', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -97,19 +97,19 @@ export class PatientsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener datos demográficos del paciente por ID' })
+  @ApiOperation({ summary: 'Get patient demographics by ID' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.patientsService.findOne(id);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Registrar un nuevo paciente (Emite evento patient.registered)' })
+  @ApiOperation({ summary: 'Register a new patient (Emits patient.registered event)' })
   async create(@Body() dto: CreatePatientDto) {
     return await this.patientsService.create(dto);
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Actualizar expediente demográfico del paciente' })
+  @ApiOperation({ summary: 'Update patient demographic record' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdatePatientDto,

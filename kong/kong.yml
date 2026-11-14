@@ -2,11 +2,11 @@ _format_version: "3.0"
 
 # ============================================================================
 # Kong Gateway 3.9.4 Declarative Configuration (DB-less mode)
-# Centro Médico Nacional - HealthTech Platform
+# National Medical Center - HealthTech Platform
 # ============================================================================
 
 services:
-  # 1. Microservicio de Citas y Turnos Médicos (NestJS 12 + Sagas)
+  # 1. Appointments & Scheduling Microservice (NestJS 12 + Sagas)
   - name: appointment-service
     url: http://appointment-service:3001/api/appointments
     routes:
@@ -38,7 +38,7 @@ services:
             - "*"
           credentials: true
 
-  # 2. Panel Admin: Sagas Orquestadas y Outbox CDC (appointment-service)
+  # 2. Admin Panel: Orchestrated Sagas and Outbox CDC (appointment-service)
   - name: admin-service
     url: http://appointment-service:3001/api/admin
     routes:
@@ -87,7 +87,7 @@ services:
             - "*"
           credentials: true
 
-  # 3. Microservicio de Pacientes y Aseguradoras (NestJS 12)
+  # 3. Patients & Insurance Microservice (NestJS 12)
   - name: patient-service
     url: http://patient-service:3002/api/patients
     routes:
@@ -117,7 +117,7 @@ services:
             - "*"
           credentials: true
 
-  # 4. Microservicio de Notificaciones (NestJS 12 + Kafka 8.x)
+  # 4. Notifications Microservice (NestJS 12 + Kafka 8.x)
   - name: notification-service
     url: http://notification-service:3005/api/notifications
     routes:
@@ -142,7 +142,7 @@ services:
             - "*"
           credentials: true
 
-  # 5. Microservicio de Caja y Facturación (NestJS 12 + Kafka)
+  # 5. Billing & Payments Microservice (NestJS 12 + Kafka)
   - name: billing-service
     url: http://billing-service:3003/api/billing
     routes:
@@ -167,7 +167,7 @@ services:
             - "*"
           credentials: true
 
-  # 6. Microservicio de Farmacia y Existencias (NestJS 12 + Kafka)
+  # 6. Pharmacy & Inventory Microservice (NestJS 12 + Kafka)
   - name: pharmacy-service
     url: http://pharmacy-service:3004/api/pharmacy
     routes:
@@ -193,7 +193,7 @@ services:
             - "*"
           credentials: true
 
-  # 7. Microservicio de Personal Médico y Especialidades (NestJS 12)
+  # 7. Medical Staff & Specialties Microservice (NestJS 12)
   - name: staff-service
     url: http://staff-service:3007/api/doctors
     routes:
@@ -220,7 +220,7 @@ services:
             - "*"
           credentials: true
 
-  # 8. Microservicio de Expediente Clínico Electrónico (ECE), Censo y Auditoría (NestJS 12)
+  # 8. Electronic Health Records (EHR), Bed Census & Audit Microservice (NestJS 12)
   - name: clinical-records-service
     url: http://clinical-records-service:3006
     routes:
@@ -263,7 +263,7 @@ services:
             - "*"
           credentials: true
 
-  # 7. Servidor de Identidad Keycloak 26.8.1
+  # 9. Keycloak 26.8.1 Identity Provider
   - name: keycloak-auth
     url: http://keycloak:8080
     routes:
@@ -274,7 +274,7 @@ services:
           - /admin
         strip_path: false
 
-  # 4. Aplicación Web Frontend Angular 21 (Nginx SPA)
+  # 10. Angular 22 Frontend Web App (Nginx SPA)
   - name: frontend
     url: http://frontend:80
     routes:

@@ -95,7 +95,7 @@ export class HospitalizationsService implements OnModuleInit {
       },
     });
     if (!stay) {
-      throw new NotFoundException(`Internación con ID ${id} no encontrada`);
+      throw new NotFoundException(`Hospitalization with ID ${id} not found`);
     }
     return stay;
   }
@@ -105,7 +105,7 @@ export class HospitalizationsService implements OnModuleInit {
       where: { idHabitacion: dto.idHabitacion, fechaAlta: IsNull() },
     });
     if (occupied) {
-      throw new BadRequestException('La habitación seleccionada ya se encuentra ocupada');
+      throw new BadRequestException('The selected room is already occupied');
     }
 
     const hospitalization = this.hospitalizationRepo.create({
@@ -136,7 +136,7 @@ export class HospitalizationsService implements OnModuleInit {
   async discharge(id: number, dto: DischargePatientDto): Promise<Internacion> {
     const stay = await this.findOne(id);
     if (stay.fechaAlta) {
-      throw new BadRequestException('Esta internación ya ha sido dada de alta');
+      throw new BadRequestException('This hospitalization has already been discharged');
     }
 
     stay.fechaAlta = new Date();
@@ -231,7 +231,7 @@ export class HospitalizationsService implements OnModuleInit {
         signal: AbortSignal.timeout(1500),
       });
     } catch (err: any) {
-      this.logger.warn(`⚠️ Error sincronizando camas con Elasticsearch: ${err?.message}`);
+      this.logger.warn(`⚠️ Error syncing beds with Elasticsearch: ${err?.message}`);
     }
   }
 }

@@ -34,16 +34,16 @@ export class AppointmentKafkaProducerService implements OnModuleInit, OnModuleDe
       });
       await this.producer.connect();
       this.isConnected = true;
-      this.logger.log(`🔗 Appointment Kafka Producer conectado a brokers: [${brokers.join(', ')}]`);
+      this.logger.log(`🔗 Appointment Kafka Producer connected to brokers: [${brokers.join(', ')}]`);
     } catch (err: any) {
       this.isConnected = false;
-      this.logger.warn(`⚠️ Kafka no disponible temporalmente en appointment-service: ${err.message}`);
+      this.logger.warn(`⚠️ Kafka temporarily unavailable in appointment-service: ${err.message}`);
     }
 
-    // Worker Outbox CDC: escanea cada 15s eventos PENDIENTE/FALLIDO y los despacha
+    // Outbox CDC Worker: scans PENDING/FAILED events every 15s and dispatches them
     this.relayTimer = setInterval(() => {
       this.relayPendingEvents().catch((e) =>
-        this.logger.warn(`Error en worker Outbox CDC: ${e?.message}`),
+        this.logger.warn(`Error in Outbox CDC worker: ${e?.message}`),
       );
     }, 15_000);
   }
@@ -100,7 +100,7 @@ export class AppointmentKafkaProducerService implements OnModuleInit, OnModuleDe
         }
       }
       if (processed > 0) {
-        this.logger.log(`🔄 Outbox Worker CDC despachó ${processed} eventos pendientes a Kafka`);
+        this.logger.log(`🔄 Outbox CDC Worker dispatched ${processed} pending events to Kafka`);
       }
     } finally {
       this.isRelaying = false;
@@ -161,9 +161,9 @@ export class AppointmentKafkaProducerService implements OnModuleInit, OnModuleDe
           ],
         });
         await this.outbox.markAsPublished(outboxRecord.idEvento);
-        this.logger.log(`📤 Evento [${eventType}] emitido a Kafka topic '${topic}' (Key: ${key})`);
+        this.logger.log(`📤 Event [${eventType}] emitted to Kafka topic '${topic}' (Key: ${key})`);
       } catch (err: any) {
-        this.logger.error(`Error emitiendo a Kafka: ${err.message}`);
+        this.logger.error(`Error emitting to Kafka: ${err.message}`);
         await this.outbox.markAsFailed(outboxRecord.idEvento, err.message);
       }
     }

@@ -29,7 +29,7 @@ export class LoginComponent implements OnInit {
       }
     });
 
-    // Si ya está autenticado, redirigir a dashboard
+    // If already authenticated, redirect to dashboard
     if (this.auth.isAuthenticated()) {
       this.router.navigateByUrl(this.returnUrl);
     }

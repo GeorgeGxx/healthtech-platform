@@ -75,7 +75,7 @@ export class BillingComponent implements OnInit {
     };
   });
 
-  // Paginación Reactiva
+  // Reactive Pagination
   readonly currentPage = signal<number>(1);
   readonly pageSize = signal<number>(5);
 

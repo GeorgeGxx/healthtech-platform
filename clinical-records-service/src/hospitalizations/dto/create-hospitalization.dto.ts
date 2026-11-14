@@ -2,22 +2,22 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsNotEmpty, IsString, IsOptional, IsNumber } from 'class-validator';
 
 export class CreateHospitalizationDto {
-  @ApiProperty({ example: 4, description: 'ID del paciente' })
+  @ApiProperty({ example: 4, description: 'Patient ID' })
   @IsInt()
   @IsNotEmpty()
   idPaciente!: number;
 
-  @ApiProperty({ example: 2, description: 'ID del médico responsable' })
+  @ApiProperty({ example: 2, description: 'Attending physician ID' })
   @IsInt()
   @IsNotEmpty()
   idMedicoResponsable!: number;
 
-  @ApiProperty({ example: 1, description: 'ID de la habitación a ocupar' })
+  @ApiProperty({ example: 1, description: 'ID of the room to occupy' })
   @IsInt()
   @IsNotEmpty()
   idHabitacion!: number;
 
-  @ApiProperty({ example: 'Insuficiencia respiratoria aguda y neumonía' })
+  @ApiProperty({ example: 'Acute respiratory failure and pneumonia' })
   @IsString()
   @IsNotEmpty()
   diagnosticoIngreso!: string;
@@ -29,7 +29,7 @@ export class CreateHospitalizationDto {
 }
 
 export class DischargePatientDto {
-  @ApiProperty({ example: 'Alta médica por resolución completa del cuadro respiratorio' })
+  @ApiProperty({ example: 'Medical discharge due to complete resolution of respiratory condition' })
   @IsString()
   @IsNotEmpty()
   motivoAlta!: string;

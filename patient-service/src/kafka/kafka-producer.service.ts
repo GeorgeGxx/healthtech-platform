@@ -28,10 +28,10 @@ export class PatientKafkaProducerService implements OnModuleInit, OnModuleDestro
       });
       await this.producer.connect();
       this.isConnected = true;
-      this.logger.log(`🔗 Patient Kafka Producer conectado a brokers: [${brokers.join(', ')}]`);
+      this.logger.log(`🔗 Patient Kafka Producer connected to brokers: [${brokers.join(', ')}]`);
     } catch (err: any) {
       this.isConnected = false;
-      this.logger.warn(`⚠️ Kafka no disponible temporalmente en patient-service: ${err.message}`);
+      this.logger.warn(`⚠️ Kafka temporarily unavailable in patient-service: ${err.message}`);
     }
   }
 
@@ -47,7 +47,7 @@ export class PatientKafkaProducerService implements OnModuleInit, OnModuleDestro
 
   async emit(eventType: string, patientId: number, payload: any) {
     if (!this.producer || !this.isConnected) {
-      this.logger.debug(`ℹ️ Kafka offline. Evento [${eventType}] registrado localmente.`);
+      this.logger.debug(`ℹ️ Kafka offline. Event [${eventType}] logged locally.`);
       return;
     }
 
@@ -75,9 +75,9 @@ export class PatientKafkaProducerService implements OnModuleInit, OnModuleDestro
           },
         ],
       });
-      this.logger.log(`📤 Evento [${eventType}] emitido a Kafka para paciente #${patientId}`);
+      this.logger.log(`📤 Event [${eventType}] emitted to Kafka for patient #${patientId}`);
     } catch (err: any) {
-      this.logger.error(`Error emitiendo evento a Kafka: ${err.message}`);
+      this.logger.error(`Error emitting event to Kafka: ${err.message}`);
     }
   }
 }

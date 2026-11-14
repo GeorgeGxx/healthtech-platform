@@ -56,7 +56,7 @@ export class AdminService {
   async retryOutboxEvent(id: string): Promise<OutboxEvento> {
     const event = await this.outboxRepo.findOne({ where: { idEvento: id } });
     if (!event) {
-      throw new NotFoundException(`Evento outbox con ID ${id} no encontrado`);
+      throw new NotFoundException(`Outbox event with ID ${id} not found`);
     }
     event.estado = 'PENDIENTE';
     event.intentos = 0;

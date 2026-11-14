@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DoctorsService } from './doctors.service.js';
 import { Public } from '../auth/auth.decorators.js';
 
-@ApiTags('Médicos y Especialidades (Clinical Staff)')
+@ApiTags('Physicians & Specialties (Clinical Staff)')
 @Public()
 @Controller('doctors')
 export class DoctorsController {
@@ -13,49 +13,49 @@ export class DoctorsController {
   ) {}
 
   @Get('health')
-  @ApiOperation({ summary: 'Health check del microservicio de cuerpo médico' })
+  @ApiOperation({ summary: 'Health check for the medical staff microservice' })
   getHealth() {
     return this.doctorsService.getHealth();
   }
 
   @Get('health/liveness')
-  @ApiOperation({ summary: 'Liveness probe (K8s / Orquestador)' })
+  @ApiOperation({ summary: 'Liveness probe (K8s / Orchestrator)' })
   liveness() {
     return { status: 'UP', service: 'staff-service' };
   }
 
   @Get('health/readiness')
-  @ApiOperation({ summary: 'Readiness probe (PostgreSQL y Redis)' })
+  @ApiOperation({ summary: 'Readiness probe (PostgreSQL and Redis)' })
   async readiness() {
     return await this.doctorsService.checkReadiness();
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar médicos en actividad con sus especialidades' })
+  @ApiOperation({ summary: 'List active physicians with their specialties' })
   async findAll() {
     return await this.doctorsService.findAll();
   }
 
   @Get('specialties')
-  @ApiOperation({ summary: 'Listar catálogo de especialidades médicas' })
+  @ApiOperation({ summary: 'List catalog of medical specialties' })
   async getSpecialties() {
     return await this.doctorsService.getSpecialties();
   }
 
   @Get('offices')
-  @ApiOperation({ summary: 'Listar consultorios físicos' })
+  @ApiOperation({ summary: 'List physical consultation offices' })
   async getOffices() {
     return await this.doctorsService.getOffices();
   }
 
   @Get('hierarchy-tree')
-  @ApiOperation({ summary: 'Consultar organigrama médico jerárquico (WITH RECURSIVE)' })
+  @ApiOperation({ summary: 'Query hierarchical medical org chart (WITH RECURSIVE)' })
   async getHierarchyTree() {
     return await this.doctorsService.getHierarchyTree();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener detalle de un médico por ID' })
+  @ApiOperation({ summary: 'Get physician details by ID' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.doctorsService.findOne(id);
   }

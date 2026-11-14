@@ -6,7 +6,7 @@ import { AppModule } from './app.module.js';
 async function bootstrap() {
   const logger = new Logger('NotificationServiceBootstrap');
 
-  // 1. Crear aplicación HTTP híbrida para Health Checks y Auditoría REST
+  // 1. Create hybrid HTTP application for Health Checks and REST Auditing
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
   const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost,http://localhost:80,http://localhost:4200,http://kong:8000')
@@ -31,7 +31,7 @@ async function bootstrap() {
   const kafkaBroker = process.env.KAFKA_BROKER || 'kafka:9092';
   const brokers = kafkaBroker.split(',').map((b) => b.trim());
 
-  // 2. Conectar listener de microservicio con transporte Kafka
+  // 2. Connect microservice listener with Kafka transport
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,
     options: {
@@ -54,13 +54,13 @@ async function bootstrap() {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       await app.startAllMicroservices();
-      logger.log(`📥 Kafka Microservice Consumer conectado exitosamente a brokers: [${brokers.join(', ')}]`);
+      logger.log(`📥 Kafka Microservice Consumer connected successfully to brokers: [${brokers.join(', ')}]`);
       break;
     } catch (err: any) {
       if (attempt === maxRetries) {
-        logger.warn(`⚠️ No fue posible inicializar el consumidor de Kafka tras ${maxRetries} intentos (${err.message}). Continuando con servidor HTTP.`);
+        logger.warn(`⚠️ Could not initialize Kafka consumer after ${maxRetries} attempts (${err.message}). Continuing with HTTP server.`);
       } else {
-        logger.warn(`⏳ Intento ${attempt}/${maxRetries} conectando Kafka Consumer (${err.message}). Reintentando en 2s...`);
+        logger.warn(`⏳ Attempt ${attempt}/${maxRetries} connecting Kafka Consumer (${err.message}). Retrying in 2s...`);
         await new Promise((resolve) => setTimeout(resolve, 2000));
       }
     }
@@ -68,7 +68,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3005;
   await app.listen(port);
-  logger.log(`🚀 Notification-Service ejecutándose en http://localhost:${port}/api/notifications`);
+  logger.log(`🚀 Notification-Service running on http://localhost:${port}/api/notifications`);
 }
 
 bootstrap();

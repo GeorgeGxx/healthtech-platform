@@ -64,7 +64,7 @@ export class MedicalRecordsService {
       },
     });
     if (!record) {
-      throw new NotFoundException(`Historia clínica con ID ${id} no encontrada`);
+      throw new NotFoundException(`Medical record with ID ${id} not found`);
     }
 
     await this.auditService.registrarAcceso({
@@ -110,7 +110,7 @@ export class MedicalRecordsService {
   async update(id: number, dto: Partial<CreateMedicalRecordDto>): Promise<HistoriaClinica> {
     const record = await this.recordRepo.findOne({ where: { idHistoria: id } });
     if (!record) {
-      throw new NotFoundException(`Historia clínica con ID ${id} no encontrada`);
+      throw new NotFoundException(`Medical record with ID ${id} not found`);
     }
 
     if (dto.diagnosticoCodigoCie !== undefined) {
@@ -216,7 +216,7 @@ export class MedicalRecordsService {
     vigenciaDias?: number;
   }): Promise<RecetaDigital & { qrValidationPayload: string }> {
     if (!data.medicamentos || data.medicamentos.length === 0) {
-      throw new BadRequestException('La receta médica debe contener al menos un medicamento.');
+      throw new BadRequestException('The medical prescription must contain at least one medication.');
     }
 
     const codigoVerif = `REC-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString('hex').toUpperCase()}`;
@@ -267,7 +267,7 @@ export class MedicalRecordsService {
     });
 
     if (!receta) {
-      throw new NotFoundException(`Receta médica con código ${codigoVerif} no encontrada o inválida.`);
+      throw new NotFoundException(`Medical prescription with code ${codigoVerif} not found or invalid.`);
     }
 
     const payloadForSign = `${codigoVerif}|${receta.idPaciente}|${receta.idMedico}|${this.phiCrypto.canonicalJson(receta.medicamentos)}`;

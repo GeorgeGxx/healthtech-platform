@@ -510,7 +510,7 @@
           </button>
         }
 
-        <!-- Perfil del Usuario Activo -->
+        <!-- Active User Profile -->
         <div class="flex items-center gap-2.5 pl-2 sm:pl-3 border-l border-slate-200">
           <div
             class="w-9 h-9 rounded-xl text-white flex items-center justify-center font-extrabold text-xs shadow-xs"
@@ -531,15 +531,15 @@
       </div>
     </header>
 
-    <!-- Área de Vistas con Rutas y Espaciado Generoso y Responsivo -->
+    <!-- Routed View Area with Generous, Responsive Spacing -->
     <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
       <router-outlet></router-outlet>
     </main>
   </div>
 
-  <!-- Modal de Expiración de Sesión HIPAA NOM-024 -->
+  <!-- HIPAA NOM-024 Session Expiration Modal -->
   <app-hipaa-session-modal />
 
-  <!-- Contenedor Flotante de Notificaciones Toast -->
+  <!-- Floating Toast Notifications Container -->
   <app-toast-container />
 </div>

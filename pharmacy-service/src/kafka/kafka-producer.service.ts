@@ -28,10 +28,10 @@ export class PharmacyKafkaProducerService implements OnModuleInit, OnModuleDestr
       });
       await this.producer.connect();
       this.isConnected = true;
-      this.logger.log(`🔗 Pharmacy Kafka Producer conectado a brokers: [${brokers.join(', ')}]`);
+      this.logger.log(`🔗 Pharmacy Kafka Producer connected to brokers: [${brokers.join(', ')}]`);
     } catch (err: any) {
       this.isConnected = false;
-      this.logger.warn(`⚠️ Kafka no disponible temporalmente en pharmacy-service: ${err.message}`);
+      this.logger.warn(`⚠️ Kafka temporarily unavailable in pharmacy-service: ${err.message}`);
     }
   }
 
@@ -43,7 +43,7 @@ export class PharmacyKafkaProducerService implements OnModuleInit, OnModuleDestr
 
   async emit(eventType: string, aggregateId: string, payload: any) {
     if (!this.producer || !this.isConnected) {
-      this.logger.debug(`ℹ️ Kafka offline. Evento [${eventType}] registrado localmente.`);
+      this.logger.debug(`ℹ️ Kafka offline. Event [${eventType}] recorded locally.`);
       return;
     }
 
@@ -71,9 +71,9 @@ export class PharmacyKafkaProducerService implements OnModuleInit, OnModuleDestr
           },
         ],
       });
-      this.logger.log(`📤 Evento [${eventType}] emitido a Kafka para medicamento #${aggregateId}`);
+      this.logger.log(`📤 Event [${eventType}] emitted to Kafka for medication #${aggregateId}`);
     } catch (err: any) {
-      this.logger.error(`Error emitiendo evento de farmacia a Kafka: ${err.message}`);
+      this.logger.error(`Error emitting pharmacy event to Kafka: ${err.message}`);
     }
   }
 }

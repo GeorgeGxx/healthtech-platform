@@ -12,7 +12,7 @@ import { PharmacyService } from './pharmacy.service.js';
 import { DispenseMedicationDto, AdjustStockDto } from './dto/pharmacy.dto.js';
 import { Public, Roles } from '../auth/auth.decorators.js';
 
-@ApiTags('Farmacia & Existencias Hospitalarias (Pharmacy Service)')
+@ApiTags('Pharmacy & Hospital Inventory (Pharmacy Service)')
 @Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 @Controller('pharmacy')
 export class PharmacyController {
@@ -20,7 +20,7 @@ export class PharmacyController {
 
   @Public()
   @Get('health')
-  @ApiOperation({ summary: 'Health check del microservicio de farmacia' })
+  @ApiOperation({ summary: 'Health check for pharmacy-service microservice' })
   getHealth() {
     return this.pharmacyService.getHealth();
   }
@@ -41,16 +41,16 @@ export class PharmacyController {
   }
 
   @Get('summary')
-  @ApiOperation({ summary: 'Obtener resumen ejecutivo e indicadores de stock de farmacia' })
+  @ApiOperation({ summary: 'Get executive summary and pharmacy stock indicators' })
   async getSummary() {
     return await this.pharmacyService.getSummary();
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar catálogo de medicamentos y existencias en almacenes' })
-  @ApiQuery({ name: 'search', required: false, description: 'Búsqueda por nombre comercial, activo o lote' })
-  @ApiQuery({ name: 'categoria', required: false, description: 'Filtro por categoría terapéutica' })
-  @ApiQuery({ name: 'alerta', required: false, description: 'Filtro por nivel de alerta (Normal, Bajo, Crítico)' })
+  @ApiOperation({ summary: 'List medication catalog and warehouse inventory' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search by brand name, active ingredient, or lot' })
+  @ApiQuery({ name: 'categoria', required: false, description: 'Filter by therapeutic category' })
+  @ApiQuery({ name: 'alerta', required: false, description: 'Filter by alert level (Normal, Bajo, Crítico)' })
   async findAll(
     @Query('search') search?: string,
     @Query('categoria') categoria?: string,
@@ -60,19 +60,19 @@ export class PharmacyController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Consultar ficha de medicamento por ID' })
+  @ApiOperation({ summary: 'Get medication record by ID' })
   async findOne(@Param('id') id: string) {
     return await this.pharmacyService.findOne(id);
   }
 
   @Post(':id/dispense')
-  @ApiOperation({ summary: 'Dispensar medicamento y emitir alerta si se cruza stock mínimo' })
+  @ApiOperation({ summary: 'Dispense medication and emit alert if minimum stock threshold is crossed' })
   async dispense(@Param('id') id: string, @Body() dto: DispenseMedicationDto) {
     return await this.pharmacyService.dispense(id, dto.cantidad);
   }
 
   @Patch(':id/stock')
-  @ApiOperation({ summary: 'Ajustar stock de medicamento en almacén central' })
+  @ApiOperation({ summary: 'Adjust medication stock in central warehouse' })
   async adjustStock(@Param('id') id: string, @Body() dto: AdjustStockDto) {
     return await this.pharmacyService.adjustStock(id, dto.nuevoStock);
   }

@@ -8,8 +8,8 @@ import { randomBytes } from 'node:crypto';
 import { Observable, tap } from 'rxjs';
 
 /**
- * Interceptor ligero W3C TraceContext + exportador OTLP/HTTP hacia Elastic Agent (puerto 4318).
- * Evita dependencias pesadas de SDK nativo manteniendo trazabilidad distribuida real.
+ * Lightweight W3C TraceContext interceptor + OTLP/HTTP exporter to Elastic Agent (port 4318).
+ * Avoids heavy native SDK dependencies while maintaining real distributed tracing.
  */
 @Injectable()
 export class OtelTracingInterceptor implements NestInterceptor {
@@ -111,7 +111,7 @@ export class OtelTracingInterceptor implements NestInterceptor {
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(1500),
     }).catch(() => {
-      // No-op: la observabilidad nunca debe degradar el flujo clínico
+      // No-op: observability must never degrade the clinical workflow
     });
   }
 }

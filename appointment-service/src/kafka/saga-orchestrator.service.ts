@@ -79,7 +79,7 @@ export class SagaOrchestratorService {
           { sagaId: idSaga },
         );
       } catch (err: any) {
-        this.logger.error(`[Saga ${nombreSaga}] Fallo en paso ${paso.orden}: ${err.message}`);
+        this.logger.error(`[Saga ${nombreSaga}] Failed at step ${paso.orden}: ${err.message}`);
         historial.push({
           pasoNumero: paso.orden,
           nombrePaso: paso.nombrePaso,
@@ -88,7 +88,7 @@ export class SagaOrchestratorService {
           timestamp: new Date().toISOString(),
         });
 
-        // Compensación en reversa (LIFO)
+        // Reverse compensation (LIFO)
         saved.estado = 'COMPENSANDO';
         saved.compensacionRequerida = true;
         saved.errorDetalle = err.message;
@@ -104,7 +104,7 @@ export class SagaOrchestratorService {
               timestamp: new Date().toISOString(),
             });
           } catch (compErr: any) {
-            this.logger.error(`Error compensando paso ${p.nombrePaso}: ${compErr.message}`);
+            this.logger.error(`Error compensating step ${p.nombrePaso}: ${compErr.message}`);
           }
         }
 

@@ -34,7 +34,7 @@ export class AppointmentsComponent implements OnInit {
   readonly feePerConsultation = 1200;
   readonly selectedDoctorDay = signal<string>('2026-10-18');
   readonly calendarYear = signal<number>(2026);
-  readonly calendarMonth = signal<number>(10); // 1 = Enero, 10 = Octubre
+  readonly calendarMonth = signal<number>(10); // 1 = January, 10 = October
 
   readonly monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -102,7 +102,7 @@ export class AppointmentsComponent implements OnInit {
       'bg-rose-100 text-rose-700 border-rose-200',
     ];
     let hash = 0;
-    const str = name || 'paciente';
+    const str = name || 'patient';
     for (let i = 0; i < str.length; i++) {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
@@ -197,14 +197,14 @@ export class AppointmentsComponent implements OnInit {
     return list.sort((a, b) => b.dateKey.localeCompare(a.dateKey));
   });
 
-  // Calendario mensual minimalista con días activos únicamente cuando hay pacientes
+  // Minimalist monthly calendar with active days only when patients are scheduled
   readonly calendarDays = computed(() => {
     const year = this.calendarYear();
     const month = this.calendarMonth();
     const apps = this.doctorAppointments();
     const selected = this.selectedDoctorDay();
 
-    // Mapa de estadísticas por fecha
+    // Statistics map by date
     const dayStats = new Map<string, { totalPatients: number; attendedCount: number; canceledCount: number; confirmedPayout: number }>();
     for (const app of apps) {
       const dateKey = this.getDateKey(app.fechaInicio);
@@ -222,13 +222,13 @@ export class AppointmentsComponent implements OnInit {
     }
 
     const daysInMonth = new Date(year, month, 0).getDate();
-    const firstDayIndex = new Date(year, month - 1, 1).getDay(); // 0 = Domingo, 1 = Lunes
-    const leadingOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1; // Ajuste para inicio de semana en Lunes
+    const firstDayIndex = new Date(year, month - 1, 1).getDay(); // 0 = Sunday, 1 = Monday
+    const leadingOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1; // Adjust for week starting on Monday
 
     const prevMonthDays = new Date(year, month - 1, 0).getDate();
     const cells: any[] = [];
 
-    // Días del mes anterior (inactivos)
+    // Previous month days (inactive)
     for (let i = leadingOffset - 1; i >= 0; i--) {
       cells.push({
         dayNumber: prevMonthDays - i,
@@ -244,7 +244,7 @@ export class AppointmentsComponent implements OnInit {
       });
     }
 
-    // Días del mes actual
+    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const stats = dayStats.get(dateKey);
@@ -266,7 +266,7 @@ export class AppointmentsComponent implements OnInit {
       });
     }
 
-    // Días del siguiente mes para completar la cuadrícula (múltiplo de 7)
+    // Next month days to complete the grid (multiple of 7)
     const remainder = cells.length % 7;
     if (remainder > 0) {
       const trailingCount = 7 - remainder;
@@ -289,7 +289,7 @@ export class AppointmentsComponent implements OnInit {
     return cells;
   });
 
-  // Resumen del Mes Completo
+  // Full Month Summary
   readonly monthlySummary = computed(() => {
     const year = this.calendarYear();
     const month = this.calendarMonth();
@@ -327,7 +327,7 @@ export class AppointmentsComponent implements OnInit {
     };
   });
 
-  // Correlación proporcional entre el día seleccionado y el total del mes
+  // Proportional correlation between the selected day and the monthly total
   readonly correlationSummary = computed(() => {
     const monthSum = this.monthlySummary();
     const selected = this.selectedDoctorDay();
@@ -434,7 +434,7 @@ export class AppointmentsComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      // Reacciona automáticamente si se conmuta entre Recepción, Médico o Paciente
+      // Automatically reacts when switching between Reception, Physician, or Patient
       const user = this.auth.currentUser();
       if (this.auth.isDoctor() && user.doctorId) {
         this.selectedDoctorId = user.doctorId;
@@ -454,7 +454,7 @@ export class AppointmentsComponent implements OnInit {
     if (shouldOpenModal) {
       setTimeout(() => this.openModal(), 100);
 
-      // Si se navega o redirige con parámetro queryParam, limpiar de inmediato la URL para mantenerla 100% limpia
+      // If navigated or redirected with queryParam, clear the URL immediately to keep it clean
       if (this.route.snapshot.queryParams['openModal']) {
         this.router.navigate([], {
           relativeTo: this.route,
@@ -515,7 +515,7 @@ export class AppointmentsComponent implements OnInit {
           }
         }
       },
-      error: (err) => console.error('Error al cargar citas médicas:', err),
+      error: (err) => console.error('Error loading medical appointments:', err),
     });
   }
 

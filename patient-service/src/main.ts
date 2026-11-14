@@ -30,9 +30,9 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Patient Service - HealthTech Platform')
-    .setDescription('Microservicio autónomo de Padrón, Demografía y Aseguradoras de Pacientes')
+    .setDescription('Autonomous microservice for Patient Registry, Demographics, and Insurance Providers')
     .setVersion('1.0.0')
-    .addTag('Pacientes (Patient Care - Microservicio)')
+    .addTag('Patients (Patient Care - Microservice)')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -40,8 +40,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3002;
   await app.listen(port);
-  logger.log(`🚀 Patient-Service ejecutándose en http://localhost:${port}/api/patients`);
-  logger.log(`📑 Swagger Docs disponible en http://localhost:${port}/api/patients/docs`);
+  logger.log(`🚀 Patient-Service running at http://localhost:${port}/api/patients`);
+  logger.log(`📑 Swagger Docs available at http://localhost:${port}/api/patients/docs`);
 }
 
 bootstrap();

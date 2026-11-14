@@ -39,7 +39,7 @@ export class DoctorsService {
       },
     });
     if (!doctor) {
-      throw new NotFoundException(`Médico con ID ${id} no encontrado`);
+      throw new NotFoundException(`Physician with ID ${id} not found`);
     }
     return doctor;
   }

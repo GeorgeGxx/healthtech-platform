@@ -15,14 +15,14 @@ import { AppointmentsService } from './appointments.service.js';
 import { CreateAppointmentDto, UpdateAppointmentStatusDto } from './dto/create-appointment.dto.js';
 import { Public, Roles } from '../auth/auth.decorators.js';
 
-@ApiTags('Turnos y Citas Médicas (Appointment Service)')
+@ApiTags('Appointments and Medical Scheduling (Appointment Service)')
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
   @Public()
   @Get('health')
-  @ApiOperation({ summary: 'Health check del microservicio appointment-service' })
+  @ApiOperation({ summary: 'Health check for appointment-service microservice' })
   health() {
     return {
       status: 'UP',
@@ -48,7 +48,7 @@ export class AppointmentsController {
 
   @Public()
   @Get('virtual-room/:roomId')
-  @ApiOperation({ summary: 'Consultar estado e ICE servers de una sala virtual de telemedicina' })
+  @ApiOperation({ summary: 'Get status and ICE servers for a telemedicine virtual room' })
   async getVirtualRoom(
     @Param('roomId') roomId: string,
     @Query('token') token?: string,
@@ -57,13 +57,13 @@ export class AppointmentsController {
   }
 
   @Post(':id/virtual-room')
-  @ApiOperation({ summary: 'Crear o acceder a la sala virtual de telemedicina de una cita médica' })
+  @ApiOperation({ summary: 'Create or access the telemedicine virtual room for a medical appointment' })
   async createOrGetVirtualRoom(@Param('id', ParseIntPipe) id: number) {
     return await this.appointmentsService.createOrGetVirtualRoom(id);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar turnos médicos filtrados opcionalmente por médico o fecha' })
+  @ApiOperation({ summary: 'List medical appointments optionally filtered by doctor or date' })
   @ApiQuery({ name: 'doctorId', required: false, type: Number })
   @ApiQuery({ name: 'date', required: false, type: String })
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -81,19 +81,19 @@ export class AppointmentsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener detalle de un turno médico por ID' })
+  @ApiOperation({ summary: 'Get medical appointment details by ID' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.appointmentsService.findOne(id);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Agendar cita médica (Saga Coreográfica con emisión Kafka)' })
+  @ApiOperation({ summary: 'Schedule medical appointment (Choreographed Saga with Kafka event emission)' })
   async create(@Body() dto: CreateAppointmentDto) {
     return await this.appointmentsService.create(dto);
   }
 
   @Post('saga-booking')
-  @ApiOperation({ summary: 'Agendar cita médica mediante Saga Orquestada con Compensación' })
+  @ApiOperation({ summary: 'Schedule medical appointment via Orchestrated Saga with Compensation' })
   async createWithSaga(
     @Body() dto: CreateAppointmentDto,
     @Query('simularFallo') simularFallo?: string,
@@ -106,7 +106,7 @@ export class AppointmentsController {
   }
 
   @Patch(':id/status')
-  @ApiOperation({ summary: 'Actualizar estado del turno médico (confirmado, atendido, cancelado)' })
+  @ApiOperation({ summary: 'Update medical appointment status (confirmado, atendido, cancelado)' })
   async updateStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAppointmentStatusDto,
@@ -115,7 +115,7 @@ export class AppointmentsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Cancelar o anular un turno médico' })
+  @ApiOperation({ summary: 'Cancel or void a medical appointment' })
   async remove(@Param('id', ParseIntPipe) id: number) {
     return await this.appointmentsService.remove(id);
   }

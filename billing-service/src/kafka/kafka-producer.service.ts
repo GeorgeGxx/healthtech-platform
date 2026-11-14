@@ -28,10 +28,10 @@ export class BillingKafkaProducerService implements OnModuleInit, OnModuleDestro
       });
       await this.producer.connect();
       this.isConnected = true;
-      this.logger.log(`🔗 Billing Kafka Producer conectado a brokers: [${brokers.join(', ')}]`);
+      this.logger.log(`🔗 Billing Kafka Producer connected to brokers: [${brokers.join(', ')}]`);
     } catch (err: any) {
       this.isConnected = false;
-      this.logger.warn(`⚠️ Kafka no disponible temporalmente en billing-service: ${err.message}`);
+      this.logger.warn(`⚠️ Kafka temporarily unavailable in billing-service: ${err.message}`);
     }
   }
 
@@ -47,7 +47,7 @@ export class BillingKafkaProducerService implements OnModuleInit, OnModuleDestro
 
   async emit(eventType: string, paymentId: number, payload: any) {
     if (!this.producer || !this.isConnected) {
-      this.logger.debug(`ℹ️ Kafka offline. Evento [${eventType}] registrado localmente.`);
+      this.logger.debug(`ℹ️ Kafka offline. Event [${eventType}] recorded locally.`);
       return;
     }
 
@@ -75,9 +75,9 @@ export class BillingKafkaProducerService implements OnModuleInit, OnModuleDestro
           },
         ],
       });
-      this.logger.log(`📤 Evento [${eventType}] emitido a Kafka para pago #${paymentId}`);
+      this.logger.log(`📤 Event [${eventType}] emitted to Kafka for payment #${paymentId}`);
     } catch (err: any) {
-      this.logger.error(`Error emitiendo evento de facturación a Kafka: ${err.message}`);
+      this.logger.error(`Error emitting billing event to Kafka: ${err.message}`);
     }
   }
 }

@@ -81,7 +81,7 @@ export class AppointmentsService {
     });
 
     if (!appointment) {
-      throw new NotFoundException(`Turno #${id} no encontrado`);
+      throw new NotFoundException(`Appointment #${id} not found`);
     }
 
     return appointment;
@@ -102,7 +102,7 @@ export class AppointmentsService {
     );
 
     if (conflict.length > 0) {
-      throw new ConflictException('El médico ya tiene asignado un turno en esa franja horaria');
+      throw new ConflictException('The doctor already has an appointment assigned in this time slot');
     }
 
     const result = await this.appointmentRepo.query(
@@ -128,7 +128,7 @@ export class AppointmentsService {
     const newId = result[0].id_turno;
     const created = await this.findOne(newId);
 
-    // Emisión de evento coreográfico a Kafka
+    // Emit choreographed event to Kafka
     await this.kafka.emit(
       'healthtech.appointments.events.v1',
       'appointment.created',
@@ -183,12 +183,12 @@ export class AppointmentsService {
   }
 
   async remove(id: number): Promise<{ success: boolean; message: string }> {
-    await this.updateStatus(id, { estado: 'cancelado', motivo: 'Cancelación asistencial' });
-    return { success: true, message: `Turno ${id} cancelado correctamente` };
+    await this.updateStatus(id, { estado: 'cancelado', motivo: 'Clinical cancellation' });
+    return { success: true, message: `Appointment ${id} cancelled successfully` };
   }
 
   /**
-   * Saga Orquestada de Citas (Reserva -> Elegibilidad Real en Patient-Service -> Confirmación)
+   * Orchestrated Appointment Saga (Reserve -> Real Eligibility in Patient-Service -> Confirmation)
    */
   async executeBookingSaga(
     dto: CreateAppointmentDto,
@@ -212,7 +212,7 @@ export class AppointmentsService {
           if (ctx.idTurno) {
             await this.updateStatus(ctx.idTurno, {
               estado: 'cancelado',
-              motivo: `Compensación automática: ${err.message}`,
+              motivo: `Automatic compensation: ${err.message}`,
             });
           }
         },
@@ -222,7 +222,7 @@ export class AppointmentsService {
         orden: 2,
         ejecutar: async () => {
           if (options?.simularFallo) {
-            throw new Error('Póliza o Cobertura de Aseguradora Inactiva / Rechazada');
+            throw new Error('Insurance Policy or Coverage Inactive / Rejected');
           }
           const headers: Record<string, string> = {
             'x-user-roles': 'admin_user',
@@ -236,7 +236,7 @@ export class AppointmentsService {
             signal: AbortSignal.timeout(3000),
           });
           if (!resp.ok) {
-            throw new Error(`Paciente #${dto.idPaciente} no elegible o no encontrado en patient-service (${resp.status})`);
+            throw new Error(`Patient #${dto.idPaciente} not eligible or not found in patient-service (${resp.status})`);
           }
           const patient: any = await resp.json();
           const cobertura = Number(patient?.obraSocial?.porcentajeCobertura ?? 0);
@@ -249,7 +249,7 @@ export class AppointmentsService {
           };
         },
         compensar: async () => {
-          this.logger.debug('Compensando verificación de cobertura');
+          this.logger.debug('Compensating coverage verification');
         },
       },
       {
@@ -258,7 +258,7 @@ export class AppointmentsService {
         ejecutar: async (ctx: any) => {
           const confirmado = await this.updateStatus(ctx.idTurno, {
             estado: 'confirmado',
-            motivo: 'Confirmado por Saga Orquestada',
+            motivo: 'Confirmed by Orchestrated Saga',
           });
           return { resultado: { idTurno: ctx.idTurno, estado: confirmado.estado } };
         },
@@ -288,7 +288,7 @@ export class AppointmentsService {
       const idSala = `TELE-${randomUUID().slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
       const tokenMedico = `MED-${randomBytes(24).toString('hex')}`;
       const tokenPaciente = `PAC-${randomBytes(24).toString('hex')}`;
-      const expiraEn = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 horas de validez
+      const expiraEn = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 hours validity
 
       room = this.virtualRoomRepo.create({
         idSala,
@@ -303,7 +303,7 @@ export class AppointmentsService {
 
       room = await this.virtualRoomRepo.save(room);
 
-      // Notificar evento de sala virtual creada a Kafka
+      // Emit virtual room created event to Kafka
       await this.kafka.emit(
         'healthtech.appointments.events.v1',
         'appointment.virtual_room_ready',
@@ -343,13 +343,13 @@ export class AppointmentsService {
     });
 
     if (!room) {
-      throw new NotFoundException(`Sala virtual ${roomId} no existe.`);
+      throw new NotFoundException(`Virtual room ${roomId} does not exist.`);
     }
 
     if (new Date() > new Date(room.expiraEn)) {
       room.estado = 'EXPIRADA';
       await this.virtualRoomRepo.save(room);
-      throw new BadRequestException('La sesión de telemedicina ha expirado.');
+      throw new BadRequestException('The telemedicine session has expired.');
     }
 
     let rol = 'ESPECTADOR';

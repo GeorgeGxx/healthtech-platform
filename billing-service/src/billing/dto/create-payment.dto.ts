@@ -11,27 +11,27 @@ import {
 import type { MetodoPago } from '../../entities/pago.entity.js';
 
 export class CreatePaymentDto {
-  @ApiProperty({ example: 4, description: 'ID del paciente pagador' })
+  @ApiProperty({ example: 4, description: 'Paying patient ID' })
   @IsInt()
   @IsNotEmpty()
   idPaciente!: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'ID del turno liquidado' })
+  @ApiPropertyOptional({ example: 1, description: 'Settled appointment ID' })
   @IsOptional()
   @IsInt()
   idTurno?: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'ID de la internación liquidada' })
+  @ApiPropertyOptional({ example: 1, description: 'Settled hospitalization ID' })
   @IsOptional()
   @IsInt()
   idInternacion?: number;
 
-  @ApiProperty({ example: 1, description: 'ID del concepto de facturación' })
+  @ApiProperty({ example: 1, description: 'Billing concept ID' })
   @IsInt()
   @IsNotEmpty()
   idConcepto!: number;
 
-  @ApiProperty({ example: 25000.0, description: 'Monto bruto arancelario' })
+  @ApiProperty({ example: 25000.0, description: 'Gross tariff amount' })
   @IsNumber()
   @Min(0)
   montoBruto!: number;

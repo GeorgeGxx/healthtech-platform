@@ -13,7 +13,7 @@ export class NotificationsKafkaController {
     const event = typeof data === 'string' ? JSON.parse(data) : data;
     const topic = context?.getTopic ? context.getTopic() : 'healthtech.appointments.events.v1';
     this.logger.log(
-      `📥 [Kafka Consumer] Evento de Citas recibido en topic '${topic}': ${event.eventType} (EventId: ${event.eventId})`,
+      `📥 [Kafka Consumer] Appointment event received on topic '${topic}': ${event.eventType} (EventId: ${event.eventId})`,
     );
     try {
       await this.notificationsService.processAppointmentEvent(event);
@@ -29,7 +29,7 @@ export class NotificationsKafkaController {
           estado: 'FALLIDO',
           fechaEnvio: new Date().toISOString(),
         },
-        err?.message || 'Error procesando evento de citas',
+        err?.message || 'Error processing appointment event',
       );
     }
   }
@@ -39,7 +39,7 @@ export class NotificationsKafkaController {
     const event = typeof data === 'string' ? JSON.parse(data) : data;
     const topic = context?.getTopic ? context.getTopic() : 'healthtech.billing.events.v1';
     this.logger.log(
-      `📥 [Kafka Consumer] Evento de Facturación recibido en topic '${topic}': ${event.eventType}`,
+      `📥 [Kafka Consumer] Billing event received on topic '${topic}': ${event.eventType}`,
     );
     try {
       await this.notificationsService.processBillingEvent(event);
@@ -55,7 +55,7 @@ export class NotificationsKafkaController {
           estado: 'FALLIDO',
           fechaEnvio: new Date().toISOString(),
         },
-        err?.message || 'Error procesando evento de facturación',
+        err?.message || 'Error processing billing event',
       );
     }
   }
@@ -65,7 +65,7 @@ export class NotificationsKafkaController {
     const event = typeof data === 'string' ? JSON.parse(data) : data;
     const topic = context?.getTopic ? context.getTopic() : 'healthtech.pharmacy.events.v1';
     this.logger.log(
-      `📥 [Kafka Consumer] Evento de Farmacia recibido en topic '${topic}': ${event.eventType}`,
+      `📥 [Kafka Consumer] Pharmacy event received on topic '${topic}': ${event.eventType}`,
     );
     try {
       await this.notificationsService.processPharmacyEvent(event);
@@ -81,7 +81,7 @@ export class NotificationsKafkaController {
           estado: 'FALLIDO',
           fechaEnvio: new Date().toISOString(),
         },
-        err?.message || 'Error procesando evento de farmacia',
+        err?.message || 'Error processing pharmacy event',
       );
     }
   }
@@ -91,7 +91,7 @@ export class NotificationsKafkaController {
     const event = typeof data === 'string' ? JSON.parse(data) : data;
     const topic = context?.getTopic ? context.getTopic() : 'healthtech.sagas.events.v1';
     this.logger.log(
-      `📥 [Kafka Consumer] Evento de Saga recibido en topic '${topic}': ${event.eventType}`,
+      `📥 [Kafka Consumer] Saga event received on topic '${topic}': ${event.eventType}`,
     );
     try {
       await this.notificationsService.processSagaEvent(event);
@@ -107,7 +107,7 @@ export class NotificationsKafkaController {
           estado: 'FALLIDO',
           fechaEnvio: new Date().toISOString(),
         },
-        err?.message || 'Error procesando evento de saga',
+        err?.message || 'Error processing saga event',
       );
     }
   }

@@ -30,9 +30,9 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('HealthTech Platform - Billing Service')
-    .setDescription('Microservicio Autónomo de Caja, Facturación, Copagos y Aranceles Hospitalarios')
+    .setDescription('Autonomous Microservice for Cashier, Billing, Copays, and Hospital Tariffs')
     .setVersion('1.0.0')
-    .addTag('Caja, Facturación y Copagos (Billing Service)')
+    .addTag('Cashier, Billing, and Copays (Billing Service)')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
@@ -40,8 +40,8 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3003;
   await app.listen(port);
-  logger.log(`🚀 Billing-Service ejecutándose en http://localhost:${port}/api/billing`);
-  logger.log(`📑 Swagger Docs disponible en http://localhost:${port}/api/billing/docs`);
+  logger.log(`🚀 Billing-Service running on http://localhost:${port}/api/billing`);
+  logger.log(`📑 Swagger Docs available at http://localhost:${port}/api/billing/docs`);
 }
 
 bootstrap();

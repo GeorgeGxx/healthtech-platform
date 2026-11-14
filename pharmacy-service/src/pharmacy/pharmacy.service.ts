@@ -79,7 +79,7 @@ export class PharmacyService {
     });
 
     if (!med) {
-      throw new NotFoundException(`Medicamento con identificador ${id} no encontrado.`);
+      throw new NotFoundException(`Medication with ID ${id} not found.`);
     }
 
     return med;
@@ -88,11 +88,11 @@ export class PharmacyService {
   async dispense(id: string, cantidad: number): Promise<Medicamento> {
     const med = await this.findOne(id);
     if (cantidad <= 0) {
-      throw new BadRequestException('La cantidad a dispensar debe ser mayor a 0');
+      throw new BadRequestException('Quantity to dispense must be greater than 0');
     }
     if (med.stockActual < cantidad) {
       throw new BadRequestException(
-        `Stock insuficiente para ${med.nombreComercial}. Disponible: ${med.stockActual}, Solicitado: ${cantidad}`,
+        `Insufficient stock for ${med.nombreComercial}. Available: ${med.stockActual}, Requested: ${cantidad}`,
       );
     }
 
@@ -107,7 +107,7 @@ export class PharmacyService {
 
     const saved = await this.medicamentoRepo.save(med);
 
-    // Emisión de evento coreográfico de dispensación
+    // Emit choreographed dispensation event
     await this.kafka.emit('pharmacy.medication_dispensed', saved.idMedicamento, {
       idMedicamento: saved.idMedicamento,
       nombreComercial: saved.nombreComercial,
@@ -118,10 +118,10 @@ export class PharmacyService {
       lote: saved.lote,
     });
 
-    // Si el stock está en nivel Bajo o Crítico, emitir alerta inmediata a Kafka
+    // If stock is at Low or Critical level, emit immediate alert to Kafka
     if (saved.stockActual <= saved.stockMinimo) {
       this.logger.warn(
-        `🚨 Stock crítico alcanzado para medicamento ${saved.nombreComercial} (${saved.stockActual}/${saved.stockMinimo})`,
+        `🚨 Critical stock reached for medication ${saved.nombreComercial} (${saved.stockActual}/${saved.stockMinimo})`,
       );
       await this.kafka.emit('pharmacy.stock_low', saved.idMedicamento, {
         idMedicamento: saved.idMedicamento,
@@ -141,7 +141,7 @@ export class PharmacyService {
   async adjustStock(id: string, nuevoStock: number): Promise<Medicamento> {
     const med = await this.findOne(id);
     if (nuevoStock < 0) {
-      throw new BadRequestException('El stock no puede ser negativo');
+      throw new BadRequestException('Stock cannot be negative');
     }
     med.stockActual = nuevoStock;
     if (med.stockActual <= Math.floor(med.stockMinimo * 0.5)) {

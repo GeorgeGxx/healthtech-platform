@@ -63,7 +63,7 @@ export interface PharmacySummary {
   almacenesCount: number;
 }
 
-// Datos de contingencia clínica sincronizados fielmente con 02_seed_centromedico.sql
+// Clinical fallback data synced with 02_seed_centromedico.sql
 const FALLBACK_METRICS: DashboardMetrics = {
   kpis: {
     totalPatients: 12,
@@ -153,13 +153,13 @@ const FALLBACK_METRICS: DashboardMetrics = {
 export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
-  // URL base dinámica (soporta desarrollo local en puerto 3000 o Reverse Proxy Nginx en /api)
+  // Dynamic base URL (supports local development or Nginx reverse proxy at /api)
   private readonly baseUrl =
     typeof window !== 'undefined' && window.location.port === '4200'
       ? 'http://localhost:8000/api'
       : '/api';
 
-  // Signals globales
+  // Global signals
   readonly isConnected = signal<boolean>(true);
   readonly activeSection = signal<string>('dashboard');
 
@@ -522,7 +522,7 @@ export class ApiService {
     return this.http.patch<any>(`${this.baseUrl}/hospitalizations/${id}/discharge`, { motivoAlta });
   }
 
-  // --- Historias Clínicas (EHR / FTS) ---
+  // --- Medical Records (EHR / FTS) ---
   getRecordsByPatient(patientId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/medical-records/patient/${patientId}`);
   }
@@ -568,7 +568,7 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/billing`, data);
   }
 
-  // --- Farmacia e Inventario Hospitalario ---
+  // --- Pharmacy & Hospital Inventory ---
   getMedicamentos(search?: string, categoria?: string, alerta?: string): Observable<Medicamento[]> {
     const params: Record<string, string> = {};
     if (search && search.trim() !== '') params['search'] = search.trim();
@@ -600,7 +600,7 @@ export class ApiService {
     );
   }
 
-  // --- Sagas Orquestadas y Outbox CDC ---
+  // --- Orchestrated Sagas & Outbox CDC ---
   executeBookingSaga(data: {
     idPaciente: number;
     idMedico: number;
@@ -636,7 +636,7 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/admin/outbox/relay-now`, {});
   }
 
-  // --- Farmacia: Dispensación y Ajuste de Stock ---
+  // --- Pharmacy: Dispensing & Stock Adjustment ---
   dispenseMedication(id: string, cantidad: number): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/pharmacy/${id}/dispense`, { cantidad });
   }
@@ -645,7 +645,7 @@ export class ApiService {
     return this.http.patch<any>(`${this.baseUrl}/pharmacy/${id}/stock`, { nuevoStock });
   }
 
-  // --- Notificaciones: Dead-Letter Queue (DLQ) ---
+  // --- Notifications: Dead-Letter Queue (DLQ) ---
   getNotificationsDlq(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/notifications/dlq`).pipe(
       catchError(() => of({ totalEnDlq: 0, items: [] })),
@@ -656,7 +656,7 @@ export class ApiService {
     return this.http.post<any>(`${this.baseUrl}/notifications/dlq/${id}/retry`, {});
   }
 
-  // --- Telemedicina WebRTC (Pilar 4) ---
+  // --- WebRTC Telemedicine (Pillar 4) ---
   createVirtualRoom(appointmentId: number): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/appointments/${appointmentId}/virtual-room`, {});
   }
@@ -665,7 +665,7 @@ export class ApiService {
     return this.http.get<any>(`${this.baseUrl}/appointments/virtual-room/${roomId}`);
   }
 
-  // --- Receta Médica Digital & Criptografía HMAC-SHA256 (Pilar 2) ---
+  // --- Digital Medical Prescription & HMAC-SHA256 Cryptography (Pillar 2) ---
   createDigitalPrescription(data: {
     idPaciente: number;
     idMedico: number;
@@ -680,7 +680,7 @@ export class ApiService {
     return this.http.get<any>(`${this.baseUrl}/medical-records/prescriptions/${code}/verify`);
   }
 
-  // --- HL7 FHIR R4 Interoperabilidad Médica (Pilar 2) ---
+  // --- HL7 FHIR R4 Medical Interoperability (Pillar 2) ---
   getPatientFhir(id: number): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/patients/${id}/fhir`);
   }
@@ -695,14 +695,14 @@ export class ApiService {
     return this.http.get<any>(`${this.baseUrl}/medical-records/${recordId}/fhir`);
   }
 
-  // --- Finanzas: Liquidación de Honorarios Médicos 80/20 (Pilar 4) ---
+  // --- Finance: 80/20 Medical Fee Settlement (Pillar 4) ---
   getDoctorSettlement(doctorId: number, periodo?: string): Observable<any> {
     let url = `${this.baseUrl}/billing/doctors/${doctorId}/settlement`;
     if (periodo) url += `?periodo=${periodo}`;
     return this.http.get<any>(url);
   }
 
-  // --- Notificaciones Multicanal WhatsApp / Email (Pilar 4) ---
+  // --- Multichannel Notifications WhatsApp / Email (Pillar 4) ---
   triggerMultichannelReminder(data: {
     idTurno: number;
     pacienteNombre: string;

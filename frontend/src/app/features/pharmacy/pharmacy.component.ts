@@ -18,7 +18,7 @@ export class PharmacyComponent implements OnInit {
   readonly summary = signal<PharmacySummary | null>(null);
   readonly isLoading = signal<boolean>(false);
 
-  // Paginación Reactiva
+  // Reactive Pagination
   readonly currentPage = signal<number>(1);
   readonly pageSize = signal<number>(6);
 
@@ -75,7 +75,7 @@ export class PharmacyComponent implements OnInit {
   loadSummary(): void {
     this.api.getPharmacySummary().subscribe({
       next: (data) => this.summary.set(data),
-      error: (err) => console.error('Error cargando resumen de farmacia:', err),
+      error: (err) => console.error('Error loading pharmacy summary:', err),
     });
   }
 
@@ -89,7 +89,7 @@ export class PharmacyComponent implements OnInit {
           this.isLoading.set(false);
         },
         error: (err) => {
-          console.error('Error cargando medicamentos:', err);
+          console.error('Error loading medications:', err);
           this.isLoading.set(false);
         },
       });

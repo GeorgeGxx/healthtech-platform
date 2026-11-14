@@ -70,7 +70,7 @@ export class KeycloakAuthGuard implements CanActivate {
       const devAuthEnabled = process.env.DEV_AUTH_ENABLED !== 'false' && process.env.NODE_ENV !== 'production';
 
       if (!devAuthEnabled || forceAuth) {
-        throw new UnauthorizedException('Token Bearer JWT requerido (Keycloak OIDC)');
+        throw new UnauthorizedException('Bearer JWT token required (Keycloak OIDC)');
       }
 
       const rawRoles = req.headers?.['x-user-roles'];
@@ -95,7 +95,7 @@ export class KeycloakAuthGuard implements CanActivate {
       const hasRole = requiredRoles.some((role) => userRoles.includes(role));
       if (!hasRole) {
         throw new ForbiddenException(
-          `Acceso denegado. Se requiere uno de los roles: [${requiredRoles.join(', ')}]`,
+          `Access denied. One of the following roles is required: [${requiredRoles.join(', ')}]`,
         );
       }
     }
@@ -126,7 +126,7 @@ export class KeycloakAuthGuard implements CanActivate {
   private async verifyJwt(token: string): Promise<JwtPayload> {
     const parts = token.split('.');
     if (parts.length !== 3) {
-      throw new UnauthorizedException('Formato JWT inválido');
+      throw new UnauthorizedException('Invalid JWT format');
     }
 
     const [encodedHeader, encodedPayload, encodedSignature] = parts;
@@ -137,15 +137,15 @@ export class KeycloakAuthGuard implements CanActivate {
       header = JSON.parse(Buffer.from(encodedHeader, 'base64url').toString('utf8'));
       payload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
     } catch {
-      throw new UnauthorizedException('JWT malformado');
+      throw new UnauthorizedException('Malformed JWT');
     }
 
     if (header.alg !== 'RS256') {
-      throw new UnauthorizedException(`Algoritmo JWT no soportado: ${header.alg ?? 'none'}`);
+      throw new UnauthorizedException(`Unsupported JWT algorithm: ${header.alg ?? 'none'}`);
     }
 
     if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now() - 30_000) {
-      throw new UnauthorizedException('Token JWT expirado');
+      throw new UnauthorizedException('Expired JWT token');
     }
 
     const key = await this.getSigningKey(header.kid);
@@ -154,7 +154,7 @@ export class KeycloakAuthGuard implements CanActivate {
 
     const valid = verify('RSA-SHA256', signingInput, key, signature);
     if (!valid) {
-      throw new UnauthorizedException('Firma JWT inválida');
+      throw new UnauthorizedException('Invalid JWT signature');
     }
 
     return payload;
@@ -162,7 +162,7 @@ export class KeycloakAuthGuard implements CanActivate {
 
   private async getSigningKey(kid?: string): Promise<KeyObject> {
     if (!kid) {
-      throw new UnauthorizedException('JWT sin identificador de clave (kid)');
+      throw new UnauthorizedException('JWT missing key identifier (kid)');
     }
 
     const now = Date.now();
@@ -173,7 +173,7 @@ export class KeycloakAuthGuard implements CanActivate {
     await this.refreshJwks();
     const key = cachedKeys.get(kid);
     if (!key) {
-      throw new UnauthorizedException(`Clave pública JWKS no encontrada para kid=${kid}`);
+      throw new UnauthorizedException(`JWKS public key not found for kid=${kid}`);
     }
     return key;
   }
@@ -206,9 +206,9 @@ export class KeycloakAuthGuard implements CanActivate {
         cachedAt = Date.now();
       }
     } catch (err: any) {
-      this.logger.warn(`No se pudo obtener JWKS desde ${jwksUrl}: ${err?.message ?? err}`);
+      this.logger.warn(`Failed to fetch JWKS from ${jwksUrl}: ${err?.message ?? err}`);
       if (cachedKeys.size === 0) {
-        throw new UnauthorizedException('Servicio de identidad Keycloak no disponible para validar JWT');
+        throw new UnauthorizedException('Keycloak identity service unavailable to validate JWT');
       }
     }
   }

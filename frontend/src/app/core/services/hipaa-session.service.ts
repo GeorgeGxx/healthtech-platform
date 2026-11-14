@@ -2,11 +2,11 @@ import { Injectable, signal, inject } from '@angular/core';
 import { AuthStateService } from './auth-state.service';
 
 /**
- * Servicio de control de inactividad conforme a la normativa HIPAA (§ 164.312(a)(2)(iii))
- * y la NOM-024-SSA3-2012 de Expediente Clínico Electrónico en México.
+ * Inactivity control service compliant with HIPAA (§ 164.312(a)(2)(iii))
+ * and NOM-024-SSA3-2012 for Electronic Health Records in Mexico.
  *
- * Desconecta automáticamente la sesión tras un período de inactividad para proteger
- * la Información de Salud Protegida (PHI / Datos Personales Sensibles de Pacientes).
+ * Automatically terminates the session after an inactivity period to protect
+ * Protected Health Information (PHI / Sensitive Patient Personal Data).
  */
 @Injectable({
   providedIn: 'root',
@@ -14,8 +14,8 @@ import { AuthStateService } from './auth-state.service';
 export class HipaaSessionService {
   private readonly authState = inject(AuthStateService);
 
-  private readonly TIMEOUT_SECONDS = 900; // 15 minutos de inactividad
-  private readonly WARNING_SECONDS = 60;  // Advertencia 60 segundos antes del cierre
+  private readonly TIMEOUT_SECONDS = 900; // 15 minutes of inactivity
+  private readonly WARNING_SECONDS = 60;  // Warning 60 seconds before logout
 
   readonly secondsLeft = signal<number>(this.TIMEOUT_SECONDS);
   readonly isWarningVisible = signal<boolean>(false);

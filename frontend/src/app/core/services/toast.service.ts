@@ -28,19 +28,19 @@ export class ToastService {
   }
 
   success(message: string, title?: string): void {
-    this.show(message, 'success', title || 'Operación Exitosa');
+    this.show(message, 'success', title || 'Operation Successful');
   }
 
   error(message: string, title?: string): void {
-    this.show(message, 'error', title || 'Error Clínico / Sistema', 5000);
+    this.show(message, 'error', title || 'Clinical / System Error', 5000);
   }
 
   warning(message: string, title?: string): void {
-    this.show(message, 'warning', title || 'Atención Médica');
+    this.show(message, 'warning', title || 'Medical Attention');
   }
 
   info(message: string, title?: string): void {
-    this.show(message, 'info', title || 'Información');
+    this.show(message, 'info', title || 'Information');
   }
 
   remove(id: string): void {

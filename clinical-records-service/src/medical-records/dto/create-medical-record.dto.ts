@@ -17,36 +17,36 @@ import type {
 } from '../../entities/historia-clinica.entity.js';
 
 export class CreateMedicalRecordDto {
-  @ApiProperty({ example: 4, description: 'ID del paciente' })
+  @ApiProperty({ example: 4, description: 'Patient ID' })
   @IsInt()
   @IsNotEmpty()
   idPaciente!: number;
 
-  @ApiProperty({ example: 2, description: 'ID del médico tratante' })
+  @ApiProperty({ example: 2, description: 'Attending physician ID' })
   @IsInt()
   @IsNotEmpty()
   idMedico!: number;
 
-  @ApiPropertyOptional({ example: 1, description: 'ID del turno vinculado (opcional)' })
+  @ApiPropertyOptional({ example: 1, description: 'Linked appointment ID (optional)' })
   @IsOptional()
   @IsInt()
   idTurno?: number;
 
-  @ApiPropertyOptional({ example: 'I10', description: 'Código CIE-10 del diagnóstico' })
+  @ApiPropertyOptional({ example: 'I10', description: 'ICD-10 diagnosis code' })
   @IsOptional()
   @IsString()
   diagnosticoCodigoCie?: string;
 
   @ApiProperty({
-    example: 'Hipertensión arterial estadio 1 controlada',
-    description: 'Descripción clínica detallada del diagnóstico',
+    example: 'Stage 1 arterial hypertension controlled',
+    description: 'Detailed clinical description of the diagnosis',
   })
   @IsString()
   @IsNotEmpty()
   diagnosticoDescripcion!: string;
 
   @ApiPropertyOptional({
-    example: 'Continuar con Losartán 50mg cada 12hs y dieta hiposódica',
+    example: 'Continue with Losartan 50mg every 12h and low-sodium diet',
   })
   @IsOptional()
   @IsString()
@@ -60,7 +60,7 @@ export class CreateMedicalRecordDto {
       peso_kg: 82.0,
       oxigeno_pct: 99,
     },
-    description: 'Signos vitales estructurados en formato JSONB',
+    description: 'Structured vital signs in JSONB format',
     type: Object,
   })
   @IsOptional()
@@ -70,13 +70,13 @@ export class CreateMedicalRecordDto {
   @ApiPropertyOptional({
     example: [
       {
-        medicamento: 'Losartán',
+        medicamento: 'Losartan',
         dosis: '50mg',
-        frecuencia: 'cada 12 horas',
+        frecuencia: 'every 12 hours',
         dias: 30,
       },
     ],
-    description: 'Receta farmacológica en formato JSONB',
+    description: 'Pharmacological prescription in JSONB format',
     type: [Object],
   })
   @IsOptional()
@@ -97,7 +97,7 @@ export class MedicamentoPrescritoDto {
   @IsNotEmpty()
   dosis!: string;
 
-  @ApiProperty({ example: 'Cada 12 horas' })
+  @ApiProperty({ example: 'Every 12 hours' })
   @IsString()
   @IsNotEmpty()
   frecuencia!: string;
@@ -119,7 +119,7 @@ export class CreateDigitalPrescriptionDto {
   @Min(1)
   idMedico!: number;
 
-  @ApiProperty({ example: 'Hipertensión Arterial Primaria' })
+  @ApiProperty({ example: 'Primary Arterial Hypertension' })
   @IsString()
   @IsNotEmpty()
   diagnostico!: string;

@@ -41,7 +41,7 @@ export class PatientsComponent implements OnInit {
 
   constructor() {
     effect(() => {
-      // Reacciona al cambio de rol en el switcher superior
+      // Reacts to role change in the top switcher
       const user = this.auth.currentUser();
       this.loadPatients();
     });
@@ -59,7 +59,7 @@ export class PatientsComponent implements OnInit {
 
   loadPatients(): void {
     if (this.auth.isBasicUser()) {
-      // Juan Pérez García solo ve su propia información
+      // Juan Pérez García only sees his own information
       this.api.getPatients('Juan').subscribe({
         next: (res) => {
           const raw = Array.isArray(res) ? res : (res.data || []);
@@ -109,7 +109,7 @@ export class PatientsComponent implements OnInit {
         },
       });
     } else {
-      // Recepción ve el padrón paginado
+      // Reception sees the paginated registry
       this.api.getPatients(this.searchQuery, this.currentPage(), this.pageSize()).subscribe({
         next: (res) => {
           if (Array.isArray(res)) {
@@ -123,7 +123,7 @@ export class PatientsComponent implements OnInit {
             this.currentPage.set(res.page || 1);
           }
         },
-        error: (err) => console.error('Error al cargar pacientes:', err),
+        error: (err) => console.error('Error loading patients:', err),
       });
     }
   }
@@ -170,7 +170,7 @@ export class PatientsComponent implements OnInit {
         this.closeModal();
         this.loadPatients();
       },
-      error: (err) => console.error('Error al registrar paciente:', err),
+      error: (err) => console.error('Error registering patient:', err),
     });
   }
 
@@ -185,7 +185,7 @@ export class PatientsComponent implements OnInit {
       },
       error: (err) => {
         this.isFhirLoading.set(false);
-        console.error('Error al obtener HL7 FHIR Patient:', err);
+        console.error('Error fetching HL7 FHIR Patient:', err);
       },
     });
   }

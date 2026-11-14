@@ -23,7 +23,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.connect().catch((err) => {
-        this.logger.warn(`Redis no disponible (${err.message}). Usando caché en memoria.`);
+        this.logger.warn(`Redis unavailable (${err.message}). Using in-memory cache.`);
         this.client = null;
       });
     } catch {
@@ -43,7 +43,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         const val = await this.client.get(key);
         return val ? JSON.parse(val) : null;
       } catch {
-        // Fallback a memoria
+        // Fallback to memory
       }
     }
 
@@ -63,7 +63,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         await this.client.set(key, str, 'EX', ttlSeconds);
         return;
       } catch {
-        // Fallback a memoria
+        // Fallback to memory
       }
     }
 

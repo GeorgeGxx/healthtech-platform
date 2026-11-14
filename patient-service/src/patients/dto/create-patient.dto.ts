@@ -10,17 +10,17 @@ import {
 } from 'class-validator';
 
 export class CreatePatientDto {
-  @ApiProperty({ example: '458256965', description: 'DNI o documento de identidad' })
+  @ApiProperty({ example: '458256965', description: 'National ID or identity document' })
   @IsString()
   @IsNotEmpty()
   dni!: string;
 
-  @ApiProperty({ example: 'Jorge', description: 'Nombre de pila del paciente' })
+  @ApiProperty({ example: 'Jorge', description: 'Patient first name' })
   @IsString()
   @IsNotEmpty()
   nombre!: string;
 
-  @ApiProperty({ example: 'Ramírez', description: 'Apellido del paciente' })
+  @ApiProperty({ example: 'Ramírez', description: 'Patient last name' })
   @IsString()
   @IsNotEmpty()
   apellido!: string;
@@ -29,7 +29,7 @@ export class CreatePatientDto {
   @IsIn(['M', 'F', 'Otro'])
   genero!: 'M' | 'F' | 'Otro';
 
-  @ApiProperty({ example: '1985-06-15', description: 'Fecha de nacimiento (YYYY-MM-DD)' })
+  @ApiProperty({ example: '1985-06-15', description: 'Date of birth (YYYY-MM-DD)' })
   @IsDateString()
   fechaNacimiento!: string;
 
@@ -38,7 +38,7 @@ export class CreatePatientDto {
   @IsString()
   idPais?: string;
 
-  @ApiPropertyOptional({ example: 1, description: 'ID de la obra social / seguro' })
+  @ApiPropertyOptional({ example: 1, description: 'Insurance provider / health plan ID' })
   @IsOptional()
   @IsInt()
   idObraSocial?: number;

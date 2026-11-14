@@ -16,20 +16,20 @@ import {
 } from './dto/create-hospitalization.dto.js';
 import { Roles } from '../auth/auth.decorators.js';
 
-@ApiTags('Internaciones y Censo de Camas (Hospital Stay)')
+@ApiTags('Hospitalizations & Bed Census (Hospital Stay)')
 @Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 @Controller('hospitalizations')
 export class HospitalizationsController {
   constructor(private readonly hospitalizationsService: HospitalizationsService) {}
 
   @Get('bed-census')
-  @ApiOperation({ summary: 'Consultar el censo en tiempo real de camas y habitaciones' })
+  @ApiOperation({ summary: 'Query real-time bed and room census' })
   async getBedCensus() {
     return await this.hospitalizationsService.getBedCensus();
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar internaciones con filtro de activas/cerradas' })
+  @ApiOperation({ summary: 'List hospitalizations with active/closed filter' })
   @ApiQuery({ name: 'activeOnly', required: false, type: Boolean })
   async findAll(@Query('activeOnly') activeOnly?: string) {
     const onlyActive = activeOnly === 'true';
@@ -37,19 +37,19 @@ export class HospitalizationsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener detalle de internación por ID' })
+  @ApiOperation({ summary: 'Get hospitalization details by ID' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return await this.hospitalizationsService.findOne(id);
   }
 
   @Post('admit')
-  @ApiOperation({ summary: 'Admitir a un paciente en una habitación' })
+  @ApiOperation({ summary: 'Admit a patient to a room' })
   async admit(@Body() dto: CreateHospitalizationDto) {
     return await this.hospitalizationsService.admit(dto);
   }
 
   @Patch(':id/discharge')
-  @ApiOperation({ summary: 'Dar de alta médica a un paciente internado' })
+  @ApiOperation({ summary: 'Medically discharge an inpatient' })
   async discharge(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: DischargePatientDto,

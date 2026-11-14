@@ -162,7 +162,7 @@ export class AdminComponent implements OnInit {
       },
     ]);
 
-    // Cargar bitácora de auditoría de confidencialidad
+    // Load confidentiality audit log
     this.http.get<AuditItem[]>('/api/audit?limit=25').subscribe({
       next: (logs) => {
         if (logs && logs.length > 0) {

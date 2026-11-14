@@ -26,16 +26,16 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
       this.client.on('connect', () => {
         this.isConnected = true;
-        this.logger.log(`🔴 Conexión establecida con Redis ${host}:${port} para control de idempotencia`);
+        this.logger.log(`🔴 Connected to Redis ${host}:${port} for idempotency control`);
       });
 
       this.client.on('error', (err) => {
         this.isConnected = false;
-        this.logger.warn(`⚠️ Advertencia de Redis (${err.message}). Utilizando memoria local como fallback.`);
+        this.logger.warn(`⚠️ Redis warning (${err.message}). Using local memory as fallback.`);
       });
     } catch (err: any) {
       this.isConnected = false;
-      this.logger.error(`Error inicializando Redis: ${err.message}`);
+      this.logger.error(`Error initializing Redis: ${err.message}`);
     }
   }
 
@@ -46,7 +46,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Verifica si un evento ya fue procesado para garantizar Idempotencia (At-Least-Once Delivery de Kafka)
+   * Checks whether an event was already processed to guarantee Idempotency (Kafka At-Least-Once Delivery)
    */
   async isEventProcessed(eventId: string): Promise<boolean> {
     const key = `idempotency:event:${eventId}`;
@@ -55,14 +55,14 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         const exists = await this.client.exists(key);
         return exists === 1;
       } catch (err: any) {
-        this.logger.warn(`Fallo al consultar Redis (${err.message}). Verificando en memoria local.`);
+        this.logger.warn(`Failed to query Redis (${err.message}). Checking local memory.`);
       }
     }
     return this.memoryCache.has(key);
   }
 
   /**
-   * Registra el evento como procesado con un TTL (por defecto 24 horas)
+   * Records the event as processed with a TTL (default 24 hours)
    */
   async markEventProcessed(eventId: string, ttlSeconds = 86400): Promise<void> {
     const key = `idempotency:event:${eventId}`;
@@ -72,7 +72,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       try {
         await this.client.set(key, 'PROCESSED', 'EX', ttlSeconds);
       } catch (err: any) {
-        this.logger.warn(`No se pudo guardar la clave de idempotencia en Redis: ${err.message}`);
+        this.logger.warn(`Could not save idempotency key in Redis: ${err.message}`);
       }
     }
   }
