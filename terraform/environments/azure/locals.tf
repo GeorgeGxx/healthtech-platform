@@ -50,7 +50,7 @@ locals {
       eventhubs_sku            = "Standard"
       eventhubs_capacity       = 1
       storage_tier             = "Standard"
-      storage_replication      = "LRS"
+      storage_replication      = "GRS"
       keyvault_sku             = "standard"
     }
     staging = {
@@ -77,7 +77,7 @@ locals {
       eventhubs_sku            = "Standard"
       eventhubs_capacity       = 1
       storage_tier             = "Standard"
-      storage_replication      = "LRS"
+      storage_replication      = "GRS"
       keyvault_sku             = "standard"
     }
     prod = {
