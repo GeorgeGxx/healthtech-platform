@@ -1,0 +1,145 @@
+global:
+  environment: dev
+  namespace: dev
+  imageRegistry: docker.io
+  imagePrefix: georgegxx
+  imageTag: "1.0.0"
+  imagePullPolicy: IfNotPresent
+
+secrets:
+  secretName: healthtech-app-secrets
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 75
+
+services:
+  appointmentService:
+    name: appointment-service
+    image: georgegxx/appointment-service:1.0.0
+    replicas: 1
+    port: 3001
+    targetPort: 3001
+    livenessPath: /api/appointments/health/liveness
+    readinessPath: /api/appointments/health/readiness
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  patientService:
+    name: patient-service
+    image: georgegxx/patient-service:1.0.0
+    replicas: 1
+    port: 3002
+    targetPort: 3002
+    livenessPath: /api/patients/health/liveness
+    readinessPath: /api/patients/health/readiness
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  billingService:
+    name: billing-service
+    image: georgegxx/billing-service:1.0.0
+    replicas: 1
+    port: 3003
+    targetPort: 3003
+    livenessPath: /api/billing/health/liveness
+    readinessPath: /api/billing/health/readiness
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  pharmacyService:
+    name: pharmacy-service
+    image: georgegxx/pharmacy-service:1.0.0
+    replicas: 1
+    port: 3004
+    targetPort: 3004
+    livenessPath: /api/pharmacy/health/liveness
+    readinessPath: /api/pharmacy/health/readiness
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  notificationService:
+    name: notification-service
+    image: georgegxx/notification-service:1.0.0
+    replicas: 1
+    port: 3005
+    targetPort: 3005
+    livenessPath: /api/notifications/health/liveness
+    readinessPath: /api/notifications/health/readiness
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  clinicalRecordsService:
+    name: clinical-records-service
+    image: georgegxx/clinical-records-service:1.0.0
+    replicas: 1
+    port: 3006
+    targetPort: 3006
+    livenessPath: /api/health/liveness
+    readinessPath: /api/health/readiness
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  staffService:
+    name: staff-service
+    image: georgegxx/staff-service:1.0.0
+    replicas: 1
+    port: 3007
+    targetPort: 3007
+    livenessPath: /api/doctors/health/liveness
+    readinessPath: /api/doctors/health/readiness
+    resources:
+      requests:
+        cpu: 100m
+        memory: 192Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  frontend:
+    name: frontend
+    image: georgegxx/frontend:1.0.0
+    replicas: 1
+    port: 80
+    targetPort: 80
+    livenessPath: /
+    readinessPath: /
+    resources:
+      requests:
+        cpu: 50m
+        memory: 96Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: healthtech-platform
+description: Enterprise HIPAA-Compliant HealthTech Microservices Platform (Azure AKS & Local Minikube)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+annotations:
+  healthtech-platform.io/helm-oci-repository: oci://healthtechacr.azurecr.io/charts/healthtech-platform
+  healthtech-platform.io/cloud: azure
+  healthtech-platform.io/cicd: azure-devops

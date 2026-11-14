@@ -1,0 +1,4 @@
+global:
+  environment: staging
+  namespace: staging
+  imagePullPolicy: Always

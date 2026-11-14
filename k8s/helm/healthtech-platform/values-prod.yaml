@@ -1,0 +1,22 @@
+global:
+  environment: prod
+  namespace: production
+  imagePullPolicy: Always
+
+services:
+  appointmentService:
+    replicas: 2
+  patientService:
+    replicas: 2
+  billingService:
+    replicas: 2
+  pharmacyService:
+    replicas: 2
+  notificationService:
+    replicas: 2
+  clinicalRecordsService:
+    replicas: 2
+  staffService:
+    replicas: 2
+  frontend:
+    replicas: 2
