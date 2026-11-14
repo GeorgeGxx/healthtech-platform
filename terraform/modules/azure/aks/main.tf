@@ -34,7 +34,8 @@ resource "azurerm_kubernetes_cluster" "this" {
   private_cluster_enabled           = var.private_cluster_enabled
 
   oms_agent {
-    log_analytics_workspace_id = var.log_analytics_workspace_id
+    log_analytics_workspace_id      = var.log_analytics_workspace_id
+    msi_auth_for_monitoring_enabled = true
   }
 
   dynamic "key_vault_secrets_provider" {
