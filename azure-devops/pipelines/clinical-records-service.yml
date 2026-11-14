@@ -1,0 +1,43 @@
+﻿name: HealthTech-Clinical-Records-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - clinical-records-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/clinical-records-service.yml
+      - azure-devops/templates/**
+
+pr:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - clinical-records-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/clinical-records-service.yml
+      - azure-devops/templates/**
+
+variables:
+  - template: ../templates/gates.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - template: ../templates/app-stages.yml
+    parameters:
+      serviceName: clinical-records-service
+      serviceDir: clinical-records-service
+      serviceType: nestjs
+      servicePort: 3006
+      helmValuesKey: services.clinicalRecordsService
+      serviceConnection: azure-service-connection
+      acrNameDev: healthtechazuredevacr
+      acrNameStaging: healthtechazurestagingacr
+      acrNameProd: healthtechazureprodacr
+      namePrefix: healthtech-azure

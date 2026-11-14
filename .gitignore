@@ -33,3 +33,5 @@ coverage/
 .oxlint-cache/
 
 notes.md
+**/.terraform/
+*.tfstate*

@@ -1,0 +1,43 @@
+﻿name: HealthTech-Frontend-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - frontend/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/frontend.yml
+      - azure-devops/templates/**
+
+pr:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - frontend/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/frontend.yml
+      - azure-devops/templates/**
+
+variables:
+  - template: ../templates/gates.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - template: ../templates/app-stages.yml
+    parameters:
+      serviceName: frontend
+      serviceDir: frontend
+      serviceType: frontend
+      servicePort: 80
+      helmValuesKey: services.frontend
+      serviceConnection: azure-service-connection
+      acrNameDev: healthtechazuredevacr
+      acrNameStaging: healthtechazurestagingacr
+      acrNameProd: healthtechazureprodacr
+      namePrefix: healthtech-azure

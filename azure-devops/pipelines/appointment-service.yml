@@ -1,0 +1,43 @@
+﻿name: HealthTech-Appointment-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - appointment-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/appointment-service.yml
+      - azure-devops/templates/**
+
+pr:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - appointment-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/appointment-service.yml
+      - azure-devops/templates/**
+
+variables:
+  - template: ../templates/gates.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - template: ../templates/app-stages.yml
+    parameters:
+      serviceName: appointment-service
+      serviceDir: appointment-service
+      serviceType: nestjs
+      servicePort: 3001
+      helmValuesKey: services.appointmentService
+      serviceConnection: azure-service-connection
+      acrNameDev: healthtechazuredevacr
+      acrNameStaging: healthtechazurestagingacr
+      acrNameProd: healthtechazureprodacr
+      namePrefix: healthtech-azure

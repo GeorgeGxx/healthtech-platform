@@ -1,0 +1,43 @@
+﻿name: HealthTech-Billing-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - billing-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/billing-service.yml
+      - azure-devops/templates/**
+
+pr:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - billing-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/billing-service.yml
+      - azure-devops/templates/**
+
+variables:
+  - template: ../templates/gates.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - template: ../templates/app-stages.yml
+    parameters:
+      serviceName: billing-service
+      serviceDir: billing-service
+      serviceType: nestjs
+      servicePort: 3003
+      helmValuesKey: services.billingService
+      serviceConnection: azure-service-connection
+      acrNameDev: healthtechazuredevacr
+      acrNameStaging: healthtechazurestagingacr
+      acrNameProd: healthtechazureprodacr
+      namePrefix: healthtech-azure

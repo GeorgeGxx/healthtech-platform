@@ -1,0 +1,43 @@
+﻿name: HealthTech-Patient-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - patient-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/patient-service.yml
+      - azure-devops/templates/**
+
+pr:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - patient-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/patient-service.yml
+      - azure-devops/templates/**
+
+variables:
+  - template: ../templates/gates.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - template: ../templates/app-stages.yml
+    parameters:
+      serviceName: patient-service
+      serviceDir: patient-service
+      serviceType: nestjs
+      servicePort: 3002
+      helmValuesKey: services.patientService
+      serviceConnection: azure-service-connection
+      acrNameDev: healthtechazuredevacr
+      acrNameStaging: healthtechazurestagingacr
+      acrNameProd: healthtechazureprodacr
+      namePrefix: healthtech-azure

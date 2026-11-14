@@ -1,0 +1,43 @@
+﻿name: HealthTech-Pharmacy-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - pharmacy-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/pharmacy-service.yml
+      - azure-devops/templates/**
+
+pr:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - pharmacy-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/pharmacy-service.yml
+      - azure-devops/templates/**
+
+variables:
+  - template: ../templates/gates.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - template: ../templates/app-stages.yml
+    parameters:
+      serviceName: pharmacy-service
+      serviceDir: pharmacy-service
+      serviceType: nestjs
+      servicePort: 3004
+      helmValuesKey: services.pharmacyService
+      serviceConnection: azure-service-connection
+      acrNameDev: healthtechazuredevacr
+      acrNameStaging: healthtechazurestagingacr
+      acrNameProd: healthtechazureprodacr
+      namePrefix: healthtech-azure

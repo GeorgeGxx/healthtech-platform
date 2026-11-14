@@ -1,0 +1,43 @@
+﻿name: HealthTech-Notification-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - notification-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/notification-service.yml
+      - azure-devops/templates/**
+
+pr:
+  branches:
+    include: [develop, staging, master]
+  paths:
+    include:
+      - notification-service/**
+      - k8s/helm/**
+      - devsecops/**
+      - azure-devops/pipelines/notification-service.yml
+      - azure-devops/templates/**
+
+variables:
+  - template: ../templates/gates.yml
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - template: ../templates/app-stages.yml
+    parameters:
+      serviceName: notification-service
+      serviceDir: notification-service
+      serviceType: nestjs
+      servicePort: 3005
+      helmValuesKey: services.notificationService
+      serviceConnection: azure-service-connection
+      acrNameDev: healthtechazuredevacr
+      acrNameStaging: healthtechazurestagingacr
+      acrNameProd: healthtechazureprodacr
+      namePrefix: healthtech-azure
