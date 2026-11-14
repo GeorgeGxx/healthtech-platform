@@ -17,8 +17,6 @@ parameters:
     type: string
   - name: envName              # value for global.environment (dev | staging | production)
     type: string
-  - name: springProfile
-    type: string
   - name: acrName
     type: string
   - name: serviceName
@@ -27,6 +25,9 @@ parameters:
     type: number
   - name: helmRelease
     type: string
+  - name: helmChartPath
+    type: string
+    default: './k8s/helm'
   - name: helmVersion
     type: string
   - name: helmValuesKey
@@ -52,9 +53,6 @@ steps:
 
   - task: AzureCLI@2
     displayName: "Helm upgrade -> ${{ parameters.envName }} (${{ parameters.cluster }} / ${{ parameters.namespace }})"
-    env:
-      GHCR_USERNAME: $(GHCR_USERNAME)
-      GHCR_TOKEN: $(GHCR_TOKEN)
     inputs:
       azureSubscription: ${{ parameters.serviceConnection }}
       scriptType: bash
@@ -67,13 +65,10 @@ steps:
           --overwrite-existing
         if command -v kubelogin >/dev/null 2>&1; then kubelogin convert-kubeconfig -l azurecli; fi
 
-        : "${GHCR_USERNAME:?Set GHCR_USERNAME as a read-only GHCR package account}"
-        : "${GHCR_TOKEN:?Set GHCR_TOKEN as a secret with read:packages access}"
-        CHART_VERSION="$(yq '.version' helm/microservices-umbrella/Chart.yaml)"
-        CHART_REPOSITORY="$(yq '.metadata.annotations["microservices-architecture.io/helm-oci-repository"] // ""' helm/microservices-umbrella/Chart.yaml)"
-        [[ "$CHART_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid umbrella chart version: $CHART_VERSION"; exit 1; }
-        [[ "$CHART_REPOSITORY" == oci://ghcr.io/*/microservices-umbrella ]] || { echo "Invalid umbrella chart OCI repository: $CHART_REPOSITORY"; exit 1; }
-        printf '%s' "$GHCR_TOKEN" | helm registry login ghcr.io --username "$GHCR_USERNAME" --password-stdin
+        CHART_PATH="${{ parameters.helmChartPath }}"
+        CHART_VERSION="$(yq '.version' "${CHART_PATH}/Chart.yaml")"
+        [[ "$CHART_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid chart version: $CHART_VERSION"; exit 1; }
+        echo "Deploying Helm chart ${CHART_PATH} (v${CHART_VERSION})"
 
         HELM_KEY="${{ parameters.helmValuesKey }}"
         if [ -z "$HELM_KEY" ]; then HELM_KEY="${{ parameters.serviceName }}"; fi
@@ -88,22 +83,31 @@ steps:
             sudo install -m 0755 /tmp/cosign /usr/local/bin/cosign
           fi
           echo "Verifying Cosign OCI image signature for ${{ parameters.acrName }}.azurecr.io/${{ parameters.serviceName }}@${IMAGE_DIGEST}..."
-          cosign verify --key devsecops/compliance/cosign/cosign.pub "${{ parameters.acrName }}.azurecr.io/${{ parameters.serviceName }}@${IMAGE_DIGEST}"
+          cosign verify --key devsecops/supply-chain/cosign/cosign.pub "${{ parameters.acrName }}.azurecr.io/${{ parameters.serviceName }}@${IMAGE_DIGEST}"
         fi
 
-        helm upgrade --install ${{ parameters.helmRelease }} "$CHART_REPOSITORY" \
-          --version "$CHART_VERSION" \
+        VALUES_ENV="${{ parameters.envName }}"
+        if [ "$VALUES_ENV" = "production" ]; then VALUES_ENV="prod"; fi
+        VALUES_ARGS=()
+        if [ -f "${CHART_PATH}/values-${VALUES_ENV}.yaml" ]; then
+          VALUES_ARGS+=(--values "${CHART_PATH}/values-${VALUES_ENV}.yaml")
+        fi
+
+        helm upgrade --install ${{ parameters.helmRelease }} "$CHART_PATH" \
+          "${VALUES_ARGS[@]}" \
           --reuse-values \
           --namespace ${{ parameters.namespace }} \
           --create-namespace \
-          --set ${HELM_KEY}.image.repository=${{ parameters.acrName }}.azurecr.io/${{ parameters.serviceName }} \
-          --set ${HELM_KEY}.image.tag=$(Build.SourceVersion) \
-          --set ${HELM_KEY}.image.digest=${IMAGE_DIGEST} \
-          --set ${HELM_KEY}.service.port=${{ parameters.servicePort }} \
+          --set ${HELM_KEY}.image=${{ parameters.acrName }}.azurecr.io/${{ parameters.serviceName }}:$(Build.SourceVersion) \
+          --set ${HELM_KEY}.port=${{ parameters.servicePort }} \
           --set global.environment=${{ parameters.envName }} \
-          --set configMap.data.SPRING_PROFILES_ACTIVE=${{ parameters.springProfile }} \
           --wait --timeout 5m \
           --cleanup-on-fail
+
+        if kubectl get crd gateways.networking.istio.io >/dev/null 2>&1 && [ -d "k8s/istio/overlays/aks-cloud" ]; then
+          echo "Applying Istio AKS cloud overlay to namespace ${{ parameters.namespace }}..."
+          kubectl apply -n ${{ parameters.namespace }} -k k8s/istio/overlays/aks-cloud
+        fi
 
   - ${{ if eq(parameters.verifyRollout, true) }}:
     - task: AzureCLI@2

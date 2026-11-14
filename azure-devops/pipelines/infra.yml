@@ -8,7 +8,7 @@ trigger:
     include:
       - terraform/environments/azure/**
       - terraform/modules/azure/**
-      - k8s/helm/healthtech-platform/Chart.yaml
+      - k8s/helm/Chart.yaml
       - devsecops/iac/tflint/**
       - devsecops/compliance/trivy/**
       - azure-devops/pipelines/infra.yml
@@ -21,7 +21,7 @@ pr:
     include:
       - terraform/environments/azure/**
       - terraform/modules/azure/**
-      - k8s/helm/healthtech-platform/Chart.yaml
+      - k8s/helm/Chart.yaml
       - devsecops/iac/tflint/**
       - devsecops/compliance/trivy/**
       - azure-devops/templates/infra-stages.yml

@@ -27,19 +27,19 @@ parameters:
     type: string
   - name: serviceDir
     type: string
-  - name: serviceType          # 'spring-boot' | 'react' | 'frontend' | 'cosmo-router' | 'python' | 'go' | 'nestjs'
+  - name: serviceType          # 'nestjs' | 'frontend'
     type: string
-    default: 'spring-boot'
+    default: 'nestjs'
   - name: servicePort
     type: number
-    default: 8080
+    default: 3001
   - name: dockerfilePath       # optional override for Dockerfile location
     type: string
     default: ''
   - name: contextDir           # optional override for docker build context directory
     type: string
     default: ''
-  - name: helmValuesKey        # optional override for umbrella values key (e.g. mlops.forecast)
+  - name: helmValuesKey        # optional override for chart values key (e.g. services.appointmentService)
     type: string
     default: ''
   - name: deploymentName       # optional override for k8s deployment name in rollout status
@@ -80,7 +80,7 @@ parameters:
     default: 'healthtech-azure'
   - name: helmChartPath
     type: string
-    default: './k8s/helm/healthtech-platform'
+    default: './k8s/helm'
   - name: helmRelease
     type: string
     default: 'healthtech'
@@ -122,67 +122,7 @@ stages:
           - script: echo "Service ${{ parameters.serviceName }} (${{ parameters.serviceType }})"
             displayName: "Service info"
 
-          - ${{ if eq(parameters.serviceType, 'spring-boot') }}:
-            - task: Cache@2
-              displayName: "Cache Maven Repository"
-              inputs:
-                key: 'maven | "$(Agent.OS)" | ${{ parameters.serviceDir }}/pom.xml'
-                restoreKeys: |
-                  maven | "$(Agent.OS)"
-                  maven
-                path: $(MAVEN_CACHE_FOLDER)
-
-            - task: JavaToolInstaller@0
-              inputs:
-                versionSpec: '21'
-                jdkArchitectureOption: 'x64'
-                jdkSourceOption: 'PreInstalled'
-
-            - script: |
-                cd ${{ parameters.serviceDir }}
-                mvn clean test jacoco:report -B -T 1C -Dspring.profiles.active=test -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)
-              displayName: "Maven Test & JaCoCo"
-
-            - task: PublishTestResults@2
-              condition: succeededOrFailed()
-              displayName: "Publish Surefire Test Results"
-              inputs:
-                testResultsFormat: 'JUnit'
-                testResultsFiles: '${{ parameters.serviceDir }}/target/surefire-reports/TEST-*.xml'
-                mergeTestResults: true
-                failTaskOnFailedTests: true
-
-            - task: PublishCodeCoverageResults@2
-              condition: succeededOrFailed()
-              displayName: "Publish JaCoCo Code Coverage"
-              inputs:
-                summaryFileLocation: '${{ parameters.serviceDir }}/target/site/jacoco/jacoco.xml'
-                pathToSources: '${{ parameters.serviceDir }}/src/main/java'
-
-            # Secret variables are NOT auto-mapped to env vars: SONAR_TOKEN is mapped in env: below.
-            # The step is skipped (visible in the UI) when SONAR_TOKEN is not defined.
-            - script: |
-                set -euo pipefail
-                if [ -z "$SONAR_ORGANIZATION" ] || [ "$SONAR_ORGANIZATION" = '$(SONAR_ORGANIZATION)' ]; then
-                  echo "SONAR_ORGANIZATION must match the SonarQube Cloud organization key."
-                  exit 1
-                fi
-                cd ${{ parameters.serviceDir }}
-                mvn -B -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER) \
-                  org.sonarsource.scanner.maven:sonar-maven-plugin:5.2.0.4988:sonar \
-                  -Dsonar.projectKey=msa-${{ parameters.serviceName }} \
-                  -Dsonar.projectName="MSA ${{ parameters.serviceName }}" \
-                  -Dsonar.organization="$SONAR_ORGANIZATION" \
-                  -Dsonar.host.url="${{ parameters.sonarHostUrl }}" \
-                  -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-                  -Dsonar.qualitygate.wait=${{ parameters.sonarQualityGateWait }}
-              displayName: "SonarQube Cloud Analysis & Quality Gate"
-              condition: and(succeeded(), ne(variables['SONAR_TOKEN'], ''))
-              env:
-                SONAR_TOKEN: $(SONAR_TOKEN)
-                SONAR_ORGANIZATION: $(SONAR_ORGANIZATION)
-
-          - ${{ if or(eq(parameters.serviceType, 'react'), eq(parameters.serviceType, 'frontend')) }}:
+          - ${{ if eq(parameters.serviceType, 'frontend') }}:
             - task: Cache@2
               displayName: "Cache npm Packages"
               inputs:
@@ -205,9 +145,8 @@ stages:
             - script: |
                 cd ${{ parameters.serviceDir }}
                 npm ci
-                npm run test:coverage
                 npm run build
-              displayName: "Novashop Frontend Test, Coverage & Build Gate"
+              displayName: "HealthTech Frontend Build Gate"
 
             - task: JavaToolInstaller@0
               displayName: "Set up Java for Sonar Scanner"
@@ -228,62 +167,15 @@ stages:
                 fi
                 cd ${{ parameters.serviceDir }}
                 npx --yes sonarqube-scanner \
-                  -Dsonar.projectKey=msa-frontend \
-                  -Dsonar.projectName="Novashop Storefront" \
+                  -Dsonar.projectKey=healthtech-frontend \
+                  -Dsonar.projectName="HealthTech Frontend" \
                   -Dsonar.organization="$SONAR_ORGANIZATION" \
                   -Dsonar.host.url="${{ parameters.sonarHostUrl }}" \
                   -Dsonar.sources=src \
-                  -Dsonar.exclusions=**/*.test.ts,**/*.test.tsx \
-                  -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+                  -Dsonar.exclusions=**/*.spec.ts \
                   -Dsonar.qualitygate.wait=${{ parameters.sonarQualityGateWait }}
               displayName: "SonarQube Cloud Frontend Analysis & Quality Gate"
               condition: succeeded()
-              env:
-                SONAR_TOKEN: $(SONAR_TOKEN)
-                SONAR_ORGANIZATION: $(SONAR_ORGANIZATION)
-
-          - ${{ if eq(parameters.serviceType, 'go') }}:
-            - task: GoTool@0
-              displayName: "Set up Go 1.24+"
-              inputs:
-                version: '1.24.x'
-
-            - script: |
-                set -euo pipefail
-                cd ${{ parameters.serviceDir }}
-                go test -v -coverprofile=coverage.out ./...
-              displayName: "Go Unit Tests & Coverage"
-
-            - task: NodeTool@0
-              displayName: "Set up Node.js for Sonar Scanner"
-              condition: and(succeeded(), ne(variables['SONAR_TOKEN'], ''))
-              inputs:
-                versionSpec: '24.x'
-
-            - script: |
-                set -euo pipefail
-                if [ -z "$SONAR_TOKEN" ] || [ "$SONAR_TOKEN" = '$(SONAR_TOKEN)' ]; then
-                  echo "SonarQube Cloud token is not configured; skipping Go analysis."
-                  exit 0
-                fi
-                if [ -z "$SONAR_ORGANIZATION" ] || [ "$SONAR_ORGANIZATION" = '$(SONAR_ORGANIZATION)' ]; then
-                  echo "SONAR_ORGANIZATION must match the SonarQube Cloud organization key."
-                  exit 1
-                fi
-                cd ${{ parameters.serviceDir }}
-                npx --yes sonarqube-scanner \
-                  -Dsonar.projectKey=msa-${{ parameters.serviceName }} \
-                  -Dsonar.projectName="MSA ${{ parameters.serviceName }}" \
-                  -Dsonar.organization="$SONAR_ORGANIZATION" \
-                  -Dsonar.host.url="${{ parameters.sonarHostUrl }}" \
-                  -Dsonar.sources=. \
-                  -Dsonar.tests=. \
-                  -Dsonar.test.inclusions="**/*_test.go" \
-                  -Dsonar.exclusions="**/*_test.go,docs/**,scripts/**" \
-                  -Dsonar.go.coverage.reportPaths=coverage.out \
-                  -Dsonar.qualitygate.wait=${{ parameters.sonarQualityGateWait }}
-              displayName: "SonarQube Cloud Go Analysis & Quality Gate"
-              condition: and(succeeded(), ne(variables['SONAR_TOKEN'], ''))
               env:
                 SONAR_TOKEN: $(SONAR_TOKEN)
                 SONAR_ORGANIZATION: $(SONAR_ORGANIZATION)
@@ -322,8 +214,8 @@ stages:
                 fi
                 cd ${{ parameters.serviceDir }}
                 npx --yes sonarqube-scanner \
-                  -Dsonar.projectKey=msa-${{ parameters.serviceName }} \
-                  -Dsonar.projectName="MSA ${{ parameters.serviceName }}" \
+                  -Dsonar.projectKey=healthtech-${{ parameters.serviceName }} \
+                  -Dsonar.projectName="HealthTech ${{ parameters.serviceName }}" \
                   -Dsonar.organization="$SONAR_ORGANIZATION" \
                   -Dsonar.host.url="${{ parameters.sonarHostUrl }}" \
                   -Dsonar.sources=src \
@@ -334,101 +226,6 @@ stages:
                   -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
                   -Dsonar.qualitygate.wait=${{ parameters.sonarQualityGateWait }}
               displayName: "SonarQube Cloud NestJS Analysis & Quality Gate"
-              condition: and(succeeded(), ne(variables['SONAR_TOKEN'], ''))
-              env:
-                SONAR_TOKEN: $(SONAR_TOKEN)
-                SONAR_ORGANIZATION: $(SONAR_ORGANIZATION)
-
-          - ${{ if eq(parameters.serviceType, 'python') }}:
-            - task: UsePythonVersion@0
-              displayName: "Set up Python 3.12"
-              inputs:
-                versionSpec: '3.12'
-                addToPath: true
-
-            - script: |
-                set -euo pipefail
-                export PYTHONPATH="$(Build.SourcesDirectory)/${{ parameters.serviceDir }}"
-                python -m pip install --upgrade pip
-                if [ -f "${{ parameters.serviceDir }}/requirements.txt" ]; then
-                  pip install -r "${{ parameters.serviceDir }}/requirements.txt"
-                fi
-                pip install coverage pytest pytest-cov pytest-asyncio
-                if [ -d "${{ parameters.serviceDir }}/tests" ]; then
-                  if [ -d "${{ parameters.serviceDir }}/app" ]; then
-                    cd "${{ parameters.serviceDir }}"
-                    pytest --cov=app --cov-report=xml:coverage.xml tests/ -v
-                  else
-                    OMIT="*/generate_sample_sales.py,*/test_tdd.py,*/patch_spark_jars.py,*/tests/*,*/.venv*/*"
-                    if [ "${{ parameters.serviceName }}" = "demand-forecast" ]; then
-                      OMIT="$OMIT,*/capture_orders.py,*/train_demand_model.py,*/feature_engineering.py"
-                    elif [ "${{ parameters.serviceName }}" = "mlops-training" ]; then
-                      OMIT="$OMIT,*/forecast_api.py"
-                    elif [ "${{ parameters.serviceName }}" = "mlflow" ]; then
-                      OMIT="$OMIT,*/capture_orders.py,*/train_demand_model.py,*/feature_engineering.py,*/forecast_api.py"
-                    fi
-                    coverage run --source=${{ parameters.serviceDir }} --omit="$OMIT" -m unittest discover -s "${{ parameters.serviceDir }}/tests" -v
-                    coverage xml -o ${{ parameters.serviceDir }}/coverage.xml
-                  fi
-                fi
-              displayName: "Python Unit Tests & Coverage"
-
-            - task: PublishCodeCoverageResults@2
-              condition: succeededOrFailed()
-              displayName: "Publish Python Code Coverage"
-              inputs:
-                summaryFileLocation: '${{ parameters.serviceDir }}/coverage.xml'
-
-            - task: JavaToolInstaller@0
-              displayName: "Set up Java for Sonar Scanner"
-              condition: and(succeeded(), ne(variables['SONAR_TOKEN'], ''))
-              inputs:
-                versionSpec: '21'
-                jdkArchitectureOption: 'x64'
-                jdkSourceOption: 'PreInstalled'
-
-            - task: NodeTool@0
-              displayName: "Set up Node.js for Sonar Scanner"
-              condition: and(succeeded(), ne(variables['SONAR_TOKEN'], ''))
-              inputs:
-                versionSpec: '24.x'
-
-            - script: |
-                set -euo pipefail
-                if [ -z "$SONAR_TOKEN" ] || [ "$SONAR_TOKEN" = '$(SONAR_TOKEN)' ]; then
-                  echo "SonarQube Cloud token is not configured; skipping Python analysis."
-                  exit 0
-                fi
-                if [ -z "$SONAR_ORGANIZATION" ] || [ "$SONAR_ORGANIZATION" = '$(SONAR_ORGANIZATION)' ]; then
-                  echo "SONAR_ORGANIZATION must match the SonarQube Cloud organization key."
-                  exit 1
-                fi
-                cd ${{ parameters.serviceDir }}
-                EXCLUSIONS="tests/**,data/**,*.sh,.venv*/**,generate_sample_sales.py,test_tdd.py,patch_spark_jars.py"
-                COVERAGE_EXCLUSIONS="generate_sample_sales.py,test_tdd.py,patch_spark_jars.py"
-                if [ "${{ parameters.serviceName }}" = "demand-forecast" ]; then
-                  EXCLUSIONS="$EXCLUSIONS,Dockerfile.training,Dockerfile.capture,capture_orders.py,train_demand_model.py,feature_engineering.py"
-                  COVERAGE_EXCLUSIONS="$COVERAGE_EXCLUSIONS,capture_orders.py,train_demand_model.py,feature_engineering.py"
-                elif [ "${{ parameters.serviceName }}" = "mlops-training" ]; then
-                  EXCLUSIONS="$EXCLUSIONS,Dockerfile.forecast,forecast_api.py"
-                  COVERAGE_EXCLUSIONS="$COVERAGE_EXCLUSIONS,forecast_api.py"
-                elif [ "${{ parameters.serviceName }}" = "mlflow" ]; then
-                  EXCLUSIONS="$EXCLUSIONS,Dockerfile.forecast,Dockerfile.training,forecast_api.py,capture_orders.py,train_demand_model.py,feature_engineering.py"
-                  COVERAGE_EXCLUSIONS="$COVERAGE_EXCLUSIONS,forecast_api.py,capture_orders.py,train_demand_model.py,feature_engineering.py"
-                fi
-                npx --yes sonarqube-scanner \
-                  -Dsonar.projectKey=msa-${{ parameters.serviceName }} \
-                  -Dsonar.projectName="MSA ${{ parameters.serviceName }}" \
-                  -Dsonar.organization="$SONAR_ORGANIZATION" \
-                  -Dsonar.host.url="${{ parameters.sonarHostUrl }}" \
-                  -Dsonar.sources=. \
-                  -Dsonar.tests=tests \
-                  -Dsonar.exclusions="$EXCLUSIONS" \
-                  -Dsonar.coverage.exclusions="$COVERAGE_EXCLUSIONS" \
-                  -Dsonar.python.version=3.12 \
-                  -Dsonar.python.coverage.reportPaths=coverage.xml \
-                  -Dsonar.qualitygate.wait=${{ parameters.sonarQualityGateWait }}
-              displayName: "SonarQube Cloud Python Analysis & Quality Gate"
               condition: and(succeeded(), ne(variables['SONAR_TOKEN'], ''))
               env:
                 SONAR_TOKEN: $(SONAR_TOKEN)
@@ -477,7 +274,7 @@ stages:
                 ${{ parameters.serviceDir }}
             displayName: "Trivy IaC Configuration Scan (Audit Mode)"
 
-          - ${{ if or(eq(parameters.serviceType, 'react'), eq(parameters.serviceType, 'frontend')) }}:
+          - ${{ if eq(parameters.serviceType, 'frontend') }}:
             - script: |
                 cd ${{ parameters.serviceDir }}
                 if [ "$(isProtectedBranch)" = "True" ]; then
@@ -507,7 +304,7 @@ stages:
               fi
               CONTEXT="${{ parameters.contextDir }}"
               if [ -z "$CONTEXT" ]; then
-                if [ "${{ parameters.serviceType }}" = "react" ] || [ "${{ parameters.serviceType }}" = "angular" ] || [ "${{ parameters.serviceType }}" = "frontend" ] || [ "${{ parameters.serviceType }}" = "python" ] || [ "${{ parameters.serviceType }}" = "go" ] || [ "${{ parameters.serviceType }}" = "nestjs" ]; then
+                if [ "${{ parameters.serviceType }}" = "frontend" ] || [ "${{ parameters.serviceType }}" = "nestjs" ]; then
                   CONTEXT="${{ parameters.serviceDir }}"
                 else
                   CONTEXT="."
@@ -704,7 +501,6 @@ stages:
                     cluster: ${{ parameters.namePrefix }}-dev-aks
                     namespace: dev
                     envName: dev
-                    springProfile: dev
                     acrName: ${{ parameters.acrNameDev }}
                     serviceName: ${{ parameters.serviceName }}
                     servicePort: ${{ parameters.servicePort }}
@@ -753,7 +549,6 @@ stages:
                     cluster: ${{ parameters.namePrefix }}-staging-aks
                     namespace: staging
                     envName: staging
-                    springProfile: staging
                     acrName: ${{ parameters.acrNameStaging }}
                     serviceName: ${{ parameters.serviceName }}
                     servicePort: ${{ parameters.servicePort }}
@@ -1003,7 +798,6 @@ stages:
                     cluster: ${{ parameters.namePrefix }}-prod-aks
                     namespace: production
                     envName: production
-                    springProfile: prod
                     acrName: ${{ parameters.acrNameProd }}
                     serviceName: ${{ parameters.serviceName }}
                     servicePort: ${{ parameters.servicePort }}
@@ -1044,7 +838,6 @@ stages:
                     cluster: ${{ parameters.namePrefix }}-dp2-prod-aks
                     namespace: production
                     envName: production
-                    springProfile: prod
                     acrName: ${{ parameters.acrNameProd }}
                     serviceName: ${{ parameters.serviceName }}
                     servicePort: ${{ parameters.servicePort }}

@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "hotel-premium-pms-collection-2026",
-    "name": "Hotel Premium PMS — Enterprise API & Gateway Verification Suite",
-    "description": "End-to-end API contract verification for Hotel Premium microservices (room-service, stay-service, billing-service, notification-worker) via Kong Gateway v3.9.4.",
+    "_postman_id": "healthtech-platform-collection-2026",
+    "name": "HealthTech Platform — Microservices & Kong Gateway 3.9.4 Contract Suite",
+    "description": "End-to-end API contract verification for all 7 NestJS 12 microservices via Kong Gateway v3.9.4.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -13,94 +13,120 @@
   ],
   "item": [
     {
-      "name": "1. Health & Readiness Checks",
+      "name": "1. Health & Readiness Probes",
       "item": [
         {
-          "name": "GET /api/v1/health",
+          "name": "Appointment Service Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Kong correlation ID header present', () => pm.response.to.have.header('X-Correlation-ID'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "health"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/appointments/health", "host": ["{{baseUrl}}"], "path": ["api", "appointments", "health"] }
+          }
+        },
+        {
+          "name": "Patient Service Health",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/patients/health", "host": ["{{baseUrl}}"], "path": ["api", "patients", "health"] }
+          }
+        },
+        {
+          "name": "Billing Service Health",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }],
+          "request": {
+            "method": { "raw": "GET" },
+            "url": { "raw": "{{baseUrl}}/api/billing/health", "host": ["{{baseUrl}}"], "path": ["api", "billing", "health"] }
+          }
+        },
+        {
+          "name": "Pharmacy Service Health",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/pharmacy/health", "host": ["{{baseUrl}}"], "path": ["api", "pharmacy", "health"] }
+          }
+        },
+        {
+          "name": "Notification Service Health",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/notifications/health", "host": ["{{baseUrl}}"], "path": ["api", "notifications", "health"] }
+          }
+        },
+        {
+          "name": "Clinical Records Service Health",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/medical-records/health", "host": ["{{baseUrl}}"], "path": ["api", "medical-records", "health"] }
+          }
+        },
+        {
+          "name": "Staff Service Health",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200', () => pm.response.to.have.status(200));"], "type": "text/javascript" } }],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/doctors/health", "host": ["{{baseUrl}}"], "path": ["api", "doctors", "health"] }
           }
         }
       ]
     },
     {
-      "name": "2. Room Inventory & Rack Management",
+      "name": "2. Aligned Frontend & Clinical Contracts",
       "item": [
         {
-          "name": "GET /api/v1/rooms",
+          "name": "GET /api/dashboard/metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200 or 401 when auth enforced', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/rooms",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "rooms"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/dashboard/metrics", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "metrics"] }
           }
-        }
-      ]
-    },
-    {
-      "name": "3. Reservations, Stays & Saga Orchestration",
-      "item": [
+        },
         {
-          "name": "GET /api/v1/stays",
+          "name": "GET /api/patients/catalogs/insurances",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200 or 401', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"], "type": "text/javascript" } }],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/stays",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "stays"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/patients/catalogs/insurances", "host": ["{{baseUrl}}"], "path": ["api", "patients", "catalogs", "insurances"] }
           }
-        }
-      ]
-    },
-    {
-      "name": "4. Billing, Folios & POS Catalog",
-      "item": [
+        },
         {
-          "name": "GET /api/v1/billing/products",
+          "name": "GET /api/billing/tariffs",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200 or 401', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"], "type": "text/javascript" } }],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/billing/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "billing", "products"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/billing/tariffs", "host": ["{{baseUrl}}"], "path": ["api", "billing", "tariffs"] }
           }
-        }
-      ]
-    },
-    {
-      "name": "5. Notifications Worker Status",
-      "item": [
+        },
         {
-          "name": "GET /api/v1/notifications",
+          "name": "GET /api/patients/1/fhir",
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Status is 200 or 401', () => pm.expect(pm.response.code).to.be.oneOf([200, 401]));"], "type": "text/javascript" } }],
           "request": {
             "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/notifications",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "v1", "notifications"]
-            }
+            "url": { "raw": "{{baseUrl}}/api/patients/1/fhir", "host": ["{{baseUrl}}"], "path": ["api", "patients", "1", "fhir"] }
           }
         }
       ]
