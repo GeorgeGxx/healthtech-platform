@@ -8,6 +8,55 @@ global:
 
 secrets:
   secretName: healthtech-app-secrets
+  create: true
+  postgresPassword: "change-me-in-vault"
+  phiEncryptionKey: "change-me-32-byte-phi-key"
+  prescriptionHmacSecret: "change-me-hmac-secret"
+
+keyVault:
+  enabled: false
+  name: healthtech-azure-prod-kv
+  tenantId: ""
+  clientId: ""
+
+serviceAccount:
+  create: true
+  name: healthtech-workload-sa
+  annotations: {}
+
+config:
+  dbHost: postgres
+  dbPort: "5432"
+  dbUser: postgres
+  dbName: centromedico
+  kafkaBroker: kafka:9092
+  redisHost: redis
+  redisPort: "6379"
+  elasticsearchUrl: http://elasticsearch:9200
+  keycloakJwksUrl: http://keycloak:8080/realms/healthtech-realm/protocol/openid-connect/certs
+  patientServiceUrl: http://patient-service:3002
+  otelEndpoint: http://elastic-agent.observability.svc.cluster.local:4318
+  corsOrigins: http://localhost,http://localhost:80,http://localhost:8000
+  devAuthEnabled: "false"
+
+kongGateway:
+  enabled: true
+  name: kong-gateway
+  image: kong:3.9.4
+  replicas: 1
+  proxyPort: 8000
+  adminPort: 8001
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+pdb:
+  enabled: false
+  minAvailable: 1
 
 autoscaling:
   enabled: true

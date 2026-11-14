@@ -3,6 +3,23 @@ global:
   namespace: production
   imagePullPolicy: Always
 
+secrets:
+  create: false
+
+keyVault:
+  enabled: true
+  name: healthtech-azure-prod-kv
+
+config:
+  devAuthEnabled: "false"
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+kongGateway:
+  replicas: 2
+
 services:
   appointmentService:
     replicas: 2

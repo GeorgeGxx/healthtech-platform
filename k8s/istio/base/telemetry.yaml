@@ -1,0 +1,9 @@
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: healthtech-mesh-telemetry
+spec:
+  tracing:
+    - providers:
+        - name: otel-elastic-agent
+      randomSamplingPercentage: 100.0

@@ -8,7 +8,7 @@ output "healthtech_chart_repository" {
 }
 
 output "healthtech_chart_version" {
-  description = "Pinned umbrella chart version from k8s/helm/healthtech-platform/Chart.yaml."
+  description = "Pinned umbrella chart version from k8s/helm/Chart.yaml."
   value       = local.healthtech_chart.version
 }
 

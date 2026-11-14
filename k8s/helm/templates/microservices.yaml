@@ -24,6 +24,7 @@ spec:
         app: {{ $svc.name }}
         {{- include "healthtech.labels" $ | nindent 8 }}
     spec:
+      serviceAccountName: {{ $.Values.serviceAccount.name }}
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -38,11 +39,18 @@ spec:
               drop: ["ALL"]
           ports:
             - containerPort: {{ $svc.targetPort }}
+          envFrom:
+            - configMapRef:
+                name: healthtech-shared-config
+            - secretRef:
+                name: {{ $.Values.secrets.secretName }}
           env:
             - name: PORT
               value: "{{ $svc.targetPort }}"
             - name: NODE_ENV
               value: "{{ $.Values.global.environment }}"
+            - name: OTEL_SERVICE_NAME
+              value: "{{ $svc.name }}"
           livenessProbe:
             httpGet:
               path: {{ $svc.livenessPath }}
@@ -57,6 +65,21 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml $svc.resources | nindent 12 }}
+          {{- if $.Values.keyVault.enabled }}
+          volumeMounts:
+            - name: secrets-store-inline
+              mountPath: /mnt/secrets-store
+              readOnly: true
+          {{- end }}
+      {{- if $.Values.keyVault.enabled }}
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: healthtech-azure-keyvault
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

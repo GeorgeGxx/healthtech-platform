@@ -113,6 +113,6 @@ locals {
 }
 
 locals {
-  healthtech_chart            = yamldecode(file("${path.module}/../../../k8s/helm/healthtech-platform/Chart.yaml"))
+  healthtech_chart            = yamldecode(file("${path.module}/../../../k8s/helm/Chart.yaml"))
   healthtech_chart_repository = try(local.healthtech_chart.annotations["healthtech-platform.io/helm-oci-repository"], "oci://healthtechacr.azurecr.io/charts/healthtech-platform")
 }

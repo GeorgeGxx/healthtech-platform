@@ -36,7 +36,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $root          = $PSScriptRoot
-$helmChartDir  = Join-Path $root "k8s\helm\healthtech-platform"
+$helmChartDir  = Join-Path $root "k8s\helm"
 $minikubeDir   = Join-Path $root "k8s\minikube"
 $tfAzureDir    = Join-Path $root "terraform\environments\azure"
 $scriptsDir    = Join-Path $root "scripts"
@@ -351,6 +351,19 @@ switch ($Command) {
             if ($LASTEXITCODE -ne 0) { throw "Failed to start Minikube." }
         }
         & kubectl apply -f (Join-Path $minikubeDir "infra\namespaces.yaml")
+        & kubectl apply -n $targetNs -f (Join-Path $minikubeDir "infra\data-stack.yaml")
+        $istioOverlayDir = Join-Path $root "k8s\istio\overlays\minikube"
+        if (Get-Command istioctl -ErrorAction SilentlyContinue) {
+            Show-Step "Installing/updating Istio Service Mesh (Minikube overlay)..."
+            & istioctl install -y -f (Join-Path $istioOverlayDir "istio-operator.yaml")
+            if ($LASTEXITCODE -eq 0) {
+                & kubectl apply -n $targetNs -k $istioOverlayDir
+            } else {
+                Show-Warn "istioctl install returned non-zero; skipping Istio CRD apply."
+            }
+        } else {
+            Show-Warn "istioctl not found in PATH — skipping Istio Service Mesh install (Kong Gateway still routes traffic)."
+        }
         if ($Build) { Invoke-ServiceBuild }
         & helm upgrade --install $helmRelease $helmChartDir --namespace $targetNs --create-namespace --values (Join-Path $helmChartDir "values-$targetCloudEnv.yaml") --wait --timeout 5m
         if ($LASTEXITCODE -ne 0) { throw "Helm deployment failed." }

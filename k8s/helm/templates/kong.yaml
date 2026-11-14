@@ -1,0 +1,181 @@
+{{- if .Values.kongGateway.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kong-declarative-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "healthtech.labels" . | nindent 4 }}
+data:
+  kong.yml: |
+    _format_version: "3.0"
+    _transform: true
+    services:
+      - name: appointment-service
+        url: http://appointment-service:3001
+        routes:
+          - name: appointment-routes
+            paths: ["/api/appointments"]
+            strip_path: false
+      - name: admin-service
+        url: http://appointment-service:3001
+        routes:
+          - name: admin-routes
+            paths: ["/api/admin"]
+            strip_path: false
+      - name: dashboard-service
+        url: http://appointment-service:3001
+        routes:
+          - name: dashboard-routes
+            paths: ["/api/dashboard"]
+            strip_path: false
+      - name: patient-service
+        url: http://patient-service:3002
+        routes:
+          - name: patient-routes
+            paths: ["/api/patients"]
+            strip_path: false
+      - name: billing-service
+        url: http://billing-service:3003
+        routes:
+          - name: billing-routes
+            paths: ["/api/billing"]
+            strip_path: false
+      - name: pharmacy-service
+        url: http://pharmacy-service:3004
+        routes:
+          - name: pharmacy-routes
+            paths: ["/api/pharmacy"]
+            strip_path: false
+      - name: notification-service
+        url: http://notification-service:3005
+        routes:
+          - name: notification-routes
+            paths: ["/api/notifications"]
+            strip_path: false
+      - name: clinical-records-service
+        url: http://clinical-records-service:3006
+        routes:
+          - name: clinical-records-routes
+            paths: ["/api/medical-records", "/api/hospitalizations", "/api/audit", "/api/clinical-records", "/api/health"]
+            strip_path: false
+      - name: staff-service
+        url: http://staff-service:3007
+        routes:
+          - name: staff-routes
+            paths: ["/api/doctors"]
+            strip_path: false
+      - name: keycloak-auth
+        url: http://keycloak:8080
+        routes:
+          - name: keycloak-routes
+            paths: ["/realms", "/resources", "/admin"]
+            strip_path: false
+      - name: frontend
+        url: http://frontend:80
+        routes:
+          - name: frontend-routes
+            paths: ["/"]
+            strip_path: false
+    plugins:
+      - name: prometheus
+      - name: rate-limiting
+        config:
+          minute: 600
+          policy: local
+          fault_tolerant: true
+      - name: correlation-id
+        config:
+          header_name: X-Correlation-ID
+          generator: uuid
+          echo_downstream: true
+      - name: response-transformer
+        config:
+          add:
+            headers:
+              - "X-Content-Type-Options: nosniff"
+              - "X-Frame-Options: SAMEORIGIN"
+              - "X-XSS-Protection: 1; mode=block"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.kongGateway.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.kongGateway.name }}
+    {{- include "healthtech.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.kongGateway.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.kongGateway.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.kongGateway.name }}
+        {{- include "healthtech.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ .Values.kongGateway.name }}
+          image: {{ .Values.kongGateway.image }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: KONG_DATABASE
+              value: "off"
+            - name: KONG_DECLARATIVE_CONFIG
+              value: "/kong/declarative/kong.yml"
+            - name: KONG_PROXY_LISTEN
+              value: "0.0.0.0:8000"
+            - name: KONG_ADMIN_LISTEN
+              value: "127.0.0.1:8001"
+          ports:
+            - containerPort: {{ .Values.kongGateway.proxyPort }}
+          volumeMounts:
+            - name: kong-config
+              mountPath: /kong/declarative
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.kongGateway.resources | nindent 12 }}
+      volumes:
+        - name: kong-config
+          configMap:
+            name: kong-declarative-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.kongGateway.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.kongGateway.name }}
+    {{- include "healthtech.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Values.kongGateway.name }}
+  ports:
+    - name: http-proxy
+      port: {{ .Values.kongGateway.proxyPort }}
+      targetPort: {{ .Values.kongGateway.proxyPort }}
+{{- end }}

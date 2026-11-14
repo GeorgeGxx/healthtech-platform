@@ -1,0 +1,18 @@
+{{- if .Values.pdb.enabled }}
+{{- range $key, $svc := .Values.services }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $svc.name }}-pdb
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app: {{ $svc.name }}
+    {{- include "healthtech.labels" $ | nindent 4 }}
+spec:
+  minAvailable: {{ $.Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app: {{ $svc.name }}
+{{- end }}
+{{- end }}

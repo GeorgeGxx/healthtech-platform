@@ -1,0 +1,46 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: healthtech-istio-aks
+  namespace: istio-system
+spec:
+  profile: default
+  meshConfig:
+    accessLogFile: /dev/stdout
+    enableTracing: true
+    defaultConfig:
+      holdApplicationUntilProxyStarts: true
+    extensionProviders:
+      - name: otel-elastic-agent
+        opentelemetry:
+          service: elastic-agent.observability.svc.cluster.local
+          port: 4317
+  components:
+    pilot:
+      k8s:
+        hpaSpec:
+          minReplicas: 2
+          maxReplicas: 5
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+    ingressGateways:
+      - name: istio-ingressgateway
+        enabled: true
+        k8s:
+          serviceAnnotations:
+            service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz/ready
+          hpaSpec:
+            minReplicas: 2
+            maxReplicas: 6
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

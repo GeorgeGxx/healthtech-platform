@@ -1,0 +1,40 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: healthtech-ingress-routes
+spec:
+  hosts:
+    - "*"
+  gateways:
+    - healthtech-gateway
+  http:
+    - name: kong-api-and-oidc-routes
+      match:
+        - uri:
+            prefix: /api/
+        - uri:
+            prefix: /realms/
+        - uri:
+            prefix: /resources/
+        - uri:
+            prefix: /admin/
+      route:
+        - destination:
+            host: kong-gateway
+            port:
+              number: 8000
+      timeout: 30s
+      retries:
+        attempts: 2
+        perTryTimeout: 10s
+        retryOn: gateway-error,connect-failure,refused-stream
+    - name: frontend-spa-route
+      match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            host: frontend
+            port:
+              number: 80
+      timeout: 15s

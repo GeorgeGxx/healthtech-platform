@@ -1,0 +1,130 @@
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: kong-gateway-dr
+spec:
+  host: kong-gateway
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        maxConnections: 200
+      http:
+        http1MaxPendingRequests: 100
+        maxRequestsPerConnection: 50
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: frontend-dr
+spec:
+  host: frontend
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    connectionPool:
+      tcp:
+        maxConnections: 200
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: appointment-service-dr
+spec:
+  host: appointment-service
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: patient-service-dr
+spec:
+  host: patient-service
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: billing-service-dr
+spec:
+  host: billing-service
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: pharmacy-service-dr
+spec:
+  host: pharmacy-service
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: notification-service-dr
+spec:
+  host: notification-service
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: clinical-records-service-dr
+spec:
+  host: clinical-records-service
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: staff-service-dr
+spec:
+  host: staff-service
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
