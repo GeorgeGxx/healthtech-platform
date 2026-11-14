@@ -1,0 +1,173 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="page_arch" name="1. HealthTech Architecture">
+    <mxGraphModel dx="1420" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t1" value="&lt;b style='font-size:22px;color:#1E293B;'&gt;HEALTHTECH PLATFORM — MICROSERVICES ARCHITECTURE&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#64748B;'&gt;Angular Frontend • Kong 3.9.4 API Gateway • Keycloak 26.8.1 HIPAA IAM • 7 NestJS Microservices • Elastic Observability&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="250" y="25" width="1400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="cli" value="&lt;b&gt;Angular SPA&lt;/b&gt;&lt;br&gt;frontend (:80)&lt;br&gt;HIPAA Session Modal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=1.5;fontColor=#1E3A8A;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="140" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="kong" value="&lt;b&gt;Kong API Gateway 3.9.4&lt;/b&gt;&lt;br&gt;Proxy :8000 | Admin :8001&lt;br&gt;JWT + Rate Limit + CORS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=1.5;fontColor=#4C1D95;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="380" y="140" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="kc" value="&lt;b&gt;Keycloak 26.8.1&lt;/b&gt;&lt;br&gt;healthtech-realm (:8080)&lt;br&gt;OIDC / RBAC / JWKS" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;strokeWidth=1.5;fontColor=#78350F;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="380" y="270" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_appt" value="&lt;b&gt;appointment-service (:3001)&lt;br&gt;Outbox + Scheduling&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="100" width="290" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kong_svc_appt" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kong" target="svc_appt">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_pat" value="&lt;b&gt;patient-service (:3002)&lt;br&gt;Demographics &amp; Intake&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="180" width="290" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kong_svc_pat" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kong" target="svc_pat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_bill" value="&lt;b&gt;billing-service (:3003)&lt;br&gt;Tariffs &amp; Invoices&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="260" width="290" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kong_svc_bill" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kong" target="svc_bill">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_pharm" value="&lt;b&gt;pharmacy-service (:3004)&lt;br&gt;Prescriptions &amp; Stock&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="340" width="290" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kong_svc_pharm" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kong" target="svc_pharm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_notif" value="&lt;b&gt;notification-service (:3005)&lt;br&gt;Kafka Consumer + SSE/Email&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="420" width="290" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kong_svc_notif" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kong" target="svc_notif">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_clin" value="&lt;b&gt;clinical-records-service (:3006)&lt;br&gt;PHI Crypto + Audit + Hospitalizations&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="500" width="290" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kong_svc_clin" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kong" target="svc_clin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="svc_staff" value="&lt;b&gt;staff-service (:3007)&lt;br&gt;Doctors &amp; Schedules&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="720" y="580" width="290" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kong_svc_staff" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kong" target="svc_staff">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pg" value="&lt;b&gt;PostgreSQL 18&lt;/b&gt;&lt;br&gt;Isolated Schemas / DBs&lt;br&gt;(:5432)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=1.5;fontColor=#1E293B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="130" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="redis" value="&lt;b&gt;Redis 8.8.1&lt;/b&gt;&lt;br&gt;Cache &amp; Idempotency&lt;br&gt;(:6379)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=1.5;fontColor=#1E293B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="250" width="240" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="kafka" value="&lt;b&gt;Apache Kafka 8.3.2 (KRaft)&lt;/b&gt;&lt;br&gt;Event Bus + Outbox&lt;br&gt;Kafka UI (:8085)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;strokeWidth=1.5;fontColor=#78350F;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="365" width="240" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="elastic" value="&lt;b&gt;Elastic Stack 9.5.5&lt;/b&gt;&lt;br&gt;Elasticsearch + Kibana + Elastic Agent&lt;br&gt;Negocio &amp; Tech/HIPAA Dashboards" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=1.5;fontColor=#4C1D95;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="495" width="290" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="e_cli_kong" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="cli" target="kong">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kong_kc" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kong" target="kc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_svc_pg" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="svc_clin" target="pg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_svc_kafka" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="svc_appt" target="kafka">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_kafka_notif" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="kafka" target="svc_notif">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="page_azure" name="2. Azure Cloud &amp; Terraform">
+    <mxGraphModel dx="1420" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t2" value="&lt;b style='font-size:22px;color:#1E293B;'&gt;AZURE CLOUD INFRASTRUCTURE (TERRAFORM)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#64748B;'&gt;terraform/environments/azure/ (dev • staging • prod Dual-Dataplane) • terraform/modules/azure/&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="250" y="25" width="1400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="az_edge" value="&lt;b&gt;Azure Front Door + Azure DNS Zone&lt;/b&gt;&lt;br&gt;WAF + TLS Termination + Static SPA Blob Storage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=1.5;fontColor=#1E3A8A;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="130" width="420" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="az_aks" value="&lt;b&gt;Azure Kubernetes Service (AKS)&lt;/b&gt;&lt;br&gt;dev: healthtech-azure-dev-aks&lt;br&gt;staging: healthtech-azure-staging-aks&lt;br&gt;prod: Dual Dataplane (DP1 + DP2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="280" width="420" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="az_acr" value="&lt;b&gt;Azure Container Registry (ACR)&lt;/b&gt;&lt;br&gt;AcrPull Role + Cosign Signed Images&lt;br&gt;OCI Helm Chart (k8s/helm/healthtech-platform)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=1.5;fontColor=#4C1D95;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="130" width="420" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="az_data" value="&lt;b&gt;Azure Managed Data &amp; Messaging&lt;/b&gt;&lt;br&gt;• Azure Database for PostgreSQL Flexible Server&lt;br&gt;• Azure Cache for Redis (TLS 1.2)&lt;br&gt;• Azure Event Hubs (Kafka Protocol)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;strokeWidth=1.5;fontColor=#78350F;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="600" y="280" width="420" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="az_sec" value="&lt;b&gt;Security, Identity &amp; Observability&lt;/b&gt;&lt;br&gt;• Azure Key Vault (PHI &amp; DB Secrets)&lt;br&gt;• Azure Workload Identity (Federated OIDC)&lt;br&gt;• Azure Monitor + Log Analytics + VNet" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=1.5;fontColor=#1E293B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="130" width="420" height="290" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="page_azdo" name="3. Azure DevOps &amp; DevSecOps">
+    <mxGraphModel dx="1420" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t3" value="&lt;b style='font-size:22px;color:#1E293B;'&gt;AZURE DEVOPS CI/CD &amp;amp; DEVSECOPS PIPELINES&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#64748B;'&gt;azure-devops/pipelines/ (8 Services + infra.yml) • Centralized devsecops/ Hub&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="250" y="25" width="1400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="ci_1" value="&lt;b&gt;1. Build &amp;amp; Unit Tests&lt;/b&gt;&lt;br&gt;Node 24 (NestJS / Angular)&lt;br&gt;Optional SonarCloud Quality Gate" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=1.5;fontColor=#1E3A8A;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="150" width="260" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ci_2" value="&lt;b&gt;2. Shift-Left SAST &amp;amp; IaC&lt;/b&gt;&lt;br&gt;• Gitleaks (.gitleaks.toml)&lt;br&gt;• Semgrep (semgrep-rules.yaml)&lt;br&gt;• TFLint (.tflint.hcl) + Trivy IaC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;strokeWidth=1.5;fontColor=#78350F;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="380" y="150" width="290" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ci_3" value="&lt;b&gt;3. Image, SBOM &amp;amp; Policy&lt;/b&gt;&lt;br&gt;• BuildKit OCI + CycloneDX SBOM&lt;br&gt;• Trivy Container Scan (HIGH/CRIT)&lt;br&gt;• OPA Conftest + Cosign v3.1.3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=1.5;fontColor=#4C1D95;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="710" y="150" width="290" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ci_4" value="&lt;b&gt;4. AKS Helm Deploy &amp;amp; Verify&lt;/b&gt;&lt;br&gt;• Azure ACR Push + AKS Helm Upgrade&lt;br&gt;• Newman Contract + k6 SLO + ZAP DAST&lt;br&gt;• Atomic Helm Rollback Stage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="150" width="310" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="ci_tf" value="&lt;b&gt;Terraform Azure Pipeline (infra.yml)&lt;/b&gt;&lt;br&gt;TFLint + Trivy IaC -&gt; Plan Artifact -&gt; Workspace Apply (dev/staging/prod)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#64748B;strokeWidth=1.5;fontColor=#1E293B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="80" y="320" width="1270" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="ci_1" target="ci_2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="ci_2" target="ci_3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e34" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#475569;strokeWidth=1.5;" edge="1" parent="1" source="ci_3" target="ci_4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="page_minikube" name="4. Local Minikube CLI">
+    <mxGraphModel dx="1420" dy="820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t4" value="&lt;b style='font-size:22px;color:#1E293B;'&gt;LOCAL MINIKUBE &amp;amp; PLATFORM CLI (platform-minikube.ps1)&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:13px;color:#64748B;'&gt;Zero-cloud-cost local Kubernetes parity + DevSecOps shift-left gates&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="250" y="25" width="1400" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="mk_1" value="&lt;b&gt;Lifecycle Commands&lt;/b&gt;&lt;br&gt;• up / bootstrap&lt;br&gt;• start / stop / down / destroy&lt;br&gt;• build / test / doctor / verify / rollback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#3B82F6;strokeWidth=1.5;fontColor=#1E3A8A;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="150" width="360" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="mk_2" value="&lt;b&gt;DevSecOps Gates (devsecops/)&lt;/b&gt;&lt;br&gt;• security-scan (Gitleaks, Semgrep, TFLint, Trivy, Conftest, Cosign)&lt;br&gt;• policy (OPA Conftest)&lt;br&gt;• dast (ZAP) • contract (Newman) • performance (k6)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;strokeWidth=1.5;fontColor=#78350F;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="520" y="150" width="440" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="mk_3" value="&lt;b&gt;Azure Cloud Terraform (-Platform azure)&lt;/b&gt;&lt;br&gt;• plan / apply / unlock&lt;br&gt;• sync-diagrams (updates docs/Diagrams.drawio)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="150" width="380" height="150" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

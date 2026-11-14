@@ -195,3 +195,17 @@ node .\scripts\verify-e2e-microservices.mjs
 * **Redis 8.8.1-alpine:** `localhost:6379`
 * **PostgreSQL 18:** `localhost:5432` (`centromedico` y `keycloak`)
 
+---
+
+## ☁️ Cloud Delivery, DevSecOps & Documentación
+
+- **Cloud Target:** Microsoft Azure (AKS, ACR, Azure Database for PostgreSQL, Event Hubs, Key Vault, Front Door) vía **Terraform** (`terraform/environments/azure/`).
+- **CI/CD:** **Azure DevOps** (`azure-devops/pipelines/` para los 8 servicios + `infra.yml`).
+- **Despliegue Local:** `./platform-minikube.ps1 up -Build` (paridad Kubernetes local + gates `devsecops/`).
+- **Hub de Documentación & Diagramas:**
+  - [Diagramas de Arquitectura (Draw.io)](./docs/Diagrams.drawio)
+  - [Architecture & Azure Cloud Infrastructure](./docs/ARCHITECTURE_AND_AZURE.md)
+  - [DevSecOps & Azure DevOps CI/CD](./docs/DEVSECOPS_AND_AZURE_DEVOPS.md)
+  - [Operations & Local Minikube CLI](./docs/OPERATIONS_AND_LOCAL.md)
+
+
