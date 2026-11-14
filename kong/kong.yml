@@ -23,7 +23,10 @@ services:
       - name: cors
         config:
           origins:
-            - "*"
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
           methods:
             - GET
             - POST
@@ -48,7 +51,10 @@ services:
       - name: cors
         config:
           origins:
-            - "*"
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
           methods:
             - GET
             - POST
@@ -74,7 +80,10 @@ services:
       - name: cors
         config:
           origins:
-            - "*"
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
           methods:
             - GET
             - POST
@@ -97,7 +106,10 @@ services:
       - name: cors
         config:
           origins:
-            - "*"
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
           methods:
             - GET
             - POST
@@ -119,7 +131,10 @@ services:
       - name: cors
         config:
           origins:
-            - "*"
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
           methods:
             - GET
             - POST
@@ -141,7 +156,10 @@ services:
       - name: cors
         config:
           origins:
-            - "*"
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
           methods:
             - GET
             - POST
@@ -164,7 +182,10 @@ services:
       - name: cors
         config:
           origins:
-            - "*"
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
           methods:
             - GET
             - POST
@@ -203,7 +224,10 @@ services:
       - name: cors
         config:
           origins:
-            - "*"
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
           methods:
             - GET
             - POST
@@ -238,6 +262,11 @@ services:
 # Plugins globales
 plugins:
   - name: prometheus
+  - name: rate-limiting
+    config:
+      minute: 600
+      policy: local
+      fault_tolerant: true
   - name: correlation-id
     config:
       header_name: X-Correlation-ID

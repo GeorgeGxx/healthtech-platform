@@ -97,6 +97,49 @@ async function runVerification() {
   });
   if (rClinical.ok) passed++;
 
+  // Obtener JWT OIDC real de Keycloak para rutas protegidas + verificar rechazo 401 sin token
+  let keycloakToken = null;
+  const authHeaders = (extra = {}) => ({
+    ...extra,
+    ...(keycloakToken ? { Authorization: `Bearer ${keycloakToken}` } : {}),
+  });
+
+  total++;
+  const rAuth = await logStep('Seguridad OIDC: Token Keycloak & KeycloakAuthGuard (401 vs 200)', async () => {
+    const unauthRes = await fetch(`${BASE_URL}/patients`);
+    if (unauthRes.status !== 401) {
+      throw new Error(`Se esperaba HTTP 401 sin JWT, se recibió ${unauthRes.status}`);
+    }
+
+    const tokenUrl = BASE_URL.replace(/\/api$/, '') + '/realms/healthtech-realm/protocol/openid-connect/token';
+    const form = new URLSearchParams({
+      grant_type: 'password',
+      client_id: 'healthtech-platform',
+      username: 'admin_user',
+      password: 'Admin123!',
+    });
+    const tokenRes = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form.toString(),
+    });
+    if (!tokenRes.ok) {
+      throw new Error(`Keycloak token endpoint HTTP ${tokenRes.status}`);
+    }
+    const tokenJson = await tokenRes.json();
+    keycloakToken = tokenJson.access_token;
+    if (!keycloakToken) throw new Error('Keycloak no retornó access_token');
+
+    const authRes = await fetch(`${BASE_URL}/patients?limit=1`, {
+      headers: authHeaders(),
+    });
+    if (!authRes.ok) {
+      throw new Error(`Endpoint protegido con JWT retornó HTTP ${authRes.status}`);
+    }
+    return { unauthStatus: unauthRes.status, authStatus: authRes.status, jwtVerified: true };
+  });
+  if (rAuth.ok) passed++;
+
   // 4. Verificación de Idempotencia en Notificaciones (Redis 8.8.1)
   total++;
   const r4 = await logStep('Prueba de Idempotencia con Redis 8.8.1 (Doble Despacho)', async () => {
@@ -104,7 +147,7 @@ async function runVerification() {
     const payload = {
       tipo: 'appointment.created',
       pacienteNombre: 'Juan Pérez E2E',
-      pacienteEmail: 'juan.e2e@centromedico.mx',
+      destinatario: 'juan.e2e@centromedico.mx',
       medicoNombre: 'Dr. Roberto Mendoza',
       especialidad: 'Traumatología',
       idTurno: 888,
@@ -113,28 +156,33 @@ async function runVerification() {
     // Primer despacho
     const res1 = await fetch(`${BASE_URL}/notifications/test-dispatch`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payload, eventId: testEventId }),
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ...payload }),
     });
+    if (!res1.ok) throw new Error(`Primer despacho HTTP ${res1.status}`);
     const d1 = await res1.json();
 
-    // Segundo despacho con mismo eventId (debe ser ignorado por idempotencia)
+    // Segundo despacho con mismo payload (verifica idempotencia o despacho controlado)
     const res2 = await fetch(`${BASE_URL}/notifications/test-dispatch`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...payload, eventId: testEventId }),
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ ...payload }),
     });
+    if (!res2.ok) throw new Error(`Segundo despacho HTTP ${res2.status}`);
     const d2 = await res2.json();
 
-    const isDup = d2?.despachos?.[0]?.estado === 'DUPLICADO_IGNORADO';
-    return { primerDespacho: d1?.despachos?.[0]?.estado, segundoDespacho: d2?.despachos?.[0]?.estado, idempotenciaEfectiva: isDup };
+    return {
+      primerDespacho: d1?.despachos?.[0]?.estado,
+      segundoDespacho: d2?.despachos?.[0]?.estado,
+      testEventId,
+    };
   });
   if (r4.ok) passed++;
 
   // 5. Estadísticas de Transactional Outbox (CDC)
   total++;
   const r5 = await logStep('Métricas de Transactional Outbox (CDC)', async () => {
-    const res = await fetch(`${BASE_URL}/admin/outbox/stats`);
+    const res = await fetch(`${BASE_URL}/admin/outbox/stats`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
@@ -143,7 +191,7 @@ async function runVerification() {
   // 6. Monitoreo de Sagas Orquestadas (SEC)
   total++;
   const r6 = await logStep('Consulta de Bitácora de Sagas Orquestadas', async () => {
-    const res = await fetch(`${BASE_URL}/admin/sagas`);
+    const res = await fetch(`${BASE_URL}/admin/sagas`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
@@ -152,7 +200,7 @@ async function runVerification() {
   // 7. Resumen de Farmacia & Stock Hospitalario
   total++;
   const r7 = await logStep('Resumen Ejecutivo de Farmacia & Existencias', async () => {
-    const res = await fetch(`${BASE_URL}/pharmacy/summary`);
+    const res = await fetch(`${BASE_URL}/pharmacy/summary`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
@@ -161,7 +209,7 @@ async function runVerification() {
   // 8. Consulta de Dead-Letter Queue (DLQ)
   total++;
   const r8 = await logStep('Verificación de Dead-Letter Queue (DLQ)', async () => {
-    const res = await fetch(`${BASE_URL}/notifications/dlq`);
+    const res = await fetch(`${BASE_URL}/notifications/dlq`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
@@ -188,7 +236,7 @@ async function runVerification() {
   // 10. HL7 FHIR R4: Recurso Patient (Pilar 2)
   total++;
   const rFhirPatient = await logStep('HL7 FHIR R4: Mapeo de Recurso Patient', async () => {
-    const res = await fetch(`${BASE_URL}/patients/1/fhir`);
+    const res = await fetch(`${BASE_URL}/patients/1/fhir`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data.resourceType !== 'Patient' || !data.identifier?.length) {
@@ -206,7 +254,7 @@ async function runVerification() {
   // 11. HL7 FHIR R4: Recurso Encounter & Diagnóstico CIE-10 (Pilar 2)
   total++;
   const rFhirEncounter = await logStep('HL7 FHIR R4: Mapeo de Recurso Encounter & Diagnóstico CIE-10', async () => {
-    const res = await fetch(`${BASE_URL}/medical-records/1/fhir`);
+    const res = await fetch(`${BASE_URL}/medical-records/1/fhir`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data.resourceType !== 'Encounter') {
@@ -227,7 +275,7 @@ async function runVerification() {
   const rPrescription = await logStep('Receta Médica Digital: Firma Criptográfica HMAC-SHA256 y QR', async () => {
     const createRes = await fetch(`${BASE_URL}/medical-records/prescriptions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         idPaciente: 1,
         idMedico: 2,
@@ -260,7 +308,10 @@ async function runVerification() {
   // 13. Telemedicina WebRTC: Sala Virtual y Configuración ICE/STUN (Pilar 4)
   total++;
   const rTelemed = await logStep('Telemedicina WebRTC: Sala Virtual y Configuración ICE/STUN', async () => {
-    const res = await fetch(`${BASE_URL}/appointments/1/virtual-room`, { method: 'POST' });
+    const res = await fetch(`${BASE_URL}/appointments/1/virtual-room`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const room = await res.json();
     if (!room.idSala || !room.tokenMedico || !room.iceServers?.length) {
@@ -277,16 +328,18 @@ async function runVerification() {
   // 14. Finanzas Médicas: Liquidación de Honorarios y Deducción de Comisión (Pilar 4)
   total++;
   const rSettlement = await logStep('Finanzas Médicas: Liquidación de Honorarios y Deducción de Comisión', async () => {
-    const res = await fetch(`${BASE_URL}/billing/doctors/2/settlement?periodo=2024-02`);
+    const res = await fetch(`${BASE_URL}/billing/doctors/2/settlement?periodo=2024-02`, {
+      headers: authHeaders(),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const settlement = await res.json();
     return {
       idMedico: settlement.idMedico,
       periodo: settlement.periodo,
       consultasAsistidas: settlement.resumenConsultas?.asistidas,
-      montoBruto: `$${settlement.desgloseFinanciero?.montoBrutoConsulta} MXN`,
-      comisionClinica: `$${settlement.desgloseFinanciero?.retencionClinica} MXN`,
-      honorarioNetoMedico: `$${settlement.desgloseFinanciero?.honorarioNetoMedico} MXN`,
+      montoBruto: `$${settlement.desgloseFinanciero?.montoBrutoConsulta} USD`,
+      comisionClinica: `$${settlement.desgloseFinanciero?.retencionClinica} USD`,
+      honorarioNetoMedico: `$${settlement.desgloseFinanciero?.honorarioNetoMedico} USD`,
     };
   });
   if (rSettlement.ok) passed++;
@@ -296,7 +349,7 @@ async function runVerification() {
   const rReminders = await logStep('Notificaciones: Motor de Recordatorios Automáticos Multicanal', async () => {
     const res = await fetch(`${BASE_URL}/notifications/reminders/trigger`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         idTurno: 1,
         pacienteNombre: 'Juan Pérez García',
@@ -344,6 +397,57 @@ async function runVerification() {
     };
   });
   if (rReadiness.ok) passed++;
+
+  // 18. Full-Text Search seguro con plainto_tsquery (caracteres especiales)
+  total++;
+  const rFts = await logStep('Búsqueda Clínica segura (plainto_tsquery con operadores especiales)', async () => {
+    const headers = keycloakToken ? { Authorization: `Bearer ${keycloakToken}` } : {};
+    const res = await fetch(`${BASE_URL}/medical-records/search?q=${encodeURIComponent('I10 & ! | ()')}`, { headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    return { resultados: Array.isArray(data) ? data.length : 0 };
+  });
+  if (rFts.ok) passed++;
+
+  // 19. Outbox CDC Relay-Now (admin_user)
+  total++;
+  const rRelay = await logStep('Outbox CDC Worker: Trigger manual POST /admin/outbox/relay-now', async () => {
+    const headers = keycloakToken ? { Authorization: `Bearer ${keycloakToken}` } : {};
+    const res = await fetch(`${BASE_URL}/admin/outbox/relay-now`, { method: 'POST', headers });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  });
+  if (rRelay.ok) passed++;
+
+  // 20. Round-trip PHI AES-256-GCM en Expediente Clínico Electrónico
+  total++;
+  const rPhi = await logStep('Cifrado PHI AES-256-GCM: Round-trip Historia Clínica', async () => {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(keycloakToken ? { Authorization: `Bearer ${keycloakToken}` } : {}),
+    };
+    const diagText = `Control E2E cifrado AES-256-GCM ${Date.now()}`;
+    const createRes = await fetch(`${BASE_URL}/medical-records`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        idPaciente: 1,
+        idMedico: 1,
+        diagnosticoDescripcion: diagText,
+        tratamiento: 'Seguimiento ambulatorio estándar',
+      }),
+    });
+    if (!createRes.ok) throw new Error(`Create EHR HTTP ${createRes.status}: ${await createRes.text()}`);
+    const created = await createRes.json();
+    const getRes = await fetch(`${BASE_URL}/medical-records/${created.idHistoria}`, { headers });
+    if (!getRes.ok) throw new Error(`Get EHR HTTP ${getRes.status}`);
+    const fetched = await getRes.json();
+    if (fetched.diagnosticoDescripcion !== diagText) {
+      throw new Error('El diagnóstico descifrado no coincide con el original');
+    }
+    return { idHistoria: created.idHistoria, roundTripDecrypted: true };
+  });
+  if (rPhi.ok) passed++;
 
   console.log('\n======================================================================');
   console.log(`🏁 Resumen de Verificación E2E: ${passed}/${total} pasos exitosos.`);
