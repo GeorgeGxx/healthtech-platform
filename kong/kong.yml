@@ -263,7 +263,7 @@ services:
             - "*"
           credentials: true
 
-  # 9. Keycloak 26.8.1 Identity Provider
+  # 9. Keycloak 26.8.1 Identity Provider (Admin console intentionally NOT exposed via public gateway)
   - name: keycloak-auth
     url: http://keycloak:8080
     routes:
@@ -271,7 +271,6 @@ services:
         paths:
           - /realms
           - /resources
-          - /admin
         strip_path: false
 
   # 10. Angular 22 Frontend Web App (Nginx SPA)

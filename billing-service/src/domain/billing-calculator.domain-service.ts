@@ -12,25 +12,27 @@ export interface CoverageCalculationResult {
 
 export class BillingCalculatorDomainService {
   static calculate(input: CoverageCalculationInput): CoverageCalculationResult {
-    if (input.basePrice < 0) {
-      throw new Error('El precio base no puede ser negativo');
+    if (!Number.isFinite(input.basePrice) || input.basePrice < 0) {
+      throw new Error('Base price cannot be negative');
     }
-    if (input.coveragePercentage < 0 || input.coveragePercentage > 100) {
-      throw new Error('El porcentaje de cobertura debe estar entre 0 y 100');
+    if (
+      !Number.isFinite(input.coveragePercentage) ||
+      input.coveragePercentage < 0 ||
+      input.coveragePercentage > 100
+    ) {
+      throw new Error('Coverage percentage must be between 0 and 100');
     }
 
-    const discountAmount = Number(
-      ((input.basePrice * input.coveragePercentage) / 100).toFixed(2),
-    );
-    const patientCopayAmount = Number(
-      (input.basePrice - discountAmount).toFixed(2),
-    );
+    // Use integer-cent arithmetic to prevent binary floating-point rounding drift
+    const baseCents = Math.round(input.basePrice * 100);
+    const discountCents = Math.round((baseCents * input.coveragePercentage) / 100);
+    const copayCents = baseCents - discountCents;
 
     return {
-      basePrice: input.basePrice,
+      basePrice: baseCents / 100,
       coveragePercentage: input.coveragePercentage,
-      discountAmount,
-      patientCopayAmount,
+      discountAmount: discountCents / 100,
+      patientCopayAmount: copayCents / 100,
     };
   }
 }

@@ -246,10 +246,14 @@ stages:
               set -euo pipefail
               CONFIG="devsecops/sast/gitleaks/.gitleaks.toml"
               IMG=zricethezav/gitleaks:${{ parameters.gitleaksVersion }}
+              EXTRA_FLAGS="--no-git"
+              if [ "$(isProtectedBranch)" = "True" ]; then
+                EXTRA_FLAGS=""
+              fi
               if [ -f "$CONFIG" ]; then
-                docker run --rm -v $(Build.SourcesDirectory):/repo $IMG detect --source=/repo --config=/repo/$CONFIG -v --no-git
+                docker run --rm -v $(Build.SourcesDirectory):/repo $IMG detect --source=/repo --config=/repo/$CONFIG -v $EXTRA_FLAGS
               else
-                docker run --rm -v $(Build.SourcesDirectory):/repo $IMG detect --source=/repo -v --no-git
+                docker run --rm -v $(Build.SourcesDirectory):/repo $IMG detect --source=/repo -v $EXTRA_FLAGS
               fi
             displayName: "Gitleaks Secret Scan (Hard Gate)"
 
@@ -268,11 +272,15 @@ stages:
               set -euo pipefail
               curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/${{ parameters.trivyVersion }}/contrib/install.sh \
                 | sh -s -- -b /usr/local/bin ${{ parameters.trivyVersion }}
+              EXIT_CODE=0
+              if [ "$(isProtectedBranch)" = "True" ]; then EXIT_CODE=1; fi
               trivy config \
                 --config devsecops/compliance/trivy/trivy.yaml \
                 --ignorefile devsecops/compliance/trivy/.trivyignore \
+                --severity HIGH,CRITICAL \
+                --exit-code $EXIT_CODE \
                 ${{ parameters.serviceDir }}
-            displayName: "Trivy IaC Configuration Scan (Audit Mode)"
+            displayName: "Trivy IaC Configuration Scan (Hard Gate on Protected Branches)"
 
           - ${{ if eq(parameters.serviceType, 'frontend') }}:
             - script: |
@@ -389,7 +397,7 @@ stages:
               HELM_KEY="${{ parameters.helmValuesKey }}"
               if [ -z "$HELM_KEY" ]; then HELM_KEY="${{ parameters.serviceName }}"; fi
               helm template ${{ parameters.helmRelease }} ${{ parameters.helmChartPath }} \
-                --set ${HELM_KEY}.image.tag=$(Build.SourceVersion) > rendered-manifests.yaml
+                --set ${HELM_KEY}.image=local/${{ parameters.serviceName }}:$(Build.SourceVersion) > rendered-manifests.yaml
 
               curl -sSfL https://github.com/open-policy-agent/conftest/releases/download/v${{ parameters.conftestVersion }}/conftest_${{ parameters.conftestVersion }}_Linux_x86_64.tar.gz -o conftest.tar.gz
               tar xzf conftest.tar.gz conftest

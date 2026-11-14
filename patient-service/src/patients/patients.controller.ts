@@ -11,7 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PatientsService } from './patients.service.js';
 import { CreatePatientDto, UpdatePatientDto } from './dto/create-patient.dto.js';
-import { Public, Roles } from '../auth/auth.decorators.js';
+import { Public, Roles, CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators.js';
 
 @ApiTags('Patients (Patient Care - Microservice)')
 @Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
@@ -46,6 +46,7 @@ export class PatientsController {
     return check;
   }
 
+  @Roles('admin_user', 'doctor_user', 'nurse_user')
   @Get('fhir')
   @ApiOperation({ summary: 'List patients in HL7 FHIR R4 Bundle standard format' })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -61,6 +62,7 @@ export class PatientsController {
     return await this.patientsService.findAllFhir(search, pageNum, limitNum);
   }
 
+  @Roles('admin_user', 'doctor_user', 'nurse_user')
   @Get(':id/fhir')
   @ApiOperation({ summary: 'Get HL7 FHIR R4 Patient resource by ID' })
   async findOneFhir(@Param('id', ParseIntPipe) id: number) {
@@ -96,10 +98,14 @@ export class PatientsController {
     return await this.patientsService.findAll(search, pageNum, limitNum);
   }
 
+  @Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user', 'basic_user')
   @Get(':id')
-  @ApiOperation({ summary: 'Get patient demographics by ID' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return await this.patientsService.findOne(id);
+  @ApiOperation({ summary: 'Get patient demographics by ID (self-scoped for basic_user)' })
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return await this.patientsService.findOne(id, user);
   }
 
   @Post()

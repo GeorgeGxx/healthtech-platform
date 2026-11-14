@@ -2,11 +2,9 @@ import { Injectable, signal, inject } from '@angular/core';
 import { AuthStateService } from './auth-state.service';
 
 /**
- * Inactivity control service compliant with HIPAA (§ 164.312(a)(2)(iii))
- * and NOM-024-SSA3-2012 for Electronic Health Records in Mexico.
- *
- * Automatically terminates the session after an inactivity period to protect
- * Protected Health Information (PHI / Sensitive Patient Personal Data).
+ * Client-side inactivity timeout helper that locks the local session and triggers
+ * OIDC logout after 15 minutes of inactivity.
+ * Note: Server-side token expiration and backend authorization remain the primary controls.
  */
 @Injectable({
   providedIn: 'root',

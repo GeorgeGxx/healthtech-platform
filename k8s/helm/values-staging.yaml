@@ -2,3 +2,13 @@ global:
   environment: staging
   namespace: staging
   imagePullPolicy: Always
+
+secrets:
+  create: false
+
+keyVault:
+  enabled: true
+  name: healthtech-azure-staging-kv
+
+config:
+  devAuthEnabled: "false"

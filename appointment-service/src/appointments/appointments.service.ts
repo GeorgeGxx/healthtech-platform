@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +15,7 @@ import { AppointmentSlot } from '../domain/appointment-slot.vo.js';
 import { CreateAppointmentDto, UpdateAppointmentStatusDto } from './dto/create-appointment.dto.js';
 import { AppointmentKafkaProducerService } from '../kafka/kafka-producer.service.js';
 import { SagaOrchestratorService } from '../kafka/saga-orchestrator.service.js';
+import type { AuthenticatedUser } from '../auth/auth.decorators.js';
 
 @Injectable()
 export class AppointmentsService {
@@ -29,7 +31,53 @@ export class AppointmentsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async findAll(doctorId?: number, date?: string, page = 1, limit = 20): Promise<any> {
+  private isClinicalOrAdminStaff(user?: AuthenticatedUser): boolean {
+    if (!user) return false;
+    return user.roles.some((r) =>
+      ['admin_user', 'doctor_user', 'nurse_user', 'receptionist_user'].includes(r),
+    );
+  }
+
+  private async resolvePatientIdForUser(user?: AuthenticatedUser): Promise<number | null> {
+    if (!user) return null;
+    if (user.patientId) return user.patientId;
+    if (user.email) {
+      const rows = await this.dataSource.query(
+        `SELECT id_paciente FROM paciente WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+        [user.email],
+      );
+      if (rows.length > 0) return Number(rows[0].id_paciente);
+    }
+    return null;
+  }
+
+  private async assertAppointmentAccess(appointment: Turno, user?: AuthenticatedUser): Promise<void> {
+    if (!user || this.isClinicalOrAdminStaff(user)) {
+      if (
+        user &&
+        !user.roles.some((r) => ['admin_user', 'receptionist_user', 'nurse_user'].includes(r)) &&
+        user.roles.includes('doctor_user') &&
+        user.doctorId &&
+        appointment.idMedico !== user.doctorId
+      ) {
+        throw new ForbiddenException('Physicians can only access appointments assigned to them');
+      }
+      return;
+    }
+
+    const ownPatientId = await this.resolvePatientIdForUser(user);
+    if (!ownPatientId || appointment.idPaciente !== ownPatientId) {
+      throw new ForbiddenException('You can only access your own appointments');
+    }
+  }
+
+  async findAll(
+    doctorId?: number,
+    date?: string,
+    page = 1,
+    limit = 20,
+    user?: AuthenticatedUser,
+  ): Promise<any> {
     const qb = this.appointmentRepo
       .createQueryBuilder('t')
       .leftJoinAndSelect('t.paciente', 'p')
@@ -38,6 +86,14 @@ export class AppointmentsService {
       .leftJoinAndSelect('t.consultorio', 'c')
       .orderBy('t.horarioRango', 'DESC')
       .addOrderBy('t.idTurno', 'DESC');
+
+    if (user && !this.isClinicalOrAdminStaff(user)) {
+      const ownPatientId = await this.resolvePatientIdForUser(user);
+      if (!ownPatientId) {
+        return { data: [], total: 0, page, limit, totalPages: 0 };
+      }
+      qb.andWhere('t.idPaciente = :ownPatientId', { ownPatientId });
+    }
 
     if (doctorId) {
       qb.andWhere('t.idMedico = :doctorId', { doctorId });
@@ -69,7 +125,7 @@ export class AppointmentsService {
     };
   }
 
-  async findOne(id: number): Promise<Turno> {
+  async findOne(id: number, user?: AuthenticatedUser): Promise<Turno> {
     const appointment = await this.appointmentRepo.findOne({
       where: { idTurno: id },
       relations: {
@@ -84,78 +140,89 @@ export class AppointmentsService {
       throw new NotFoundException(`Appointment #${id} not found`);
     }
 
+    await this.assertAppointmentAccess(appointment, user);
     return appointment;
   }
 
-  async create(dto: CreateAppointmentDto): Promise<Turno> {
+  async create(dto: CreateAppointmentDto, user?: AuthenticatedUser): Promise<Turno> {
+    if (user && !this.isClinicalOrAdminStaff(user)) {
+      const ownPatientId = await this.resolvePatientIdForUser(user);
+      if (!ownPatientId || dto.idPaciente !== ownPatientId) {
+        throw new ForbiddenException('Patients can only book appointments for themselves');
+      }
+    }
     const slot = new AppointmentSlot(dto.inicio, dto.fin);
 
-    const conflict = await this.appointmentRepo.query(
-      `
-      SELECT id_turno FROM turno 
-      WHERE id_medico = $1 
-        AND horario_rango && tstzrange($2, $3, '[)')
-        AND estado NOT IN ('cancelado', 'reprogramado')
-      LIMIT 1;
-      `,
-      [dto.idMedico, slot.startTime.toISOString(), slot.endTime.toISOString()],
-    );
+    const { newId, outboxRecord } = await this.dataSource.transaction(async (manager) => {
+      const conflict = await manager.query(
+        `
+        SELECT id_turno FROM turno 
+        WHERE id_medico = $1 
+          AND horario_rango && tstzrange($2, $3, '[)')
+          AND estado NOT IN ('cancelado', 'reprogramado')
+        LIMIT 1;
+        `,
+        [dto.idMedico, slot.startTime.toISOString(), slot.endTime.toISOString()],
+      );
 
-    if (conflict.length > 0) {
-      throw new ConflictException('The doctor already has an appointment assigned in this time slot');
-    }
+      if (conflict.length > 0) {
+        throw new ConflictException('The doctor already has an appointment assigned in this time slot');
+      }
 
-    const result = await this.appointmentRepo.query(
-      `
-      INSERT INTO turno (
-        id_paciente, id_medico, id_especialidad, id_consultorio,
-        horario_rango, estado, motivo_consulta, observaciones
-      ) VALUES ($1, $2, $3, $4, tstzrange($5, $6, '[)'), 'pendiente', $7, $8)
-      RETURNING id_turno;
-      `,
-      [
-        dto.idPaciente,
-        dto.idMedico,
-        dto.idEspecialidad,
-        dto.idConsultorio ?? null,
-        slot.startTime.toISOString(),
-        slot.endTime.toISOString(),
-        dto.motivoConsulta ?? null,
-        dto.observaciones ?? null,
-      ],
-    );
+      const result = await manager.query(
+        `
+        INSERT INTO turno (
+          id_paciente, id_medico, id_especialidad, id_consultorio,
+          horario_rango, estado, motivo_consulta, observaciones
+        ) VALUES ($1, $2, $3, $4, tstzrange($5, $6, '[)'), 'pendiente', $7, $8)
+        RETURNING id_turno;
+        `,
+        [
+          dto.idPaciente,
+          dto.idMedico,
+          dto.idEspecialidad,
+          dto.idConsultorio ?? null,
+          slot.startTime.toISOString(),
+          slot.endTime.toISOString(),
+          dto.motivoConsulta ?? null,
+          dto.observaciones ?? null,
+        ],
+      );
 
-    const newId = result[0].id_turno;
+      const insertedId = result[0].id_turno;
+      const outbox = await this.kafka.recordInTransaction(
+        manager,
+        'healthtech.appointments.events.v1',
+        'appointment.created',
+        'Turno',
+        String(insertedId),
+        {
+          idTurno: insertedId,
+          idPaciente: dto.idPaciente,
+          fechaInicio: slot.startTime.toISOString(),
+          fechaFin: slot.endTime.toISOString(),
+        },
+        { partitionKey: String(dto.idPaciente) },
+      );
+
+      return { newId: insertedId, outboxRecord: outbox };
+    });
+
     const created = await this.findOne(newId);
-
-    // Emit choreographed event to Kafka
-    await this.kafka.emit(
-      'healthtech.appointments.events.v1',
-      'appointment.created',
-      'Turno',
-      String(newId),
-      {
-        idTurno: newId,
-        idPaciente: created.idPaciente,
-        pacienteNombre: created.paciente ? `${created.paciente.nombre} ${created.paciente.apellido}` : 'Paciente',
-        pacienteEmail: created.paciente?.email || 'paciente@centromedico.mx',
-        pacienteTelefono: created.paciente?.telefono || '+525500000000',
-        medicoNombre: created.medico ? `${created.medico.nombre} ${created.medico.apellido}` : 'Especialista',
-        especialidad: created.especialidad?.nombre || 'Consulta General',
-        consultorio: created.consultorio?.descripcion || created.consultorio?.codigo || 'Consultorio 1',
-        fechaInicio: slot.startTime.toISOString(),
-        fechaFin: slot.endTime.toISOString(),
-      },
-      { partitionKey: String(created.idPaciente) },
-    );
+    await this.kafka.dispatchOutboxRecord(outboxRecord, String(created.idPaciente));
 
     return created;
   }
 
-  async updateStatus(id: number, dto: UpdateAppointmentStatusDto): Promise<Turno> {
-    const appointment = await this.findOne(id);
-    appointment.estado = dto.estado as EstadoTurno;
-    await this.appointmentRepo.save(appointment);
+  async updateStatus(
+    id: number,
+    dto: UpdateAppointmentStatusDto,
+    user?: AuthenticatedUser,
+  ): Promise<Turno> {
+    const appointment = await this.findOne(id, user);
+    if (user && !this.isClinicalOrAdminStaff(user) && dto.estado !== 'cancelado') {
+      throw new ForbiddenException('Patients can only cancel their own appointments');
+    }
 
     const eventType =
       dto.estado === 'cancelado'
@@ -164,26 +231,34 @@ export class AppointmentsService {
           ? 'appointment.confirmed'
           : 'appointment.rescheduled';
 
-    await this.kafka.emit(
-      'healthtech.appointments.events.v1',
-      eventType,
-      'Turno',
-      String(id),
-      {
-        idTurno: id,
-        idPaciente: appointment.idPaciente,
-        pacienteNombre: appointment.paciente ? `${appointment.paciente.nombre} ${appointment.paciente.apellido}` : 'Paciente',
-        pacienteEmail: appointment.paciente?.email || 'paciente@centromedico.mx',
-        estado: dto.estado,
-        motivo: dto.motivo,
-      },
-    );
+    const outboxRecord = await this.dataSource.transaction(async (manager) => {
+      appointment.estado = dto.estado as EstadoTurno;
+      await manager.getRepository(Turno).save(appointment);
+
+      return await this.kafka.recordInTransaction(
+        manager,
+        'healthtech.appointments.events.v1',
+        eventType,
+        'Turno',
+        String(id),
+        {
+          idTurno: id,
+          idPaciente: appointment.idPaciente,
+          pacienteNombre: appointment.paciente ? `${appointment.paciente.nombre} ${appointment.paciente.apellido}` : 'Patient',
+          pacienteEmail: appointment.paciente?.email || '',
+          estado: dto.estado,
+          motivo: dto.motivo,
+        },
+      );
+    });
+
+    await this.kafka.dispatchOutboxRecord(outboxRecord, String(appointment.idPaciente));
 
     return await this.findOne(id);
   }
 
-  async remove(id: number): Promise<{ success: boolean; message: string }> {
-    await this.updateStatus(id, { estado: 'cancelado', motivo: 'Clinical cancellation' });
+  async remove(id: number, user?: AuthenticatedUser): Promise<{ success: boolean; message: string }> {
+    await this.updateStatus(id, { estado: 'cancelado', motivo: 'Clinical cancellation' }, user);
     return { success: true, message: `Appointment ${id} cancelled successfully` };
   }
 
@@ -192,7 +267,7 @@ export class AppointmentsService {
    */
   async executeBookingSaga(
     dto: CreateAppointmentDto,
-    options?: { simularFallo?: boolean; authHeader?: string },
+    options?: { simularFallo?: boolean; authHeader?: string; user?: AuthenticatedUser },
   ) {
     const patientServiceUrl =
       process.env.PATIENT_SERVICE_URL || 'http://patient-service:3002';
@@ -202,7 +277,7 @@ export class AppointmentsService {
         nombrePaso: 'RESERVAR_SLOT_AGENDA',
         orden: 1,
         ejecutar: async (ctx: any) => {
-          const turno = await this.create(dto);
+          const turno = await this.create(dto, options?.user);
           return {
             resultado: { idTurno: turno.idTurno, estado: turno.estado },
             contextoActualizado: { idTurno: turno.idTurno },
@@ -224,9 +299,7 @@ export class AppointmentsService {
           if (options?.simularFallo) {
             throw new Error('Insurance Policy or Coverage Inactive / Rejected');
           }
-          const headers: Record<string, string> = {
-            'x-user-roles': 'admin_user',
-          };
+          const headers: Record<string, string> = {};
           if (options?.authHeader) {
             headers['Authorization'] = options.authHeader;
           }
@@ -277,8 +350,8 @@ export class AppointmentsService {
     );
   }
 
-  async createOrGetVirtualRoom(appointmentId: number): Promise<any> {
-    const appointment = await this.findOne(appointmentId);
+  async createOrGetVirtualRoom(appointmentId: number, user?: AuthenticatedUser): Promise<any> {
+    const appointment = await this.findOne(appointmentId, user);
 
     let room = await this.virtualRoomRepo.findOne({
       where: { idTurno: appointmentId },
@@ -337,13 +410,20 @@ export class AppointmentsService {
     };
   }
 
-  async getVirtualRoom(roomId: string, token?: string): Promise<any> {
+  async getVirtualRoom(roomId: string, token?: string, user?: AuthenticatedUser): Promise<any> {
     const room = await this.virtualRoomRepo.findOne({
       where: { idSala: roomId },
     });
 
     if (!room) {
       throw new NotFoundException(`Virtual room ${roomId} does not exist.`);
+    }
+
+    if (user && !this.isClinicalOrAdminStaff(user)) {
+      const ownPatientId = await this.resolvePatientIdForUser(user);
+      if (!ownPatientId || room.idPaciente !== ownPatientId) {
+        throw new ForbiddenException('You are not authorized to access this virtual room');
+      }
     }
 
     if (new Date() > new Date(room.expiraEn)) {

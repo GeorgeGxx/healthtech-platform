@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Medicamento } from '../entities/medicamento.entity.js';
@@ -85,29 +91,123 @@ export class PharmacyService {
     return med;
   }
 
-  async dispense(id: string, cantidad: number): Promise<Medicamento> {
-    const med = await this.findOne(id);
+  async dispense(
+    id: string,
+    cantidad: number,
+    actorId?: string,
+    idempotencyKey?: string,
+    motivo?: string,
+  ): Promise<Medicamento> {
     if (cantidad <= 0) {
       throw new BadRequestException('Quantity to dispense must be greater than 0');
     }
-    if (med.stockActual < cantidad) {
-      throw new BadRequestException(
-        `Insufficient stock for ${med.nombreComercial}. Available: ${med.stockActual}, Requested: ${cantidad}`,
+
+    const { saved, deduplicated } = await this.medicamentoRepo.manager.transaction(async (manager) => {
+      if (idempotencyKey) {
+        const existingMove = await manager.query(
+          `SELECT id_movimiento FROM pharmacy.movimiento_inventario WHERE idempotency_key = $1 LIMIT 1`,
+          [idempotencyKey],
+        );
+        if (existingMove.length > 0) {
+          const current = await manager.getRepository(Medicamento).findOne({
+            where: { idMedicamento: id },
+          });
+          if (!current) {
+            throw new NotFoundException(`Medication with ID ${id} not found`);
+          }
+          return { saved: current, deduplicated: true };
+        }
+      }
+
+      const updatedRows = await manager.query(
+        `
+        UPDATE medicamento
+        SET
+          stock_actual = stock_actual - $2,
+          nivel_alerta = CASE
+            WHEN stock_actual - $2 <= FLOOR(stock_minimo * 0.5) THEN 'Crítico'
+            WHEN stock_actual - $2 <= stock_minimo THEN 'Bajo'
+            ELSE 'Normal'
+          END
+        WHERE id_medicamento = $1 AND stock_actual >= $2
+        RETURNING
+          id_medicamento AS "idMedicamento",
+          codigo_nacional AS "codigoNacional",
+          nombre_comercial AS "nombreComercial",
+          principio_activo AS "principioActivo",
+          categoria,
+          presentacion,
+          lote,
+          fecha_vencimiento AS "fechaVencimiento",
+          stock_actual AS "stockActual",
+          stock_minimo AS "stockMinimo",
+          precio_unitario AS "precioUnitario",
+          ubicacion_almacen AS "ubicacionAlmacen",
+          nivel_alerta AS "nivelAlerta",
+          activo;
+        `,
+        [id, cantidad],
       );
+
+      if (updatedRows.length === 0) {
+        const existing = await manager.getRepository(Medicamento).findOne({
+          where: { idMedicamento: id },
+        });
+        if (!existing) {
+          throw new NotFoundException(`Medication with ID ${id} not found`);
+        }
+        throw new ConflictException(
+          `Insufficient stock for ${existing.nombreComercial}. Available: ${existing.stockActual}, Requested: ${cantidad}`,
+        );
+      }
+
+      const updated = updatedRows[0] as Medicamento;
+
+      await manager.query(
+        `
+        INSERT INTO pharmacy.movimiento_inventario (
+          id_medicamento, tipo_movimiento, cantidad, stock_anterior, stock_nuevo,
+          lote, fecha_vencimiento, actor_id, motivo, idempotency_key
+        ) VALUES ($1, 'DISPENSACION', $2, $3, $4, $5, $6, $7, $8, $9);
+        `,
+        [
+          updated.idMedicamento,
+          -cantidad,
+          updated.stockActual + cantidad,
+          updated.stockActual,
+          updated.lote ?? null,
+          updated.caducidad ?? null,
+          actorId || 'system',
+          motivo || 'Medication dispensation',
+          idempotencyKey ?? null,
+        ],
+      );
+
+      const dispensedPayload = {
+        idMedicamento: updated.idMedicamento,
+        nombreComercial: updated.nombreComercial,
+        principioActivo: updated.principioActivo,
+        cantidadDispensada: cantidad,
+        stockRestante: updated.stockActual,
+        ubicacionAlmacen: updated.ubicacionAlmacen,
+        lote: updated.lote,
+      };
+
+      await manager.query(
+        `
+        INSERT INTO outbox_evento (agregado_tipo, agregado_id, tipo_evento, topico, payload, metadata, estado, intentos)
+        VALUES ('Medicamento', $1, 'pharmacy.medication_dispensed', 'pharmacy.medication_dispensed', $2::jsonb, '{"producerService":"pharmacy-service"}'::jsonb, 'PENDIENTE', 0);
+        `,
+        [updated.idMedicamento, JSON.stringify(dispensedPayload)],
+      );
+
+      return { saved: updated, deduplicated: false };
+    });
+
+    if (deduplicated) {
+      return saved;
     }
 
-    med.stockActual -= cantidad;
-    if (med.stockActual <= Math.floor(med.stockMinimo * 0.5)) {
-      med.nivelAlerta = 'Crítico';
-    } else if (med.stockActual <= med.stockMinimo) {
-      med.nivelAlerta = 'Bajo';
-    } else {
-      med.nivelAlerta = 'Normal';
-    }
-
-    const saved = await this.medicamentoRepo.save(med);
-
-    // Emit choreographed dispensation event
     await this.kafka.emit('pharmacy.medication_dispensed', saved.idMedicamento, {
       idMedicamento: saved.idMedicamento,
       nombreComercial: saved.nombreComercial,
@@ -118,10 +218,9 @@ export class PharmacyService {
       lote: saved.lote,
     });
 
-    // If stock is at Low or Critical level, emit immediate alert to Kafka
     if (saved.stockActual <= saved.stockMinimo) {
       this.logger.warn(
-        `🚨 Critical stock reached for medication ${saved.nombreComercial} (${saved.stockActual}/${saved.stockMinimo})`,
+        `Critical stock reached for medication ${saved.nombreComercial} (${saved.stockActual}/${saved.stockMinimo})`,
       );
       await this.kafka.emit('pharmacy.stock_low', saved.idMedicamento, {
         idMedicamento: saved.idMedicamento,
@@ -138,21 +237,59 @@ export class PharmacyService {
     return saved;
   }
 
-  async adjustStock(id: string, nuevoStock: number): Promise<Medicamento> {
-    const med = await this.findOne(id);
+  async adjustStock(
+    id: string,
+    nuevoStock: number,
+    actorId?: string,
+    motivo?: string,
+  ): Promise<Medicamento> {
     if (nuevoStock < 0) {
       throw new BadRequestException('Stock cannot be negative');
     }
-    med.stockActual = nuevoStock;
-    if (med.stockActual <= Math.floor(med.stockMinimo * 0.5)) {
-      med.nivelAlerta = 'Crítico';
-    } else if (med.stockActual <= med.stockMinimo) {
-      med.nivelAlerta = 'Bajo';
-    } else {
-      med.nivelAlerta = 'Normal';
-    }
 
-    const saved = await this.medicamentoRepo.save(med);
+    const saved = await this.medicamentoRepo.manager.transaction(async (manager) => {
+      const med = await manager.getRepository(Medicamento).findOne({
+        where: { idMedicamento: id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!med) {
+        throw new NotFoundException(`Medication with ID ${id} not found`);
+      }
+
+      const previousStock = med.stockActual;
+      med.stockActual = nuevoStock;
+      if (med.stockActual <= Math.floor(med.stockMinimo * 0.5)) {
+        med.nivelAlerta = 'Crítico';
+      } else if (med.stockActual <= med.stockMinimo) {
+        med.nivelAlerta = 'Bajo';
+      } else {
+        med.nivelAlerta = 'Normal';
+      }
+
+      const updated = await manager.getRepository(Medicamento).save(med);
+
+      await manager.query(
+        `
+        INSERT INTO pharmacy.movimiento_inventario (
+          id_medicamento, tipo_movimiento, cantidad, stock_anterior, stock_nuevo,
+          lote, fecha_vencimiento, actor_id, motivo
+        ) VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6, $7, $8);
+        `,
+        [
+          updated.idMedicamento,
+          nuevoStock - previousStock,
+          previousStock,
+          nuevoStock,
+          updated.lote ?? null,
+          updated.caducidad ?? null,
+          actorId || 'system',
+          motivo || 'Warehouse stock adjustment',
+        ],
+      );
+
+      return updated;
+    });
+
     if (saved.stockActual <= saved.stockMinimo) {
       await this.kafka.emit('pharmacy.stock_low', saved.idMedicamento, {
         idMedicamento: saved.idMedicamento,

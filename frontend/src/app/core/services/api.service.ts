@@ -178,11 +178,7 @@ export class ApiService {
   getDashboardMetrics(): Observable<DashboardMetrics> {
     return this.http.get<DashboardMetrics>(`${this.baseUrl}/dashboard/metrics`).pipe(
       tap(() => this.isConnected.set(true)),
-      catchError((err) => {
-        console.warn('API /dashboard/metrics unavailable. Loading PostgreSQL 18 clinical replica:', err.message);
-        this.isConnected.set(false);
-        return of(FALLBACK_METRICS);
-      })
+      catchError(this.handleOperationalError('dashboard metrics')),
     );
   }
 

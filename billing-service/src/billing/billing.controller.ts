@@ -5,15 +5,16 @@ import {
   Body,
   Param,
   Query,
+  Headers,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { BillingService } from './billing.service.js';
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
-import { Public, Roles } from '../auth/auth.decorators.js';
+import { Public, Roles, CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators.js';
 
 @ApiTags('Cashier, Billing, and Copays (Billing Service)')
-@Roles('admin_user', 'receptionist_user', 'doctor_user', 'basic_user')
+@Roles('admin_user', 'receptionist_user', 'billing_user')
 @Controller('billing')
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
@@ -39,15 +40,18 @@ export class BillingController {
     return await this.billingService.checkReadiness();
   }
 
+  @Roles('admin_user', 'receptionist_user', 'billing_user', 'doctor_user')
   @Get('doctors/:doctorId/settlement')
   @ApiOperation({ summary: 'Calculate doctor fee settlement and balance by period' })
   async getDoctorSettlement(
     @Param('doctorId', ParseIntPipe) doctorId: number,
     @Query('periodo') periodo?: string,
+    @CurrentUser() user?: AuthenticatedUser,
   ) {
-    return await this.billingService.calculateDoctorSettlement(doctorId, periodo);
+    return await this.billingService.calculateDoctorSettlement(doctorId, periodo, user);
   }
 
+  @Roles('admin_user', 'receptionist_user', 'billing_user')
   @Get('summary')
   @ApiOperation({ summary: 'Get revenue summary by payment method' })
   async getRevenueSummary() {
@@ -68,22 +72,55 @@ export class BillingController {
     return await this.billingService.getHospitalTariffs();
   }
 
+  @Roles('admin_user', 'receptionist_user', 'billing_user', 'basic_user')
   @Get()
-  @ApiOperation({ summary: 'List all recorded payments' })
-  async findAll() {
-    return await this.billingService.findAll();
+  @ApiOperation({ summary: 'List recorded payments (scoped to own patient for basic_user)' })
+  async findAll(@CurrentUser() user?: AuthenticatedUser) {
+    return await this.billingService.findAll(user);
   }
 
+  @Roles('admin_user', 'receptionist_user', 'billing_user', 'basic_user')
   @Get(':id')
   @ApiOperation({ summary: 'Get payment details by ID' })
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    return await this.billingService.findOne(id);
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return await this.billingService.findOne(id, user);
   }
 
+  @Roles('admin_user', 'receptionist_user', 'billing_user')
   @Post()
-  @ApiOperation({ summary: 'Record new payment with copay calculation and emit event to Kafka' })
+  @ApiOperation({ summary: 'Record new payment with idempotency, copay calculation, and Kafka event' })
   @ApiResponse({ status: 201, description: 'Payment recorded successfully' })
-  async create(@Body() dto: CreatePaymentDto) {
-    return await this.billingService.create(dto);
+  async create(
+    @Body() dto: CreatePaymentDto,
+    @Headers('x-idempotency-key') headerIdemKey?: string,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    const idempotencyKey = dto.idempotencyKey || headerIdemKey;
+    return await this.billingService.create({ ...dto, idempotencyKey }, user);
+  }
+
+  @Roles('admin_user', 'billing_user')
+  @Post(':id/refund')
+  @ApiOperation({ summary: 'Refund a completed payment with immutable ledger entry' })
+  async refund(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('motivo') motivo?: string,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return await this.billingService.refundPayment(id, motivo, user);
+  }
+
+  @Roles('admin_user', 'billing_user')
+  @Post(':id/void')
+  @ApiOperation({ summary: 'Void a payment with immutable ledger entry' })
+  async voidPayment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('motivo') motivo?: string,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return await this.billingService.voidPayment(id, motivo, user);
   }
 }

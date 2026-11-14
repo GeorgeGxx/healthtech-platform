@@ -3,8 +3,9 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { NotificationsService } from './notifications.service.js';
 import { TriggerReminderDto, TestDispatchDto } from './dto/notification.dto.js';
-import { Public, Roles } from '../auth/auth.decorators.js';
+import { Public, Roles, CurrentUser, type AuthenticatedUser } from '../auth/auth.decorators.js';
 
+@Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user', 'basic_user')
 @Controller('notifications')
 export class NotificationsHttpController {
   constructor(private readonly notificationsService: NotificationsService) {}
@@ -48,17 +49,21 @@ export class NotificationsHttpController {
   }
 
   @Get('history')
-  getHistory(@Query('limit') limit?: string) {
+  getHistory(
+    @Query('limit') limit?: string,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
     const lim = limit ? parseInt(limit, 10) : 50;
+    const items = this.notificationsService.getHistory(lim, user);
     return {
-      total: this.notificationsService.getHistory(lim).length,
-      items: this.notificationsService.getHistory(lim),
+      total: items.length,
+      items,
     };
   }
 
   @Sse('stream')
-  streamNotifications(): Observable<MessageEvent> {
-    return this.notificationsService.getStream().pipe(
+  streamNotifications(@CurrentUser() user?: AuthenticatedUser): Observable<MessageEvent> {
+    return this.notificationsService.getStream(user).pipe(
       map((notif) => ({ data: notif } as MessageEvent)),
     );
   }

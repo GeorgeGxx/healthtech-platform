@@ -149,15 +149,13 @@ spec:
             - name: kong-tmp
               mountPath: /tmp
           livenessProbe:
-            httpGet:
-              path: /status
-              port: 8001
+            exec:
+              command: ["kong", "health"]
             initialDelaySeconds: 15
             periodSeconds: 15
           readinessProbe:
-            httpGet:
-              path: /status
-              port: 8001
+            exec:
+              command: ["kong", "health"]
             initialDelaySeconds: 10
             periodSeconds: 10
           resources:

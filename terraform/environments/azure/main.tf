@@ -185,9 +185,15 @@ module "workload_identity" {
   location                  = var.location
   resource_group_name       = azurerm_resource_group.this.name
   aks_oidc_issuer_url       = module.aks.oidc_issuer_url
-  service_account_namespace = "default"
-  service_account_name      = "backend-workload-identity"
+  service_account_namespace = local.env == "prod" ? "production" : local.env
+  service_account_name      = "healthtech-workload-sa"
   tags                      = local.tags
+}
+
+resource "azurerm_role_assignment" "workload_identity_kv_secrets_user" {
+  scope                = module.keyvault.key_vault_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = module.workload_identity.principal_id
 }
 
 module "workload_identity_dp2" {
@@ -199,8 +205,8 @@ module "workload_identity_dp2" {
   location                  = var.location
   resource_group_name       = azurerm_resource_group.this.name
   aks_oidc_issuer_url       = module.aks_dp2[0].oidc_issuer_url
-  service_account_namespace = "default"
-  service_account_name      = "backend-workload-identity"
+  service_account_namespace = local.env == "prod" ? "production" : local.env
+  service_account_name      = "healthtech-workload-sa"
   tags                      = merge(local.tags, { DataPlane = "2" })
 }
 

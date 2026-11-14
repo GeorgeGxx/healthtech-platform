@@ -165,15 +165,11 @@ export class AdminComponent implements OnInit {
     // Load confidentiality audit log
     this.http.get<AuditItem[]>('/api/audit?limit=25').subscribe({
       next: (logs) => {
-        if (logs && logs.length > 0) {
-          this.auditLogs.set(logs);
-        } else {
-          this.auditLogs.set(this.getFallbackLogs());
-        }
+        this.auditLogs.set(logs ?? []);
         this.loading.set(false);
       },
       error: () => {
-        this.auditLogs.set(this.getFallbackLogs());
+        this.auditLogs.set([]);
         this.loading.set(false);
       },
     });

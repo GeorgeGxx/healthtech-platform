@@ -10,7 +10,7 @@ spec:
     namespaces:
       - "dev"
       - "staging"
-      - "prod"
+      - "production"
   parameters:
     registries:
       - "georgegxx/"

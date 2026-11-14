@@ -2,8 +2,10 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { Roles } from '../auth/auth.decorators.js';
 
 @ApiTags('Dashboard & Clinical KPIs')
+@Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 @Controller('dashboard')
 export class DashboardController {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}

@@ -3,6 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RegistroAuditoria } from '../entities/registro-auditoria.entity.js';
 import { AuditLogDto } from './dto/audit-log.dto.js';
+import type { AuthenticatedUser } from '../auth/auth.decorators.js';
+
+export interface AuditPrincipalContext {
+  user?: AuthenticatedUser;
+  ip?: string;
+  userAgent?: string;
+  status?: 'AUTORIZADO' | 'DENEGADO';
+}
 
 @Injectable()
 export class AuditService {
@@ -13,34 +21,50 @@ export class AuditService {
     private readonly auditRepo: Repository<RegistroAuditoria>,
   ) {}
 
-  async registrarAcceso(dto: AuditLogDto): Promise<RegistroAuditoria> {
+  async registrarAcceso(
+    dto: AuditLogDto,
+    principal?: AuditPrincipalContext,
+  ): Promise<RegistroAuditoria> {
+    const authUser = principal?.user;
+    const usuarioId = authUser?.sub || dto.usuarioId || 'system-internal';
+    const nombreUsuario = authUser?.username || dto.nombreUsuario || 'system-internal';
+    const rol = authUser?.roles?.[0] || dto.rol || 'system';
+    const ipCliente = principal?.ip || dto.ipCliente || 'unknown';
+    const userAgent = principal?.userAgent || dto.userAgent || 'internal-service';
+    const status = principal?.status || 'AUTORIZADO';
+
     const registro = this.auditRepo.create({
-      usuarioId: dto.usuarioId || 'system-user',
-      nombreUsuario: dto.nombreUsuario || 'Dr. Attending Physician',
-      rol: dto.rol || 'doctor_user',
+      usuarioId,
+      nombreUsuario,
+      rol,
       accion: dto.accion,
       entidad: dto.entidad,
       idEntidad: dto.idEntidad?.toString(),
-      ipCliente: dto.ipCliente || '127.0.0.1',
-      userAgent: dto.userAgent || 'HealthTech-App',
-      metadatos: dto.metadatos || {},
+      ipCliente,
+      userAgent,
+      metadatos: {
+        ...(dto.metadatos || {}),
+        estado_evento: status,
+      },
     });
 
     const guardado = await this.auditRepo.save(registro);
 
     this.logger.log(
-      `[HIPAA/NOM-024 AUDIT] Action '${dto.accion}' on '${dto.entidad}' (ID: ${dto.idEntidad}) executed by user ${dto.usuarioId || 'system'}`,
+      `[HIPAA/NOM-024 AUDIT] status=${status} action=${dto.accion} entity=${dto.entidad} entityId=${dto.idEntidad ?? '-'} actor=${usuarioId}`,
     );
 
-    // Asynchronous forensic sync to Elasticsearch for Kibana Tech/HIPAA
-    this.syncAuditToElasticsearch(guardado).catch((err) =>
+    this.syncAuditToElasticsearch(guardado, status).catch((err) =>
       this.logger.warn(`Failed to index audit log in Elasticsearch: ${err?.message}`),
     );
 
     return guardado;
   }
 
-  private async syncAuditToElasticsearch(registro: RegistroAuditoria): Promise<void> {
+  private async syncAuditToElasticsearch(
+    registro: RegistroAuditoria,
+    status: 'AUTORIZADO' | 'DENEGADO' = 'AUTORIZADO',
+  ): Promise<void> {
     const esUrl = process.env.ELASTICSEARCH_URL;
     if (!esUrl) return;
 
@@ -58,7 +82,7 @@ export class AuditService {
         id_entidad: registro.idEntidad,
         ip_cliente: registro.ipCliente,
         user_agent: registro.userAgent,
-        estado_evento: 'AUTORIZADO',
+        estado_evento: status,
         origen: 'clinical-records-service',
       }),
     });

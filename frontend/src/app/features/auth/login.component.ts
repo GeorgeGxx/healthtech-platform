@@ -23,9 +23,19 @@ export class LoginComponent implements OnInit {
   readonly isLoading = signal<boolean>(false);
 
   ngOnInit(): void {
-    this.route.queryParams.subscribe((params) => {
+    this.route.queryParams.subscribe(async (params) => {
       if (params['returnUrl']) {
         this.returnUrl = params['returnUrl'];
+      }
+      if (params['code'] && params['state']) {
+        this.isLoading.set(true);
+        const res = await this.auth.handleOidcCallback(params['code'], params['state']);
+        this.isLoading.set(false);
+        if (res.success) {
+          this.router.navigateByUrl(this.returnUrl);
+        } else {
+          this.errorMessage.set(res.message || 'OIDC authentication failed');
+        }
       }
     });
 
@@ -50,19 +60,20 @@ export class LoginComponent implements OnInit {
     }
   }
 
+  async loginWithSso(): Promise<void> {
+    await this.auth.startPkceLogin();
+  }
+
   quickLoginAdmin(): void {
-    this.auth.switchToAdmin();
-    this.router.navigateByUrl(this.returnUrl);
+    void this.auth.startPkceLogin();
   }
 
   quickLoginDoctor(): void {
-    this.auth.switchToDoctor();
-    this.router.navigateByUrl(this.returnUrl);
+    void this.auth.startPkceLogin();
   }
 
   quickLoginPatient(): void {
-    this.auth.switchToBasicUser();
-    this.router.navigateByUrl(this.returnUrl);
+    void this.auth.startPkceLogin();
   }
 
   continueAsGuest(): void {

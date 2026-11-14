@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   OnModuleInit,
   Logger,
 } from '@nestjs/common';
@@ -13,7 +14,7 @@ import {
   CreateHospitalizationDto,
   DischargePatientDto,
 } from './dto/create-hospitalization.dto.js';
-import { AuditService } from '../audit/audit.service.js';
+import { AuditService, type AuditPrincipalContext } from '../audit/audit.service.js';
 
 @Injectable()
 export class HospitalizationsService implements OnModuleInit {
@@ -100,40 +101,70 @@ export class HospitalizationsService implements OnModuleInit {
     return stay;
   }
 
-  async admit(dto: CreateHospitalizationDto): Promise<Internacion> {
-    const occupied = await this.hospitalizationRepo.findOne({
-      where: { idHabitacion: dto.idHabitacion, fechaAlta: IsNull() },
-    });
-    if (occupied) {
-      throw new BadRequestException('The selected room is already occupied');
+  async admit(
+    dto: CreateHospitalizationDto,
+    principal?: AuditPrincipalContext,
+  ): Promise<Internacion> {
+    let savedId: number;
+    try {
+      savedId = await this.hospitalizationRepo.manager.transaction(async (manager) => {
+        // Lock the target room row to serialize concurrent admission attempts
+        const roomRows = await manager.query(
+          `SELECT id_habitacion, activa FROM habitacion WHERE id_habitacion = $1 FOR UPDATE`,
+          [dto.idHabitacion],
+        );
+        if (roomRows.length === 0) {
+          throw new NotFoundException(`Room #${dto.idHabitacion} not found`);
+        }
+
+        const occupied = await manager.getRepository(Internacion).findOne({
+          where: { idHabitacion: dto.idHabitacion, fechaAlta: IsNull() },
+        });
+        if (occupied) {
+          throw new ConflictException('The selected room is already occupied');
+        }
+
+        const hospitalization = manager.getRepository(Internacion).create({
+          idPaciente: dto.idPaciente,
+          idMedicoResponsable: dto.idMedicoResponsable,
+          idHabitacion: dto.idHabitacion,
+          diagnosticoIngreso: dto.diagnosticoIngreso,
+          costoTotalEstimado: dto.costoTotalEstimado ?? 0,
+        });
+
+        const saved = await manager.getRepository(Internacion).save(hospitalization);
+        return saved.idInternacion;
+      });
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        throw new ConflictException('The selected room is already occupied');
+      }
+      throw err;
     }
 
-    const hospitalization = this.hospitalizationRepo.create({
-      idPaciente: dto.idPaciente,
-      idMedicoResponsable: dto.idMedicoResponsable,
-      idHabitacion: dto.idHabitacion,
-      diagnosticoIngreso: dto.diagnosticoIngreso,
-      costoTotalEstimado: dto.costoTotalEstimado ?? 0,
-    });
-
-    const saved = await this.hospitalizationRepo.save(hospitalization);
-
-    await this.auditService.registrarAcceso({
-      accion: 'INGRESO_INTERNACION',
-      entidad: 'internacion',
-      idEntidad: saved.idInternacion,
-      metadatos: {
-        idHabitacion: dto.idHabitacion,
-        idPaciente: dto.idPaciente,
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'INGRESO_INTERNACION',
+        entidad: 'internacion',
+        idEntidad: savedId,
+        metadatos: {
+          idHabitacion: dto.idHabitacion,
+          idPaciente: dto.idPaciente,
+        },
       },
-    });
+      principal,
+    );
 
-    const result = await this.findOne(saved.idInternacion);
+    const result = await this.findOne(savedId);
     await this.syncBedCensusToElasticsearch().catch(() => {});
     return result;
   }
 
-  async discharge(id: number, dto: DischargePatientDto): Promise<Internacion> {
+  async discharge(
+    id: number,
+    dto: DischargePatientDto,
+    principal?: AuditPrincipalContext,
+  ): Promise<Internacion> {
     const stay = await this.findOne(id);
     if (stay.fechaAlta) {
       throw new BadRequestException('This hospitalization has already been discharged');
@@ -154,16 +185,19 @@ export class HospitalizationsService implements OnModuleInit {
 
     await this.hospitalizationRepo.save(stay);
 
-    await this.auditService.registrarAcceso({
-      accion: 'ALTA_INTERNACION',
-      entidad: 'internacion',
-      idEntidad: id,
-      metadatos: {
-        motivoAlta: dto.motivoAlta,
-        diasEstancia: diffDays,
-        costoTotal: stay.costoTotalEstimado,
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'ALTA_INTERNACION',
+        entidad: 'internacion',
+        idEntidad: id,
+        metadatos: {
+          motivoAlta: dto.motivoAlta,
+          diasEstancia: diffDays,
+          costoTotal: stay.costoTotalEstimado,
+        },
       },
-    });
+      principal,
+    );
 
     const result = await this.findOne(id);
     await this.syncBedCensusToElasticsearch().catch(() => {});

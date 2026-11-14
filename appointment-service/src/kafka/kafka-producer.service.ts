@@ -2,7 +2,9 @@ import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import { Kafka, Producer, Partitioners } from 'kafkajs';
 import { randomUUID } from 'node:crypto';
+import type { EntityManager } from 'typeorm';
 import { OutboxService } from './outbox.service.js';
+import type { OutboxEvento } from '../entities/outbox-evento.entity.js';
 
 @Injectable()
 export class AppointmentKafkaProducerService implements OnModuleInit, OnModuleDestroy {
@@ -113,26 +115,83 @@ export class AppointmentKafkaProducerService implements OnModuleInit, OnModuleDe
     return this.isConnected;
   }
 
-  async emit(
+  async recordInTransaction(
+    manager: EntityManager,
     topic: string,
     eventType: string,
     aggregateType: string,
     aggregateId: string,
     payload: any,
     options?: { sagaId?: string; partitionKey?: string },
-  ) {
-    const envelope = {
-      eventId: randomUUID(),
-      eventType,
+  ): Promise<OutboxEvento> {
+    return await this.outbox.recordEvent(
       aggregateType,
       aggregateId,
-      timestamp: new Date().toISOString(),
-      metadata: {
+      eventType,
+      topic,
+      payload,
+      {
         producerService: 'appointment-service',
         sagaId: options?.sagaId,
         correlationId: randomUUID(),
       },
-      payload,
+      manager,
+    );
+  }
+
+  async dispatchOutboxRecord(
+    outboxRecord: OutboxEvento,
+    partitionKey?: string,
+  ): Promise<void> {
+    const envelope = {
+      eventId: outboxRecord.idEvento,
+      eventType: outboxRecord.tipoEvento,
+      aggregateType: outboxRecord.agregadoTipo,
+      aggregateId: outboxRecord.agregadoId,
+      timestamp: new Date().toISOString(),
+      metadata: outboxRecord.metadata || { producerService: 'appointment-service' },
+      payload: outboxRecord.payload,
+    };
+
+    if (this.producer && this.isConnected) {
+      try {
+        const key = partitionKey || outboxRecord.agregadoId;
+        await this.producer.send({
+          topic: outboxRecord.topico,
+          messages: [
+            {
+              key,
+              value: JSON.stringify(envelope),
+              headers: {
+                'x-event-type': outboxRecord.tipoEvento,
+                'x-saga-id': outboxRecord.metadata?.sagaId || '',
+              },
+            },
+          ],
+        });
+        await this.outbox.markAsPublished(outboxRecord.idEvento);
+        this.logger.log(
+          `📤 Event [${outboxRecord.tipoEvento}] (${outboxRecord.idEvento}) emitted to Kafka topic '${outboxRecord.topico}' (Key: ${key})`,
+        );
+      } catch (err: any) {
+        this.logger.error(`Error emitting to Kafka (${outboxRecord.idEvento}): ${err.message}`);
+        await this.outbox.markAsFailed(outboxRecord.idEvento, err.message);
+      }
+    }
+  }
+
+  async emit(
+    topic: string,
+    eventType: string,
+    aggregateType: string,
+    aggregateId: string,
+    payload: any,
+    options?: { sagaId?: string; partitionKey?: string; manager?: EntityManager },
+  ) {
+    const metadata = {
+      producerService: 'appointment-service',
+      sagaId: options?.sagaId,
+      correlationId: randomUUID(),
     };
 
     const outboxRecord = await this.outbox.recordEvent(
@@ -141,31 +200,14 @@ export class AppointmentKafkaProducerService implements OnModuleInit, OnModuleDe
       eventType,
       topic,
       payload,
-      envelope.metadata,
+      metadata,
+      options?.manager,
     );
 
-    if (this.producer && this.isConnected) {
-      try {
-        const key = options?.partitionKey || aggregateId;
-        await this.producer.send({
-          topic,
-          messages: [
-            {
-              key,
-              value: JSON.stringify(envelope),
-              headers: {
-                'x-event-type': eventType,
-                'x-saga-id': options?.sagaId || '',
-              },
-            },
-          ],
-        });
-        await this.outbox.markAsPublished(outboxRecord.idEvento);
-        this.logger.log(`📤 Event [${eventType}] emitted to Kafka topic '${topic}' (Key: ${key})`);
-      } catch (err: any) {
-        this.logger.error(`Error emitting to Kafka: ${err.message}`);
-        await this.outbox.markAsFailed(outboxRecord.idEvento, err.message);
-      }
+    if (!options?.manager) {
+      await this.dispatchOutboxRecord(outboxRecord, options?.partitionKey);
     }
+
+    return outboxRecord;
   }
 }

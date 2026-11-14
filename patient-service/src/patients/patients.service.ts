@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Paciente } from '../entities/paciente.entity.js';
@@ -7,6 +7,7 @@ import { Pais } from '../entities/pais.entity.js';
 import { CreatePatientDto, UpdatePatientDto } from './dto/create-patient.dto.js';
 import { PatientKafkaProducerService } from '../kafka/kafka-producer.service.js';
 import { FhirPatientMapper, FhirPatientResource, FhirBundle } from './fhir-patient.mapper.js';
+import type { AuthenticatedUser } from '../auth/auth.decorators.js';
 
 @Injectable()
 export class PatientsService {
@@ -65,7 +66,7 @@ export class PatientsService {
     };
   }
 
-  async findOne(id: number): Promise<Paciente> {
+  async findOne(id: number, user?: AuthenticatedUser): Promise<Paciente> {
     const patient = await this.patientRepo.findOne({
       where: { idPaciente: id },
       relations: {
@@ -76,6 +77,20 @@ export class PatientsService {
 
     if (!patient) {
       throw new NotFoundException(`Patient with ID ${id} not found`);
+    }
+
+    if (
+      user &&
+      !user.roles.some((r) =>
+        ['admin_user', 'doctor_user', 'nurse_user', 'receptionist_user'].includes(r),
+      )
+    ) {
+      const matchesId = user.patientId !== undefined && user.patientId === patient.idPaciente;
+      const matchesEmail =
+        !!user.email && !!patient.email && user.email.toLowerCase() === patient.email.toLowerCase();
+      if (!matchesId && !matchesEmail) {
+        throw new ForbiddenException('You are not authorized to access another patient record');
+      }
     }
 
     return {

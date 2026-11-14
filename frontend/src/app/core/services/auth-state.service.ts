@@ -27,44 +27,16 @@ export const GUEST_USER: AppUser = {
   roles: [],
 };
 
-export const ADMIN_USER: AppUser = {
-  id: 'usr-recep-01',
-  username: 'admin_user',
-  name: 'Sofia Ramos',
-  email: 'recepcion@centromedico.mx',
-  role: 'admin_user',
-  roleTitle: 'Reception & Medical Coordination',
-  roles: ['admin_user', 'receptionist_user'],
-};
-
-export const DOCTOR_USER: AppUser = {
-  id: 'usr-doc-02',
-  username: 'doctor_user',
-  name: 'Dr. Laura Gomez',
-  email: 'laura.gomez@centromedico.mx',
-  role: 'doctor_user',
-  roleTitle: 'Attending Specialist Physician',
-  roles: ['doctor_user'],
-  doctorId: 2,
-  license: 'MN-10002',
-  specialty: 'Dermatology',
-};
-
-export const BASIC_USER: AppUser = {
-  id: 'usr-patient-01',
-  username: 'basic_user',
-  name: 'Juan Perez Garcia',
-  email: 'juan.perez@email.com',
-  role: 'basic_user',
-  roleTitle: 'Primary Patient',
-  roles: ['basic_user'],
-  patientId: 1,
-  dni: '28456123',
-  insurance: 'GNP Insurance (Policy 88992)',
-};
-
 const TOKEN_STORAGE_KEY = 'healthtech_access_token';
+const ID_TOKEN_STORAGE_KEY = 'healthtech_id_token';
 const ROLE_STORAGE_KEY = 'healthtech_user_role';
+const PKCE_VERIFIER_KEY = 'healthtech_pkce_verifier';
+const PKCE_STATE_KEY = 'healthtech_pkce_state';
+
+const KEYCLOAK_AUTH_URL = '/realms/healthtech-realm/protocol/openid-connect/auth';
+const KEYCLOAK_TOKEN_URL = '/realms/healthtech-realm/protocol/openid-connect/token';
+const KEYCLOAK_LOGOUT_URL = '/realms/healthtech-realm/protocol/openid-connect/logout';
+const OIDC_CLIENT_ID = 'healthtech-platform';
 
 @Injectable({
   providedIn: 'root',
@@ -84,10 +56,109 @@ export class AuthStateService {
     () => this.currentUser().role === 'admin_user' || this.currentUser().role === 'doctor_user',
   );
 
+  /**
+   * Starts OIDC Authorization Code Flow with PKCE (S256) against Keycloak.
+   */
+  async startPkceLogin(): Promise<void> {
+    if (typeof window === 'undefined' || !window.crypto?.subtle) {
+      return;
+    }
+
+    const verifierBytes = new Uint8Array(32);
+    window.crypto.getRandomValues(verifierBytes);
+    const verifier = this.base64UrlEncode(verifierBytes);
+    const stateBytes = new Uint8Array(16);
+    window.crypto.getRandomValues(stateBytes);
+    const state = this.base64UrlEncode(stateBytes);
+
+    const digest = await window.crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(verifier),
+    );
+    const challenge = this.base64UrlEncode(new Uint8Array(digest));
+
+    try {
+      sessionStorage.setItem(PKCE_VERIFIER_KEY, verifier);
+      sessionStorage.setItem(PKCE_STATE_KEY, state);
+    } catch {}
+
+    const redirectUri = `${window.location.origin}/login`;
+    const params = new URLSearchParams({
+      client_id: OIDC_CLIENT_ID,
+      response_type: 'code',
+      scope: 'openid profile email',
+      redirect_uri: redirectUri,
+      state,
+      code_challenge: challenge,
+      code_challenge_method: 'S256',
+    });
+
+    window.location.assign(`${KEYCLOAK_AUTH_URL}?${params.toString()}`);
+  }
+
+  /**
+   * Completes the OIDC Authorization Code + PKCE callback by exchanging the code for tokens.
+   */
+  async handleOidcCallback(code: string, state: string): Promise<{ success: boolean; message?: string }> {
+    let expectedState: string | null = null;
+    let verifier: string | null = null;
+    try {
+      expectedState = sessionStorage.getItem(PKCE_STATE_KEY);
+      verifier = sessionStorage.getItem(PKCE_VERIFIER_KEY);
+      sessionStorage.removeItem(PKCE_STATE_KEY);
+      sessionStorage.removeItem(PKCE_VERIFIER_KEY);
+    } catch {}
+
+    if (!expectedState || state !== expectedState || !verifier) {
+      return { success: false, message: 'Invalid OIDC state or missing PKCE verifier.' };
+    }
+
+    try {
+      const redirectUri = `${window.location.origin}/login`;
+      const body = new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: OIDC_CLIENT_ID,
+        code,
+        redirect_uri: redirectUri,
+        code_verifier: verifier,
+      });
+
+      const response = await fetch(KEYCLOAK_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+
+      if (!response.ok) {
+        return { success: false, message: 'Failed to exchange OIDC authorization code.' };
+      }
+
+      const data = (await response.json()) as { access_token?: string; id_token?: string };
+      if (!data.access_token) {
+        return { success: false, message: 'Keycloak token response missing access_token.' };
+      }
+
+      this.setToken(data.access_token, data.id_token);
+      this.setUser(this.buildUserFromJwt(data.access_token));
+      return { success: true };
+    } catch {
+      return { success: false, message: 'Keycloak token exchange failed.' };
+    }
+  }
+
+  /**
+   * Direct credential sign-in is only permitted in local development mode;
+   * production uses OIDC Authorization Code + PKCE via startPkceLogin().
+   */
   async loginWithKeycloak(
     username: string,
     password: string,
   ): Promise<{ success: boolean; message?: string }> {
+    if (!isDevMode()) {
+      await this.startPkceLogin();
+      return { success: false, message: 'Redirecting to Keycloak OIDC PKCE login.' };
+    }
+
     const cleanUser = (username || '').trim();
     const cleanPass = (password || '').trim();
     if (!cleanUser || !cleanPass) {
@@ -97,117 +168,62 @@ export class AuthStateService {
     try {
       const body = new URLSearchParams({
         grant_type: 'password',
-        client_id: 'healthtech-platform',
+        client_id: OIDC_CLIENT_ID,
         username: cleanUser,
         password: cleanPass,
       });
 
-      const response = await fetch('/realms/healthtech-realm/protocol/openid-connect/token', {
+      const response = await fetch(KEYCLOAK_TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body.toString(),
       });
 
       if (response.ok) {
-        const data = (await response.json()) as { access_token?: string };
+        const data = (await response.json()) as { access_token?: string; id_token?: string };
         if (data.access_token) {
-          const user = this.buildUserFromJwt(data.access_token);
-          this.setToken(data.access_token);
-          this.setUser(user);
+          this.setToken(data.access_token, data.id_token);
+          this.setUser(this.buildUserFromJwt(data.access_token));
           return { success: true };
         }
       }
 
-      if (response.status === 401 || response.status === 400) {
-        if (isDevMode()) {
-          const devResult = this.login(cleanUser, cleanPass);
-          if (devResult.success) return devResult;
-        }
-        return {
-          success: false,
-          message: 'Invalid Keycloak OIDC credentials.',
-        };
-      }
+      return {
+        success: false,
+        message: 'Invalid Keycloak OIDC credentials.',
+      };
     } catch {
-      if (isDevMode()) {
-        return this.login(cleanUser, cleanPass);
-      }
+      return {
+        success: false,
+        message: 'Keycloak identity service unavailable.',
+      };
     }
-
-    if (isDevMode()) {
-      return this.login(cleanUser, cleanPass);
-    }
-
-    return {
-      success: false,
-      message: 'Keycloak identity service unavailable.',
-    };
-  }
-
-  login(username: string, password: string): { success: boolean; message?: string } {
-    if (!isDevMode()) {
-      return { success: false, message: 'Use Keycloak OIDC authentication in production.' };
-    }
-
-    const u = (username || '').trim().toLowerCase();
-    const p = (password || '').trim();
-
-    if (
-      (u === 'admin_user' || u === 'admin' || u === 'recepcion' || u === 'sofia' || u === 'recepcion@centromedico.mx') &&
-      (p === 'admin' || p === 'Admin123!' || p === 'admin123')
-    ) {
-      this.setUser(ADMIN_USER);
-      return { success: true };
-    }
-
-    if (
-      (u === 'doctor_user' || u === 'doctor' || u === 'medico' || u === 'laura' || u === 'laura.gomez' || u === 'dr.gomez' || u === 'laura.gomez@centromedico.mx') &&
-      (p === 'doctor' || p === 'Doctor123!' || p === 'admin' || p === 'doctor123')
-    ) {
-      this.setUser(DOCTOR_USER);
-      return { success: true };
-    }
-
-    if (
-      (u === 'basic_user' || u === 'user' || u === 'paciente' || u === 'juan' || u === 'juan.perez' || u === 'juan.perez@email.com') &&
-      (p === 'user' || p === 'User123!' || p === 'admin' || p === 'user123')
-    ) {
-      this.setUser(BASIC_USER);
-      return { success: true };
-    }
-
-    return {
-      success: false,
-      message: 'Invalid credentials. You can sign in with doctor_user / Doctor123!, admin_user / Admin123!, or basic_user / User123!.',
-    };
   }
 
   logout(redirectTo = '/'): void {
-    this.setToken(null);
-    this.setUser(GUEST_USER);
+    let idToken: string | null = null;
     try {
+      idToken = sessionStorage.getItem(ID_TOKEN_STORAGE_KEY);
       localStorage.removeItem(ROLE_STORAGE_KEY);
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(ID_TOKEN_STORAGE_KEY);
+      sessionStorage.removeItem(PKCE_VERIFIER_KEY);
+      sessionStorage.removeItem(PKCE_STATE_KEY);
     } catch {}
+
+    this.setToken(null);
+    this.setUser(GUEST_USER);
+
+    if (idToken && typeof window !== 'undefined') {
+      const params = new URLSearchParams({
+        id_token_hint: idToken,
+        post_logout_redirect_uri: `${window.location.origin}${redirectTo}`,
+      });
+      window.location.assign(`${KEYCLOAK_LOGOUT_URL}?${params.toString()}`);
+      return;
+    }
+
     this.router.navigate([redirectTo]);
-  }
-
-  switchToAdmin(): void {
-    if (!isDevMode()) return;
-    this.setUser(ADMIN_USER);
-    this.router.navigate(['/dashboard']);
-  }
-
-  switchToDoctor(): void {
-    if (!isDevMode()) return;
-    this.setUser(DOCTOR_USER);
-    this.router.navigate(['/medical-records']);
-  }
-
-  switchToBasicUser(): void {
-    if (!isDevMode()) return;
-    this.setUser(BASIC_USER);
-    this.router.navigate(['/dashboard']);
   }
 
   switchToGuest(): void {
@@ -220,54 +236,76 @@ export class AuthStateService {
       const normalized = payloadSegment.replaceAll('-', '+').replaceAll('_', '/');
       const payload = JSON.parse(atob(normalized)) as {
         sub?: string;
+        exp?: number;
         preferred_username?: string;
         name?: string;
         email?: string;
+        patient_id?: number;
+        doctor_id?: number;
         realm_access?: { roles?: string[] };
         resource_access?: Record<string, { roles?: string[] }>;
       };
+
+      if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()) {
+        return GUEST_USER;
+      }
 
       const realmRoles = payload.realm_access?.roles ?? [];
       const clientRoles = Object.values(payload.resource_access ?? {}).flatMap((r) => r.roles ?? []);
       const roles = Array.from(new Set([...realmRoles, ...clientRoles]));
 
       let primaryRole: AppUser['role'] = 'basic_user';
-      if (roles.includes('admin_user')) primaryRole = 'admin_user';
-      else if (roles.includes('doctor_user')) primaryRole = 'doctor_user';
-
-      const base =
-        primaryRole === 'admin_user'
-          ? ADMIN_USER
-          : primaryRole === 'doctor_user'
-            ? DOCTOR_USER
-            : BASIC_USER;
+      let roleTitle = 'Patient';
+      if (roles.includes('admin_user')) {
+        primaryRole = 'admin_user';
+        roleTitle = 'Administrator';
+      } else if (roles.includes('doctor_user')) {
+        primaryRole = 'doctor_user';
+        roleTitle = 'Attending Physician';
+      }
 
       return {
-        ...base,
-        id: payload.sub || base.id,
-        username: payload.preferred_username || base.username,
-        name: payload.name || payload.preferred_username || base.name,
-        email: payload.email || base.email,
+        id: payload.sub || 'unknown',
+        username: payload.preferred_username || payload.sub || 'unknown',
+        name: payload.name || payload.preferred_username || 'Authenticated User',
+        email: payload.email || '',
         role: primaryRole,
+        roleTitle,
         roles,
+        patientId: payload.patient_id,
+        doctorId: payload.doctor_id,
       };
     } catch {
-      return BASIC_USER;
+      return GUEST_USER;
     }
   }
 
-  private setToken(token: string | null): void {
+  private base64UrlEncode(bytes: Uint8Array): string {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  private setToken(token: string | null, idToken?: string): void {
     this.accessToken.set(token);
     try {
-      if (token) sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
-      else sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+      if (token) {
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+        if (idToken) sessionStorage.setItem(ID_TOKEN_STORAGE_KEY, idToken);
+      } else {
+        sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+        sessionStorage.removeItem(ID_TOKEN_STORAGE_KEY);
+      }
     } catch {}
   }
 
   private setUser(user: AppUser): void {
     this.currentUser.set(user);
     try {
-      localStorage.setItem(ROLE_STORAGE_KEY, user.role);
+      if (user.role === 'guest') localStorage.removeItem(ROLE_STORAGE_KEY);
+      else localStorage.setItem(ROLE_STORAGE_KEY, user.role);
     } catch {}
   }
 
@@ -284,18 +322,6 @@ export class AuthStateService {
     if (token) {
       return this.buildUserFromJwt(token);
     }
-    if (!isDevMode()) {
-      return GUEST_USER;
-    }
-    try {
-      const savedRole = localStorage.getItem(ROLE_STORAGE_KEY);
-      if (savedRole === 'doctor_user') return DOCTOR_USER;
-      if (savedRole === 'basic_user') return BASIC_USER;
-      if (savedRole === 'guest') return GUEST_USER;
-      if (savedRole === 'admin_user') return ADMIN_USER;
-      return ADMIN_USER;
-    } catch {
-      return ADMIN_USER;
-    }
+    return GUEST_USER;
   }
 }

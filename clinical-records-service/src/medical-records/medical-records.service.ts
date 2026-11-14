@@ -1,14 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { randomBytes } from 'node:crypto';
 import { HistoriaClinica } from '../entities/historia-clinica.entity.js';
 import { Turno } from '../entities/turno.entity.js';
 import { RecetaDigital, MedicamentoPrescrito } from '../entities/receta-digital.entity.js';
-import { CreateMedicalRecordDto } from './dto/create-medical-record.dto.js';
-import { AuditService } from '../audit/audit.service.js';
+import { CreateMedicalRecordDto, UpdateMedicalRecordDto } from './dto/create-medical-record.dto.js';
+import { AuditService, type AuditPrincipalContext } from '../audit/audit.service.js';
 import { PhiCryptoService } from '../crypto/phi-crypto.service.js';
 import { FhirEncounterMapper, FhirEncounterResource } from './fhir-encounter.mapper.js';
+import type { AuthenticatedUser } from '../auth/auth.decorators.js';
 
 @Injectable()
 export class MedicalRecordsService {
@@ -23,6 +30,7 @@ export class MedicalRecordsService {
     private readonly prescriptionRepo: Repository<RecetaDigital>,
     private readonly auditService: AuditService,
     private readonly phiCrypto: PhiCryptoService,
+    private readonly dataSource: DataSource,
   ) {}
 
   private decryptRecord(record: HistoriaClinica): HistoriaClinica {
@@ -35,7 +43,45 @@ export class MedicalRecordsService {
     return record;
   }
 
-  async findByPatient(patientId: number): Promise<HistoriaClinica[]> {
+  private isClinicalStaff(user?: AuthenticatedUser): boolean {
+    if (!user) return false;
+    return user.roles.some((r) => ['admin_user', 'doctor_user', 'nurse_user'].includes(r));
+  }
+
+  private async resolvePatientIdForUser(user?: AuthenticatedUser): Promise<number | null> {
+    if (!user) return null;
+    if (user.patientId) return user.patientId;
+    if (user.email) {
+      const rows = await this.dataSource.query(
+        `SELECT id_paciente FROM paciente WHERE LOWER(email) = LOWER($1) LIMIT 1`,
+        [user.email],
+      );
+      if (rows.length > 0) return Number(rows[0].id_paciente);
+    }
+    return null;
+  }
+
+  async findByPatient(
+    patientId: number,
+    principal?: AuditPrincipalContext,
+  ): Promise<HistoriaClinica[]> {
+    const user = principal?.user;
+    if (user && !this.isClinicalStaff(user)) {
+      const ownPatientId = await this.resolvePatientIdForUser(user);
+      if (!ownPatientId || ownPatientId !== patientId) {
+        await this.auditService.registrarAcceso(
+          {
+            accion: 'ACCESO_DENEGADO_HISTORIAL',
+            entidad: 'historia_clinica',
+            idEntidad: patientId,
+            metadatos: { reason: 'Cross-patient clinical history access denied' },
+          },
+          { ...principal, status: 'DENEGADO' },
+        );
+        throw new ForbiddenException('You can only access your own clinical history');
+      }
+    }
+
     const records = await this.recordRepo.find({
       where: { idPaciente: patientId },
       relations: {
@@ -45,16 +91,19 @@ export class MedicalRecordsService {
       order: { fechaAtencion: 'DESC' },
     });
 
-    await this.auditService.registrarAcceso({
-      accion: 'CONSULTA_HISTORIAL_PACIENTE',
-      entidad: 'historia_clinica',
-      idEntidad: patientId,
-    });
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'CONSULTA_HISTORIAL_PACIENTE',
+        entidad: 'historia_clinica',
+        idEntidad: patientId,
+      },
+      principal,
+    );
 
     return records.map((r) => this.decryptRecord(r));
   }
 
-  async findOne(id: number): Promise<HistoriaClinica> {
+  async findOne(id: number, principal?: AuditPrincipalContext): Promise<HistoriaClinica> {
     const record = await this.recordRepo.findOne({
       where: { idHistoria: id },
       relations: {
@@ -67,16 +116,22 @@ export class MedicalRecordsService {
       throw new NotFoundException(`Medical record with ID ${id} not found`);
     }
 
-    await this.auditService.registrarAcceso({
-      accion: 'LECTURA_EXPEDIENTE',
-      entidad: 'historia_clinica',
-      idEntidad: id,
-    });
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'LECTURA_EXPEDIENTE',
+        entidad: 'historia_clinica',
+        idEntidad: id,
+      },
+      principal,
+    );
 
     return this.decryptRecord(record);
   }
 
-  async create(dto: CreateMedicalRecordDto): Promise<HistoriaClinica> {
+  async create(
+    dto: CreateMedicalRecordDto,
+    principal?: AuditPrincipalContext,
+  ): Promise<HistoriaClinica> {
     const record = new HistoriaClinica();
     record.idPaciente = dto.idPaciente;
     record.idMedico = dto.idMedico;
@@ -93,60 +148,140 @@ export class MedicalRecordsService {
       await this.appointmentRepo.update(dto.idTurno, { estado: 'atendido' });
     }
 
-    await this.auditService.registrarAcceso({
-      accion: 'CREACION_EXPEDIENTE',
-      entidad: 'historia_clinica',
-      idEntidad: saved.idHistoria,
-      metadatos: {
-        idPaciente: dto.idPaciente,
-        idMedico: dto.idMedico,
-        codigoCie: dto.diagnosticoCodigoCie,
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'CREACION_EXPEDIENTE',
+        entidad: 'historia_clinica',
+        idEntidad: saved.idHistoria,
+        metadatos: {
+          idPaciente: dto.idPaciente,
+          idMedico: dto.idMedico,
+          codigoCie: dto.diagnosticoCodigoCie,
+        },
       },
-    });
+      principal,
+    );
 
-    return await this.findOne(saved.idHistoria);
+    return await this.findOne(saved.idHistoria, principal);
   }
 
-  async update(id: number, dto: Partial<CreateMedicalRecordDto>): Promise<HistoriaClinica> {
+  /**
+   * Appends a versioned clinical addendum without silently overwriting historical content
+   * or permitting patient/physician reassignment.
+   */
+  async update(
+    id: number,
+    dto: UpdateMedicalRecordDto & { changeReason?: string },
+    principal?: AuditPrincipalContext,
+  ): Promise<HistoriaClinica> {
     const record = await this.recordRepo.findOne({ where: { idHistoria: id } });
     if (!record) {
       throw new NotFoundException(`Medical record with ID ${id} not found`);
     }
 
-    if (dto.diagnosticoCodigoCie !== undefined) {
-      record.diagnosticoCodigoCie = dto.diagnosticoCodigoCie ?? undefined;
+    if (dto.idPaciente !== undefined && dto.idPaciente !== record.idPaciente) {
+      throw new BadRequestException('Cannot reassign the patient of an existing clinical record');
     }
-    if (dto.diagnosticoDescripcion !== undefined) {
-      record.diagnosticoDescripcion = this.phiCrypto.encryptPhi(dto.diagnosticoDescripcion);
-    }
-    if (dto.tratamiento !== undefined) {
-      record.tratamiento = dto.tratamiento ? this.phiCrypto.encryptPhi(dto.tratamiento) : undefined;
-    }
-    if (dto.signosVitales !== undefined) {
-      record.signosVitales = dto.signosVitales;
-    }
-    if (dto.recetaMedicamentos !== undefined) {
-      record.recetaMedicamentos = dto.recetaMedicamentos;
-    }
-    if (dto.idPaciente !== undefined) {
-      record.idPaciente = dto.idPaciente;
-    }
-    if (dto.idMedico !== undefined) {
-      record.idMedico = dto.idMedico;
+    if (dto.idMedico !== undefined && dto.idMedico !== record.idMedico) {
+      throw new BadRequestException('Cannot reassign the attending physician of an existing clinical record');
     }
 
-    await this.recordRepo.save(record);
+    const authorId = principal?.user?.sub || 'system-internal';
+    const authorName = principal?.user?.username || 'system-internal';
+    const authorRole = principal?.user?.roles?.[0] || 'doctor_user';
+    const changeReason = dto.changeReason || 'Clinical addendum';
 
-    await this.auditService.registrarAcceso({
-      accion: 'ACTUALIZACION_EXPEDIENTE',
-      entidad: 'historia_clinica',
-      idEntidad: id,
+    await this.dataSource.transaction(async (manager) => {
+      await manager.query(
+        `
+        INSERT INTO clinical.historia_clinica_version (
+          id_historia, version_num, author_id, author_name, author_role,
+          diagnostico_codigo_cie, diagnostico_descripcion, tratamiento,
+          signos_vitales, receta_medicamentos, change_reason
+        )
+        SELECT
+          $1,
+          COALESCE((SELECT MAX(version_num) FROM clinical.historia_clinica_version WHERE id_historia = $1), 0) + 1,
+          $2, $3, $4,
+          $5, $6, $7, $8::jsonb, $9::jsonb, $10
+        `,
+        [
+          record.idHistoria,
+          authorId,
+          authorName,
+          authorRole,
+          record.diagnosticoCodigoCie ?? null,
+          record.diagnosticoDescripcion,
+          record.tratamiento ?? null,
+          JSON.stringify(record.signosVitales ?? {}),
+          JSON.stringify(record.recetaMedicamentos ?? []),
+          changeReason,
+        ],
+      );
+
+      if (dto.diagnosticoCodigoCie !== undefined) {
+        record.diagnosticoCodigoCie = dto.diagnosticoCodigoCie ?? undefined;
+      }
+      if (dto.diagnosticoDescripcion !== undefined) {
+        const previousPlain = this.phiCrypto.decryptPhi(record.diagnosticoDescripcion);
+        const addendumText = `[ADDENDUM ${new Date().toISOString()} by ${authorName}]: ${dto.diagnosticoDescripcion}`;
+        record.diagnosticoDescripcion = this.phiCrypto.encryptPhi(
+          previousPlain ? `${previousPlain}\n${addendumText}` : dto.diagnosticoDescripcion,
+        );
+      }
+      if (dto.tratamiento !== undefined) {
+        const previousTrat = record.tratamiento ? this.phiCrypto.decryptPhi(record.tratamiento) : '';
+        const addendumTrat = `[ADDENDUM ${new Date().toISOString()} by ${authorName}]: ${dto.tratamiento}`;
+        record.tratamiento = dto.tratamiento
+          ? this.phiCrypto.encryptPhi(previousTrat ? `${previousTrat}\n${addendumTrat}` : dto.tratamiento)
+          : undefined;
+      }
+      if (dto.signosVitales !== undefined) {
+        record.signosVitales = { ...(record.signosVitales ?? {}), ...dto.signosVitales };
+      }
+      if (dto.recetaMedicamentos !== undefined) {
+        record.recetaMedicamentos = dto.recetaMedicamentos;
+      }
+
+      await manager.getRepository(HistoriaClinica).save(record);
     });
 
-    return await this.findOne(id);
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'ADENDA_EXPEDIENTE',
+        entidad: 'historia_clinica',
+        idEntidad: id,
+        metadatos: { changeReason },
+      },
+      principal,
+    );
+
+    return await this.findOne(id, principal);
   }
 
-  async findByDoctor(doctorId: number): Promise<HistoriaClinica[]> {
+  async findByDoctor(
+    doctorId: number,
+    principal?: AuditPrincipalContext,
+  ): Promise<HistoriaClinica[]> {
+    const user = principal?.user;
+    if (
+      user &&
+      !user.roles.includes('admin_user') &&
+      user.doctorId !== undefined &&
+      user.doctorId !== doctorId
+    ) {
+      await this.auditService.registrarAcceso(
+        {
+          accion: 'ACCESO_DENEGADO_MEDICO',
+          entidad: 'historia_clinica',
+          idEntidad: doctorId,
+          metadatos: { reason: 'Cross-physician clinical records access denied' },
+        },
+        { ...principal, status: 'DENEGADO' },
+      );
+      throw new ForbiddenException('Physicians can only access clinical notes assigned to them');
+    }
+
     const records = await this.recordRepo.find({
       where: { idMedico: doctorId },
       relations: {
@@ -156,14 +291,36 @@ export class MedicalRecordsService {
       },
       order: { fechaAtencion: 'DESC' },
     });
+
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'CONSULTA_HISTORIAL_MEDICO',
+        entidad: 'historia_clinica',
+        idEntidad: doctorId,
+      },
+      principal,
+    );
+
     return records.map((r) => this.decryptRecord(r));
   }
 
-  async searchClinicalText(term: string): Promise<any[]> {
+  async searchClinicalText(
+    term: string,
+    principal?: AuditPrincipalContext,
+  ): Promise<any[]> {
     const sanitizedTerm = term?.trim();
     if (!sanitizedTerm) {
       return [];
     }
+
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'BUSQUEDA_TEXTO_CLINICO',
+        entidad: 'historia_clinica',
+        metadatos: { termLength: sanitizedTerm.length },
+      },
+      principal,
+    );
 
     const rows = await this.recordRepo.query(
       `
@@ -178,21 +335,17 @@ export class MedicalRecordsService {
         hc.diagnostico_descripcion,
         hc.tratamiento,
         hc.signos_vitales,
-        hc.receta_medicamentos,
-        ts_rank(hc.documento_busqueda, plainto_tsquery('spanish', $1)) AS relevancia
+        hc.receta_medicamentos
       FROM historia_clinica hc
       JOIN paciente p ON hc.id_paciente = p.id_paciente
       JOIN medico m ON hc.id_medico = m.id_medico
-      WHERE hc.documento_busqueda @@ plainto_tsquery('spanish', $1)
-         OR LOWER(hc.diagnostico_codigo_cie) LIKE LOWER($2)
-         OR LOWER(p.nombre || ' ' || p.apellido) LIKE LOWER($2)
-      ORDER BY relevancia DESC, hc.fecha_atencion DESC
-      LIMIT 20;
+      ORDER BY hc.fecha_atencion DESC
+      LIMIT 200;
     `,
-      [sanitizedTerm, `%${sanitizedTerm}%`],
     );
 
-    return rows.map((row: any) => ({
+    const lowerTerm = sanitizedTerm.toLowerCase();
+    const decrypted = rows.map((row: any) => ({
       ...row,
       diagnostico_descripcion: row.diagnostico_descripcion
         ? this.phiCrypto.decryptPhi(row.diagnostico_descripcion)
@@ -201,20 +354,41 @@ export class MedicalRecordsService {
         ? this.phiCrypto.decryptPhi(row.tratamiento)
         : row.tratamiento,
     }));
+
+    return decrypted
+      .filter((row: any) => {
+        const haystack = [
+          row.diagnostico_codigo_cie,
+          row.diagnostico_descripcion,
+          row.tratamiento,
+          row.paciente,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return haystack.includes(lowerTerm);
+      })
+      .slice(0, 20);
   }
 
-  async findOneFhir(id: number): Promise<FhirEncounterResource> {
-    const record = await this.findOne(id);
+  async findOneFhir(
+    id: number,
+    principal?: AuditPrincipalContext,
+  ): Promise<FhirEncounterResource> {
+    const record = await this.findOne(id, principal);
     return FhirEncounterMapper.toFhir(record);
   }
 
-  async createPrescription(data: {
-    idPaciente: number;
-    idMedico: number;
-    diagnostico: string;
-    medicamentos: MedicamentoPrescrito[];
-    vigenciaDias?: number;
-  }): Promise<RecetaDigital & { qrValidationPayload: string }> {
+  async createPrescription(
+    data: {
+      idPaciente: number;
+      idMedico: number;
+      diagnostico: string;
+      medicamentos: MedicamentoPrescrito[];
+      vigenciaDias?: number;
+    },
+    principal?: AuditPrincipalContext,
+  ): Promise<RecetaDigital & { qrValidationPayload: string }> {
     if (!data.medicamentos || data.medicamentos.length === 0) {
       throw new BadRequestException('The medical prescription must contain at least one medication.');
     }
@@ -227,7 +401,7 @@ export class MedicalRecordsService {
       codigoVerif,
       idPaciente: data.idPaciente,
       idMedico: data.idMedico,
-      diagnostico: data.diagnostico,
+      diagnostico: this.phiCrypto.encryptPhi(data.diagnostico),
       medicamentos: data.medicamentos,
       firmaDigital,
       vigenciaDias: data.vigenciaDias ?? 30,
@@ -236,17 +410,20 @@ export class MedicalRecordsService {
 
     const guardada = await this.prescriptionRepo.save(receta);
 
-    await this.auditService.registrarAcceso({
-      accion: 'EMISION_RECETA_DIGITAL',
-      entidad: 'receta_digital',
-      idEntidad: guardada.idReceta,
-      metadatos: {
-        codigoVerif,
-        pacienteId: data.idPaciente,
-        medicoId: data.idMedico,
-        totalMedicamentos: data.medicamentos.length,
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'EMISION_RECETA_DIGITAL',
+        entidad: 'receta_digital',
+        idEntidad: guardada.idReceta,
+        metadatos: {
+          codigoVerif,
+          pacienteId: data.idPaciente,
+          medicoId: data.idMedico,
+          totalMedicamentos: data.medicamentos.length,
+        },
       },
-    });
+      principal,
+    );
 
     const qrValidationPayload = JSON.stringify({
       code: codigoVerif,
@@ -257,11 +434,19 @@ export class MedicalRecordsService {
 
     return {
       ...guardada,
+      diagnostico: data.diagnostico,
       qrValidationPayload,
     };
   }
 
-  async verifyPrescription(codigoVerif: string): Promise<any> {
+  /**
+   * Public verification endpoint: validates HMAC signature and expiration
+   * WITHOUT disclosing patient identifiers, physician IDs, diagnoses, or medications.
+   */
+  async verifyPrescription(
+    codigoVerif: string,
+    principal?: AuditPrincipalContext,
+  ): Promise<any> {
     const receta = await this.prescriptionRepo.findOne({
       where: { codigoVerif },
     });
@@ -282,30 +467,28 @@ export class MedicalRecordsService {
       await this.prescriptionRepo.save(receta);
     }
 
-    await this.auditService.registrarAcceso({
-      accion: 'VALIDACION_QR_RECETA',
-      entidad: 'receta_digital',
-      idEntidad: receta.idReceta,
-      metadatos: {
-        codigoVerif,
-        firmaValida,
-        estado: receta.estado,
+    await this.auditService.registrarAcceso(
+      {
+        accion: 'VALIDACION_QR_RECETA',
+        entidad: 'receta_digital',
+        idEntidad: receta.idReceta,
+        metadatos: {
+          codigoVerif,
+          firmaValida,
+          estado: receta.estado,
+        },
       },
-    });
+      principal,
+    );
 
     return {
+      verified: firmaValida && receta.estado === 'EMITIDA',
       codigoVerif: receta.codigoVerif,
-      idReceta: receta.idReceta,
-      idPaciente: receta.idPaciente,
-      idMedico: receta.idMedico,
-      diagnostico: receta.diagnostico,
-      medicamentos: receta.medicamentos,
       firmaValida,
       vigenciaDias: receta.vigenciaDias,
       fechaEmision: receta.emitidaEn,
       fechaExpiracion: expiracion.toISOString(),
       estado: receta.estado,
-      qrCheckUrl: `http://localhost:8000/api/medical-records/prescriptions/${codigoVerif}/verify`,
     };
   }
 }

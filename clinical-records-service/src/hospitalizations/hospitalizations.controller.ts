@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { HospitalizationsService } from './hospitalizations.service.js';
@@ -14,7 +15,7 @@ import {
   CreateHospitalizationDto,
   DischargePatientDto,
 } from './dto/create-hospitalization.dto.js';
-import { Roles } from '../auth/auth.decorators.js';
+import { CurrentUser, Roles, type AuthenticatedUser } from '../auth/auth.decorators.js';
 
 @ApiTags('Hospitalizations & Bed Census (Hospital Stay)')
 @Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
@@ -42,18 +43,34 @@ export class HospitalizationsController {
     return await this.hospitalizationsService.findOne(id);
   }
 
+  @Roles('admin_user', 'doctor_user', 'nurse_user')
   @Post('admit')
   @ApiOperation({ summary: 'Admit a patient to a room' })
-  async admit(@Body() dto: CreateHospitalizationDto) {
-    return await this.hospitalizationsService.admit(dto);
+  async admit(
+    @Body() dto: CreateHospitalizationDto,
+    @CurrentUser() user?: AuthenticatedUser,
+    @Req() req?: any,
+  ) {
+    return await this.hospitalizationsService.admit(dto, {
+      user,
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 
+  @Roles('admin_user', 'doctor_user', 'nurse_user')
   @Patch(':id/discharge')
   @ApiOperation({ summary: 'Medically discharge an inpatient' })
   async discharge(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: DischargePatientDto,
+    @CurrentUser() user?: AuthenticatedUser,
+    @Req() req?: any,
   ) {
-    return await this.hospitalizationsService.discharge(id, dto);
+    return await this.hospitalizationsService.discharge(id, dto, {
+      user,
+      ip: req?.ip,
+      userAgent: req?.headers?.['user-agent'],
+    });
   }
 }

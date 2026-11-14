@@ -9,6 +9,8 @@ spec:
         kinds: ["Pod"]
     namespaces:
       - "dev"
+      - "staging"
+      - "production"
       - "auth"
       - "data"
 ---
@@ -23,6 +25,8 @@ spec:
         kinds: ["Pod"]
     namespaces:
       - "dev"
+      - "staging"
+      - "production"
       - "auth"
       - "data"
   parameters:
@@ -54,3 +58,5 @@ spec:
         kinds: ["Pod"]
     namespaces:
       - "dev"
+      - "staging"
+      - "production"

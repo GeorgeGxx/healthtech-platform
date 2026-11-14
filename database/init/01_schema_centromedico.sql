@@ -22,64 +22,60 @@ CREATE EXTENSION IF NOT EXISTS btree_gist;
 CREATE EXTENSION IF NOT EXISTS unaccent;
 
 -- ----------------------------------------------------------------------------
--- 2. Cleanup of Previous Tables and Types (Idempotent Execution)
+-- 2. Non-Destructive Schema Initialization
+--    (For disposable dev resets, use database/dev-reset/reset_centromedico.sql)
 -- ----------------------------------------------------------------------------
-DROP TABLE IF EXISTS pago CASCADE;
-DROP TABLE IF EXISTS concepto_pago CASCADE;
-DROP TABLE IF EXISTS medicamento CASCADE;
-DROP TABLE IF EXISTS internacion CASCADE;
-DROP TABLE IF EXISTS habitacion CASCADE;
-DROP TABLE IF EXISTS historia_clinica CASCADE;
-DROP TABLE IF EXISTS turno CASCADE;
-DROP TABLE IF EXISTS consultorio CASCADE;
-DROP TABLE IF EXISTS paciente CASCADE;
-DROP TABLE IF EXISTS medico_especialidad CASCADE;
-DROP TABLE IF EXISTS especialidad CASCADE;
-DROP TABLE IF EXISTS medico CASCADE;
-DROP TABLE IF EXISTS obra_social CASCADE;
-DROP TABLE IF EXISTS pais CASCADE;
-
-DROP TYPE IF EXISTS tipo_habitacion_enum CASCADE;
-DROP TYPE IF EXISTS metodo_pago_enum CASCADE;
-DROP TYPE IF EXISTS estado_pago_enum CASCADE;
-DROP TYPE IF EXISTS estado_turno_enum CASCADE;
-DROP TYPE IF EXISTS genero_enum CASCADE;
 
 -- ----------------------------------------------------------------------------
--- 3. Enumerated Types (Native PostgreSQL ENUMs)
+-- 3. Enumerated Types (Native PostgreSQL ENUMs, non-destructive)
 -- ----------------------------------------------------------------------------
-CREATE TYPE genero_enum AS ENUM ('M', 'F', 'Otro');
+DO $$ BEGIN
+    CREATE TYPE genero_enum AS ENUM ('M', 'F', 'Otro');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE estado_turno_enum AS ENUM (
-    'pendiente',
-    'confirmado',
-    'atendido',
-    'cancelado',
-    'ausente',
-    'reprogramado'
-);
+DO $$ BEGIN
+    CREATE TYPE estado_turno_enum AS ENUM (
+        'pendiente',
+        'confirmado',
+        'atendido',
+        'cancelado',
+        'ausente',
+        'reprogramado'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE estado_pago_enum AS ENUM (
-    'pendiente',
-    'completado',
-    'anulado',
-    'reembolsado'
-);
+DO $$ BEGIN
+    CREATE TYPE estado_pago_enum AS ENUM (
+        'pendiente',
+        'completado',
+        'anulado',
+        'reembolsado'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE metodo_pago_enum AS ENUM (
-    'efectivo',
-    'tarjeta_debito',
-    'tarjeta_credito',
-    'transferencia',
-    'obra_social'
-);
+DO $$ BEGIN
+    CREATE TYPE metodo_pago_enum AS ENUM (
+        'efectivo',
+        'tarjeta_debito',
+        'tarjeta_credito',
+        'transferencia',
+        'obra_social'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE tipo_habitacion_enum AS ENUM (
-    'general',
-    'individual',
-    'terapia_intensiva',
-    'observacion'
-);
+DO $$ BEGIN
+    CREATE TYPE tipo_habitacion_enum AS ENUM (
+        'general',
+        'individual',
+        'terapia_intensiva',
+        'observacion'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ----------------------------------------------------------------------------
 -- 4. Catalog and Base Entity Tables
@@ -302,7 +298,8 @@ CREATE TABLE internacion (
 CREATE INDEX ix_internacion_paciente ON internacion(id_paciente);
 CREATE INDEX ix_internacion_medico ON internacion(id_medico_responsable);
 CREATE INDEX ix_internacion_habitacion ON internacion(id_habitacion);
-CREATE INDEX ix_internacion_activa ON internacion(fecha_ingreso) WHERE fecha_alta IS NULL;
+CREATE INDEX IF NOT EXISTS ix_internacion_activa ON internacion(fecha_ingreso) WHERE fecha_alta IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_internacion_habitacion_activa ON internacion(id_habitacion) WHERE fecha_alta IS NULL;
 
 -- ----------------------------------------------------------------------------
 -- 8. Billing and Payments

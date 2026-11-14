@@ -6,6 +6,7 @@ import {
   IsIn,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 import type { MetodoPago } from '../../entities/pago.entity.js';
@@ -60,4 +61,10 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   comprobanteFiscal?: string;
+
+  @ApiPropertyOptional({ example: 'pay-idem-2026-0001' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  idempotencyKey?: string;
 }

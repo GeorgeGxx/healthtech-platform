@@ -34,14 +34,34 @@ describe('AuditService (HIPAA & NOM-024 Audit Trail)', () => {
     expect(registro.idEntidad).toBe('14');
   });
 
-  it('should use safe default values when user or role are omitted', async () => {
+  it('should use non-privileged system defaults when principal is omitted and override spoofed DTO fields when principal is provided', async () => {
     const registro = await auditService.registrarAcceso({
       accion: 'DESCARGA_ESTUDIO',
       entidad: 'estudios_clinicos',
       idEntidad: 'EST-2026-001',
     });
 
-    expect(registro.usuarioId).toBe('system-user');
-    expect(registro.rol).toBe('doctor_user');
+    expect(registro.usuarioId).toBe('system-internal');
+    expect(registro.rol).toBe('system');
+
+    const principalRecord = await auditService.registrarAcceso(
+      {
+        usuarioId: 'spoofed-admin',
+        rol: 'admin_user',
+        accion: 'LECTURA_EXPEDIENTE',
+        entidad: 'historia_clinica',
+        idEntidad: 10,
+      },
+      {
+        user: { sub: 'real-jwt-sub', username: 'dr.real', roles: ['doctor_user'] },
+        ip: '10.1.2.3',
+        userAgent: 'TestAgent/1.0',
+      },
+    );
+
+    expect(principalRecord.usuarioId).toBe('real-jwt-sub');
+    expect(principalRecord.nombreUsuario).toBe('dr.real');
+    expect(principalRecord.rol).toBe('doctor_user');
+    expect(principalRecord.ipCliente).toBe('10.1.2.3');
   });
 });

@@ -2,9 +2,23 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Subject, Observable } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { randomUUID } from 'node:crypto';
 import { RedisService } from '../redis/redis.service.js';
 import { BitacoraDlq } from '../entities/bitacora-dlq.entity.js';
-import { NOTIFICATION_TEMPLATES, escapeHtml } from './templates/email-templates.js';
+import { NOTIFICATION_TEMPLATES } from './templates/email-templates.js';
+import type { AuthenticatedUser } from '../auth/auth.decorators.js';
+
+export type NotificationDeliveryState =
+  | 'PENDING'
+  | 'PROCESSING'
+  | 'SENT'
+  | 'FAILED'
+  | 'RETRYING'
+  | 'DEAD_LETTERED'
+  | 'SIMULATED'
+  | 'UNAVAILABLE'
+  | 'DUPLICADO_IGNORADO';
 
 export interface DispatchedNotification {
   id: string;
@@ -13,7 +27,7 @@ export interface DispatchedNotification {
   destinatario: string;
   asunto: string;
   contenido: string;
-  estado: 'ENVIADO' | 'FALLIDO' | 'DUPLICADO_IGNORADO';
+  estado: NotificationDeliveryState;
   fechaEnvio: string;
   metadatos?: Record<string, any>;
 }
@@ -31,21 +45,156 @@ export class NotificationsService {
     private readonly dlqRepo: Repository<BitacoraDlq>,
   ) {}
 
-  getStream(): Observable<DispatchedNotification> {
-    return this.stream$.asObservable();
+  private isStaffUser(user?: AuthenticatedUser): boolean {
+    if (!user) return false;
+    return user.roles.some((r) =>
+      ['admin_user', 'doctor_user', 'nurse_user', 'receptionist_user'].includes(r),
+    );
+  }
+
+  private matchesUserScope(notif: DispatchedNotification, user?: AuthenticatedUser): boolean {
+    if (!user || this.isStaffUser(user)) return true;
+    if (user.email && notif.destinatario?.toLowerCase() === user.email.toLowerCase()) {
+      return true;
+    }
+    if (user.patientId && notif.metadatos?.idPaciente === user.patientId) {
+      return true;
+    }
+    if (notif.metadatos?.recipientSub === user.sub) {
+      return true;
+    }
+    return false;
+  }
+
+  getStream(user?: AuthenticatedUser): Observable<DispatchedNotification> {
+    return this.stream$.asObservable().pipe(
+      filter((notif) => this.matchesUserScope(notif, user)),
+    );
+  }
+
+  private async claimEventIdempotency(eventId: string): Promise<boolean> {
+    if (typeof (this.redis as any).acquireEventIdempotencyLock === 'function') {
+      return await this.redis.acquireEventIdempotencyLock(eventId);
+    }
+    if (typeof (this.redis as any).isEventProcessed === 'function') {
+      const already = await this.redis.isEventProcessed(eventId);
+      if (already) return false;
+      if (typeof (this.redis as any).markEventProcessed === 'function') {
+        await this.redis.markEventProcessed(eventId);
+      }
+    }
+    return true;
   }
 
   /**
-   * Processes medical appointment event with idempotency guarantee
+   * Dispatches through the configured channel provider.
+   * Never reports 'SENT' unless a real provider endpoint confirms delivery.
+   */
+  private async deliverThroughProvider(
+    notif: DispatchedNotification,
+  ): Promise<NotificationDeliveryState> {
+    if (notif.canal === 'IN_APP') {
+      return 'SENT';
+    }
+
+    const endpointMap: Record<'EMAIL' | 'SMS' | 'WHATSAPP', string | undefined> = {
+      EMAIL: process.env.EMAIL_WEBHOOK_URL || process.env.SMTP_RELAY_URL,
+      SMS: process.env.SMS_PROVIDER_URL,
+      WHATSAPP: process.env.WHATSAPP_PROVIDER_URL,
+    };
+
+    const endpoint = endpointMap[notif.canal];
+    if (!endpoint) {
+      const nodeEnv = (process.env.NODE_ENV ?? '').toLowerCase();
+      return nodeEnv === 'production' || nodeEnv === 'staging' ? 'UNAVAILABLE' : 'SIMULATED';
+    }
+
+    try {
+      const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(4000),
+        body: JSON.stringify({
+          recipient: notif.destinatario,
+          subject: notif.asunto,
+          content: notif.contenido,
+          eventId: notif.eventId,
+        }),
+      });
+      return resp.ok ? 'SENT' : 'FAILED';
+    } catch (err: any) {
+      this.logger.warn(`Provider delivery error for ${notif.canal} (${notif.eventId}): ${err?.message}`);
+      return 'FAILED';
+    }
+  }
+
+  private async persistNotification(notif: DispatchedNotification): Promise<void> {
+    const manager = (this.dlqRepo as any)?.manager;
+    if (!manager || typeof manager.query !== 'function') {
+      return;
+    }
+
+    try {
+      await manager.query(
+        `
+        INSERT INTO notifications.notificacion (
+          id_notificacion, event_id, canal, destinatario, asunto, contenido, estado, metadatos, enviado_en
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9)
+        ON CONFLICT (event_id, canal) DO NOTHING;
+        `,
+        [
+          notif.id,
+          notif.eventId,
+          notif.canal,
+          notif.destinatario,
+          notif.asunto,
+          notif.contenido,
+          notif.estado,
+          JSON.stringify(notif.metadatos || {}),
+          notif.fechaEnvio,
+        ],
+      );
+    } catch (err: any) {
+      this.logger.warn(`Could not persist notification ${notif.id} in PostgreSQL: ${err?.message}`);
+    }
+  }
+
+  private async finalizeNotifications(notifications: DispatchedNotification[]): Promise<DispatchedNotification[]> {
+    for (const notif of notifications) {
+      notif.estado = 'PROCESSING';
+      notif.estado = await this.deliverThroughProvider(notif);
+      await this.persistNotification(notif);
+
+      if (notif.estado === 'FAILED') {
+        await this.sendToDlq(notif, `Provider delivery failed for channel ${notif.canal}`);
+      } else if (notif.estado === 'SENT' || notif.estado === 'SIMULATED') {
+        this.totalEnviados++;
+      }
+
+      this.history.unshift(notif);
+      this.stream$.next(notif);
+      this.logger.log(
+        `[${notif.canal}] status=${notif.estado} recipient=${notif.destinatario} subject="${notif.asunto}"`,
+      );
+    }
+
+    while (this.history.length > 200) {
+      this.history.pop();
+    }
+
+    return notifications;
+  }
+
+  /**
+   * Processes medical appointment event with atomic idempotency guarantee.
    */
   async processAppointmentEvent(event: any): Promise<DispatchedNotification[]> {
-    const eventId = event.eventId || String(Date.now());
+    const eventId = event.eventId || randomUUID();
     const eventType = event.eventType;
     const payload = event.payload || {};
 
-    // 1. Idempotency Verification
-    if (await this.redis.isEventProcessed(eventId)) {
-      this.logger.warn(`🛑 Duplicate event detected and discarded by idempotency: ${eventId}`);
+    if (!(await this.claimEventIdempotency(eventId))) {
+      this.logger.warn(`Duplicate event detected and discarded by idempotency: ${eventId}`);
       return [
         {
           id: `dup-${eventId}`,
@@ -61,8 +210,13 @@ export class NotificationsService {
     }
 
     const notifications: DispatchedNotification[] = [];
-    const destinatarioEmail = payload.pacienteEmail || 'paciente@centromedico.mx';
+    const destinatarioEmail = payload.pacienteEmail || 'patient@centromedico.local';
     const destinatarioTel = payload.pacienteTelefono || '+525500000000';
+    const baseMeta = {
+      idTurno: payload.idTurno,
+      idPaciente: payload.idPaciente,
+      traceId: event.metadata?.traceId,
+    };
 
     if (eventType === 'appointment.created' || eventType === 'appointment.confirmed') {
       const template = NOTIFICATION_TEMPLATES.appointmentCreated({
@@ -74,33 +228,29 @@ export class NotificationsService {
         idTurno: payload.idTurno || '0',
       });
 
-      // Channel 1: Email
-      const emailNotif: DispatchedNotification = {
-        id: `email-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      notifications.push({
+        id: `email-${randomUUID()}`,
         eventId,
         canal: 'EMAIL',
         destinatario: destinatarioEmail,
         asunto: template.asunto,
         contenido: template.html,
-        estado: 'ENVIADO',
+        estado: 'PENDING',
         fechaEnvio: new Date().toISOString(),
-        metadatos: { idTurno: payload.idTurno, traceId: event.metadata?.traceId },
-      };
-      notifications.push(emailNotif);
+        metadatos: baseMeta,
+      });
 
-      // Channel 2: SMS / WhatsApp
-      const smsNotif: DispatchedNotification = {
-        id: `sms-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      notifications.push({
+        id: `sms-${randomUUID()}`,
         eventId,
         canal: 'SMS',
         destinatario: destinatarioTel,
         asunto: 'SMS Appointment Reminder',
         contenido: template.sms,
-        estado: 'ENVIADO',
+        estado: 'PENDING',
         fechaEnvio: new Date().toISOString(),
-        metadatos: { idTurno: payload.idTurno },
-      };
-      notifications.push(smsNotif);
+        metadatos: baseMeta,
+      });
     } else if (eventType === 'appointment.cancelled') {
       const template = NOTIFICATION_TEMPLATES.appointmentCancelled({
         pacienteNombre: payload.pacienteNombre || 'Patient',
@@ -109,143 +259,101 @@ export class NotificationsService {
       });
 
       notifications.push({
-        id: `email-${Date.now()}`,
+        id: `email-${randomUUID()}`,
         eventId,
         canal: 'EMAIL',
         destinatario: destinatarioEmail,
         asunto: template.asunto,
         contenido: template.html,
-        estado: 'ENVIADO',
+        estado: 'PENDING',
         fechaEnvio: new Date().toISOString(),
+        metadatos: baseMeta,
       });
     }
 
-    // Record in history and mark as processed in Redis
-    for (const notif of notifications) {
-      this.history.unshift(notif);
-      this.totalEnviados++;
-      this.stream$.next(notif);
-      this.logger.log(
-        `✉️ [${notif.canal}] Notification sent to ${notif.destinatario} | Subject: "${notif.asunto}"`,
-      );
-    }
-
-    if (this.history.length > 200) {
-      this.history.pop();
-    }
-
-    await this.redis.markEventProcessed(eventId);
-    return notifications;
+    return await this.finalizeNotifications(notifications);
   }
 
   /**
-   * Processes pharmacy / critical stock event
+   * Processes pharmacy / critical stock event.
    */
   async processPharmacyEvent(event: any): Promise<DispatchedNotification[]> {
-    const eventId = event.eventId || String(Date.now());
-    if (await this.redis.isEventProcessed(eventId)) return [];
-
+    const eventId = event.eventId || randomUUID();
     const payload = event.payload || {};
-    const template = NOTIFICATION_TEMPLATES.stockAlert({
-      medicamento: payload.nombreComercial || payload.medicamento || 'Hospital Medication',
-      lote: payload.lote || 'L-GENERAL',
-      stockActual: payload.stockActual ?? 0,
-      stockMinimo: payload.stockMinimo ?? 10,
-      ubicacion: payload.ubicacionAlmacen || 'Central Warehouse',
-    });
+
+    if (!(await this.claimEventIdempotency(eventId))) {
+      return [];
+    }
 
     const notif: DispatchedNotification = {
-      id: `alert-${Date.now()}`,
+      id: `pharm-${randomUUID()}`,
       eventId,
       canal: 'IN_APP',
-      destinatario: 'personal.farmacia@centromedico.mx',
-      asunto: template.asunto,
-      contenido: template.sms,
-      estado: 'ENVIADO',
+      destinatario: 'pharmacy-chief@centromedico.local',
+      asunto: `CRITICAL STOCK: ${payload.nombreComercial || 'Medication'} (${payload.stockActual} units)`,
+      contenido: `Critical stock threshold crossed for ${payload.nombreComercial} (Active Ingredient: ${payload.principioActivo}). Location: ${payload.ubicacionAlmacen}. Current stock: ${payload.stockActual} / Min: ${payload.stockMinimo}.`,
+      estado: 'PENDING',
       fechaEnvio: new Date().toISOString(),
+      metadatos: { nivelAlerta: payload.nivelAlerta, idMedicamento: payload.idMedicamento },
     };
 
-    this.history.unshift(notif);
-    this.totalEnviados++;
-    this.stream$.next(notif);
-    await this.redis.markEventProcessed(eventId);
-    this.logger.warn(`🚨 Stock Alert Notification dispatched: ${template.asunto}`);
-    return [notif];
+    return await this.finalizeNotifications([notif]);
   }
 
   /**
-   * Processes Billing and Collection events
+   * Processes billing / payment received event.
    */
   async processBillingEvent(event: any): Promise<DispatchedNotification[]> {
-    const eventId = event.eventId || String(Date.now());
-    if (await this.redis.isEventProcessed(eventId)) return [];
-
+    const eventId = event.eventId || randomUUID();
     const payload = event.payload || {};
-    const template = NOTIFICATION_TEMPLATES.paymentReceipt({
-      pacienteNombre: payload.pacienteNombre || 'Patient',
-      idPago: payload.idPago || event.aggregateId || 'REC-001',
-      montoNeto: payload.montoNeto ?? payload.montoBruto ?? 0,
-      metodoPago: payload.metodoPago || 'Card',
-      comprobanteFiscal: payload.comprobanteFiscal || 'FAC-000',
-      concepto: payload.concepto || 'Comprehensive Medical Care',
-    });
+
+    if (!(await this.claimEventIdempotency(eventId))) {
+      return [];
+    }
 
     const notif: DispatchedNotification = {
-      id: `bill-notif-${Date.now()}`,
+      id: `bill-${randomUUID()}`,
       eventId,
       canal: 'EMAIL',
-      destinatario: payload.pacienteEmail || 'paciente@centromedico.mx',
-      asunto: template.asunto,
-      contenido: template.sms,
-      estado: 'ENVIADO',
+      destinatario: payload.pacienteEmail || 'patient@centromedico.local',
+      asunto: `Receipt ${payload.comprobanteFiscal || 'E-Receipt'} - National Medical Center`,
+      contenido: `Dear ${payload.pacienteNombre || 'Patient'}, we have successfully recorded your payment of $${payload.montoNeto} USD (${payload.metodoPago}) for ${payload.concepto || 'Medical Care'}.`,
+      estado: 'PENDING',
       fechaEnvio: new Date().toISOString(),
-      metadatos: { html: template.html },
+      metadatos: { comprobante: payload.comprobanteFiscal, idPago: payload.idPago, idPaciente: payload.idPaciente },
     };
 
-    this.history.unshift(notif);
-    this.totalEnviados++;
-    this.stream$.next(notif);
-    await this.redis.markEventProcessed(eventId);
-    this.logger.log(`💳 Payment Notification received and dispatched to ${notif.destinatario}`);
-    return [notif];
+    return await this.finalizeNotifications([notif]);
   }
 
   /**
-   * Processes Orchestrated Saga events
+   * Processes saga compensation / failure event.
    */
   async processSagaEvent(event: any): Promise<DispatchedNotification[]> {
-    const eventId = event.eventId || String(Date.now());
-    if (await this.redis.isEventProcessed(eventId)) return [];
-
+    const eventId = event.eventId || randomUUID();
     const payload = event.payload || {};
-    const template = NOTIFICATION_TEMPLATES.sagaAlert({
-      idSaga: payload.idSaga || event.aggregateId || 'unknown',
-      nombreSaga: payload.nombreSaga || event.eventType,
-      estado: event.eventType.includes('completed') ? 'EXITO' : 'COMPENSADA_POR_ERROR',
-      error: payload.error,
-    });
+
+    if (!(await this.claimEventIdempotency(eventId))) {
+      return [];
+    }
 
     const notif: DispatchedNotification = {
-      id: `saga-notif-${Date.now()}`,
+      id: `saga-${randomUUID()}`,
       eventId,
       canal: 'IN_APP',
-      destinatario: 'sre-apm@centromedico.mx',
-      asunto: template.asunto,
-      contenido: template.sms,
-      estado: 'ENVIADO',
+      destinatario: 'operations@centromedico.local',
+      asunto: `SAGA COMPENSATION [${payload.sagaName}]`,
+      contenido: `Saga ${payload.sagaId} rolled back step ${payload.step || 'N/A'}. Reason: ${payload.reason}`,
+      estado: 'PENDING',
       fechaEnvio: new Date().toISOString(),
+      metadatos: payload,
     };
 
-    this.history.unshift(notif);
-    this.totalEnviados++;
-    this.stream$.next(notif);
-    await this.redis.markEventProcessed(eventId);
-    this.logger.log(`🧬 Saga Notification processed: ${template.asunto}`);
-    return [notif];
+    return await this.finalizeNotifications([notif]);
   }
 
-  getHistory(limit = 50): DispatchedNotification[] {
-    return this.history.slice(0, limit);
+  getHistory(limit = 50, user?: AuthenticatedUser): DispatchedNotification[] {
+    return this.history.filter((n) => this.matchesUserScope(n, user)).slice(0, limit);
   }
 
   async getDlq(limit = 50): Promise<any[]> {
@@ -257,7 +365,7 @@ export class NotificationsService {
   }
 
   async sendToDlq(notif: DispatchedNotification, motivo: string): Promise<void> {
-    notif.estado = 'FALLIDO';
+    notif.estado = 'FAILED';
     const entry = this.dlqRepo.create({
       idEvento: notif.eventId,
       tipoEvento: notif.asunto,
@@ -268,32 +376,40 @@ export class NotificationsService {
       resuelto: false,
     });
     await this.dlqRepo.save(entry);
-    this.logger.error(`☠️ [Persistent DLQ] Event ${notif.eventId} saved in notifications.bitacora_dlq (Reason: ${motivo})`);
+    this.logger.error(`[Persistent DLQ] Event ${notif.eventId} saved in notifications.bitacora_dlq (Reason: ${motivo})`);
   }
 
   async retryDlqItem(id: string): Promise<DispatchedNotification | null> {
     const entry = await this.dlqRepo.findOne({ where: { idDlq: id, resuelto: false } });
     if (!entry) return null;
 
-    entry.resuelto = true;
-    entry.resueltoEn = new Date();
-    entry.reintentos += 1;
-    await this.dlqRepo.save(entry);
-
     const dispatched: DispatchedNotification = {
-      id: `dlq-retry-${entry.idDlq}-${Date.now()}`,
+      id: `dlq-retry-${entry.idDlq}-${randomUUID()}`,
       eventId: entry.idEvento,
       canal: (entry.canal as any) || 'EMAIL',
       destinatario: entry.destinatario,
       asunto: entry.tipoEvento,
-      contenido: `Successful retry after error: ${entry.errorCausa}`,
-      estado: 'ENVIADO',
+      contenido: `Retry dispatch for failed event ${entry.idEvento}`,
+      estado: 'RETRYING',
       fechaEnvio: new Date().toISOString(),
     };
+
+    dispatched.estado = await this.deliverThroughProvider(dispatched);
+    entry.reintentos += 1;
+
+    if (dispatched.estado === 'SENT' || dispatched.estado === 'SIMULATED') {
+      entry.resuelto = true;
+      entry.resueltoEn = new Date();
+      this.totalEnviados++;
+    } else {
+      entry.errorCausa = `Retry #${entry.reintentos} resulted in ${dispatched.estado}`;
+    }
+
+    await this.dlqRepo.save(entry);
+    await this.persistNotification(dispatched);
     this.history.unshift(dispatched);
-    this.totalEnviados++;
     this.stream$.next(dispatched);
-    this.logger.log(`♻️ [DLQ Retry] Record #${id} re-dispatched and marked resolved in PostgreSQL`);
+
     return dispatched;
   }
 
@@ -315,55 +431,49 @@ export class NotificationsService {
     pacienteTelefono?: string;
     medicoNombre?: string;
     especialidad?: string;
-    fechaInicio?: string;
-    idTurno?: number;
-  }): Promise<{ totalGenerados: number; despachos: DispatchedNotification[] }> {
-    const pNombre = params?.pacienteNombre || 'Juan Pérez García';
-    const pEmail = params?.pacienteEmail || 'juan.perez@centromedico.mx';
-    const pTel = params?.pacienteTelefono || '+52 55 1234-5678';
-    const mNombre = params?.medicoNombre || 'Dra. Laura Gómez';
-    const esp = params?.especialidad || 'Cardiology';
-    const fecha = params?.fechaInicio || new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('en-US');
-    const idTurno = params?.idTurno || 1;
+    consultorio?: string;
+    fechaHora?: string;
+  }) {
+    const pacienteNombre = params?.pacienteNombre || 'Scheduled Patient';
+    const pacienteEmail = params?.pacienteEmail || 'patient@centromedico.local';
+    const pacienteTelefono = params?.pacienteTelefono || '+525500000000';
+    const medicoNombre = params?.medicoNombre || 'Attending Specialist';
+    const especialidad = params?.especialidad || 'Medical Consultation';
+    const consultorio = params?.consultorio || 'Office 101';
+    const fechaHora = params?.fechaHora || new Date(Date.now() + 86400_000).toLocaleString('en-US');
 
-    const eventId = `reminder-${idTurno}-${Date.now()}`;
-    const despachos: DispatchedNotification[] = [];
+    const eventId = `rem-${randomUUID()}`;
+    const whatsappMsg = `National Medical Center Reminder: Hello ${pacienteNombre}, you have an appointment in ${especialidad} with ${medicoNombre} tomorrow (${fechaHora}) at ${consultorio}.`;
 
-    const whatsAppNotif: DispatchedNotification = {
-      id: `wapp-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      eventId,
-      canal: 'WHATSAPP',
-      destinatario: pTel,
-      asunto: 'Medical Appointment Reminder (24h prior)',
-      contenido: `Hello ${pNombre}. We remind you of your medical appointment tomorrow ${fecha} with ${mNombre} (${esp}) at the National Medical Center.\n\n👉 To confirm or reschedule online: http://localhost:8000/api/appointments`,
-      estado: 'ENVIADO',
-      fechaEnvio: new Date().toISOString(),
-      metadatos: { idTurno, tipo: 'RECORDATORIO_24H' },
-    };
-    despachos.push(whatsAppNotif);
+    const notifs: DispatchedNotification[] = [
+      {
+        id: `wa-${randomUUID()}`,
+        eventId,
+        canal: 'WHATSAPP',
+        destinatario: pacienteTelefono,
+        asunto: `WhatsApp 24h Reminder - ${especialidad}`,
+        contenido: whatsappMsg,
+        estado: 'PENDING',
+        fechaEnvio: new Date().toISOString(),
+      },
+      {
+        id: `email-${randomUUID()}`,
+        eventId,
+        canal: 'EMAIL',
+        destinatario: pacienteEmail,
+        asunto: `Appointment Reminder: ${especialidad} (${fechaHora})`,
+        contenido: `Hello ${pacienteNombre}, please remember your appointment with ${medicoNombre} at ${consultorio} on ${fechaHora}.`,
+        estado: 'PENDING',
+        fechaEnvio: new Date().toISOString(),
+      },
+    ];
 
-    const emailNotif: DispatchedNotification = {
-      id: `email-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      eventId,
-      canal: 'EMAIL',
-      destinatario: pEmail,
-      asunto: `Medical Appointment Reminder - ${mNombre}`,
-      contenido: `<div style="font-family:sans-serif;padding:20px;"><h2>Appointment Care Reminder</h2><p>Dear <strong>${escapeHtml(pNombre)}</strong>,</p><p>We remind you of your scheduled consultation with <strong>${escapeHtml(mNombre)}</strong> in the specialty of <strong>${escapeHtml(esp)}</strong>.</p><p><strong>Date and Time:</strong> ${escapeHtml(fecha)}</p><p>Please arrive 15 minutes early with your official ID.</p></div>`,
-      estado: 'ENVIADO',
-      fechaEnvio: new Date().toISOString(),
-      metadatos: { idTurno, tipo: 'RECORDATORIO_24H' },
-    };
-    despachos.push(emailNotif);
-
-    for (const d of despachos) {
-      this.history.unshift(d);
-      this.totalEnviados++;
-      this.stream$.next(d);
-    }
+    await this.finalizeNotifications(notifs);
 
     return {
-      totalGenerados: despachos.length,
-      despachos,
+      status: 'COMPLETED',
+      totalDispatched: notifs.length,
+      notifications: notifs,
     };
   }
 }

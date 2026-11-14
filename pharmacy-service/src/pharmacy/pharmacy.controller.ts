@@ -6,14 +6,15 @@ import {
   Body,
   Param,
   Query,
+  Headers,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PharmacyService } from './pharmacy.service.js';
 import { DispenseMedicationDto, AdjustStockDto } from './dto/pharmacy.dto.js';
-import { Public, Roles } from '../auth/auth.decorators.js';
+import { CurrentUser, Public, Roles, type AuthenticatedUser } from '../auth/auth.decorators.js';
 
 @ApiTags('Pharmacy & Hospital Inventory (Pharmacy Service)')
-@Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
+@Roles('admin_user', 'doctor_user', 'nurse_user', 'pharmacist_user')
 @Controller('pharmacy')
 export class PharmacyController {
   constructor(private readonly pharmacyService: PharmacyService) {}
@@ -66,14 +67,24 @@ export class PharmacyController {
   }
 
   @Post(':id/dispense')
-  @ApiOperation({ summary: 'Dispense medication and emit alert if minimum stock threshold is crossed' })
-  async dispense(@Param('id') id: string, @Body() dto: DispenseMedicationDto) {
-    return await this.pharmacyService.dispense(id, dto.cantidad);
+  @ApiOperation({ summary: 'Dispense medication atomically with idempotency and movement ledger' })
+  async dispense(
+    @Param('id') id: string,
+    @Body() dto: DispenseMedicationDto,
+    @Headers('x-idempotency-key') headerIdemKey?: string,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    const idempotencyKey = dto.idempotencyKey || headerIdemKey;
+    return await this.pharmacyService.dispense(id, dto.cantidad, user?.sub, idempotencyKey, dto.motivo);
   }
 
   @Patch(':id/stock')
   @ApiOperation({ summary: 'Adjust medication stock in central warehouse' })
-  async adjustStock(@Param('id') id: string, @Body() dto: AdjustStockDto) {
-    return await this.pharmacyService.adjustStock(id, dto.nuevoStock);
+  async adjustStock(
+    @Param('id') id: string,
+    @Body() dto: AdjustStockDto,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return await this.pharmacyService.adjustStock(id, dto.nuevoStock, user?.sub, dto.motivo);
   }
 }

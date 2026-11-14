@@ -1,6 +1,14 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { randomUUID } from 'node:crypto';
 import { Pago } from '../entities/pago.entity.js';
 import { Paciente } from '../entities/paciente.entity.js';
 import { ConceptoPago } from '../entities/concepto-pago.entity.js';
@@ -8,6 +16,7 @@ import { LiquidacionMedico } from '../entities/liquidacion-medico.entity.js';
 import { BillingCalculatorDomainService } from '../domain/billing-calculator.domain-service.js';
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
 import { BillingKafkaProducerService } from '../kafka/kafka-producer.service.js';
+import type { AuthenticatedUser } from '../auth/auth.decorators.js';
 
 @Injectable()
 export class BillingService {
@@ -25,7 +34,40 @@ export class BillingService {
     private readonly kafka: BillingKafkaProducerService,
   ) {}
 
-  async findAll(): Promise<Pago[]> {
+  private isBillingStaff(user?: AuthenticatedUser): boolean {
+    if (!user) return false;
+    return user.roles.some((r) => ['admin_user', 'receptionist_user', 'billing_user'].includes(r));
+  }
+
+  private async resolvePatientIdForUser(user?: AuthenticatedUser): Promise<number | null> {
+    if (!user) return null;
+    if (user.patientId) return user.patientId;
+    if (user.email) {
+      const patient = await this.patientRepo
+        .createQueryBuilder('p')
+        .where('LOWER(p.email) = LOWER(:email)', { email: user.email })
+        .getOne();
+      if (patient) return patient.idPaciente;
+    }
+    return null;
+  }
+
+  async findAll(user?: AuthenticatedUser): Promise<Pago[]> {
+    if (user && !this.isBillingStaff(user)) {
+      const ownPatientId = await this.resolvePatientIdForUser(user);
+      if (!ownPatientId) {
+        return [];
+      }
+      return await this.paymentRepo.find({
+        where: { idPaciente: ownPatientId },
+        relations: {
+          paciente: true,
+          concepto: true,
+        },
+        order: { fechaPago: 'DESC' },
+      });
+    }
+
     return await this.paymentRepo.find({
       relations: {
         paciente: true,
@@ -35,7 +77,7 @@ export class BillingService {
     });
   }
 
-  async findOne(id: number): Promise<Pago> {
+  async findOne(id: number, user?: AuthenticatedUser): Promise<Pago> {
     const payment = await this.paymentRepo.findOne({
       where: { idPago: id },
       relations: {
@@ -45,6 +87,12 @@ export class BillingService {
     });
     if (!payment) {
       throw new NotFoundException(`Payment with ID ${id} not found`);
+    }
+    if (user && !this.isBillingStaff(user)) {
+      const ownPatientId = await this.resolvePatientIdForUser(user);
+      if (!ownPatientId || payment.idPaciente !== ownPatientId) {
+        throw new ForbiddenException('You are not authorized to access this payment record');
+      }
     }
     return payment;
   }
@@ -136,7 +184,22 @@ export class BillingService {
     ];
   }
 
-  async create(dto: CreatePaymentDto): Promise<Pago> {
+  async create(dto: CreatePaymentDto, user?: AuthenticatedUser): Promise<Pago> {
+    if (dto.idempotencyKey) {
+      const existingByKey = await this.paymentRepo
+        .createQueryBuilder('p')
+        .where("p.detalles_transaccion->>'idempotencyKey' = :key", { key: dto.idempotencyKey })
+        .getOne();
+      if (existingByKey) {
+        return await this.findOne(existingByKey.idPago);
+      }
+    }
+
+    const concept = await this.conceptRepo.findOne({ where: { idConcepto: dto.idConcepto } });
+    if (!concept) {
+      throw new NotFoundException(`Billing concept with ID ${dto.idConcepto} not found`);
+    }
+
     const patient = await this.patientRepo.findOne({
       where: { idPaciente: dto.idPaciente },
       relations: { obraSocial: true },
@@ -154,49 +217,155 @@ export class BillingService {
       coveragePercentage: coveragePct,
     });
 
+    const dateTag = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const fiscalTicket =
-      dto.comprobanteFiscal || `FAC-${Date.now().toString().slice(-6)}`;
+      dto.comprobanteFiscal || `FAC-${dateTag}-${randomUUID().slice(0, 8).toUpperCase()}`;
 
-    const payment = this.paymentRepo.create({
-      idPaciente: dto.idPaciente,
-      idTurno: dto.idTurno ?? null,
-      idInternacion: dto.idInternacion ?? null,
-      idConcepto: dto.idConcepto,
-      montoBruto: calculation.basePrice,
-      descuentoCobertura: calculation.discountAmount,
-      metodoPago: dto.metodoPago,
-      estado: 'completado',
-      comprobanteFiscal: fiscalTicket,
-      detallesTransaccion: {
-        obraSocial: patient.obraSocial?.nombre ?? 'Self-Pay',
-        porcentajeCoberturaAplicado: coveragePct,
-        copagoPaciente: calculation.patientCopayAmount,
-      },
-    });
+    let savedId: number;
+    try {
+      savedId = await this.paymentRepo.manager.transaction(async (manager) => {
+        const payment = manager.getRepository(Pago).create({
+          idPaciente: dto.idPaciente,
+          idTurno: dto.idTurno ?? null,
+          idInternacion: dto.idInternacion ?? null,
+          idConcepto: dto.idConcepto,
+          montoBruto: calculation.basePrice,
+          descuentoCobertura: calculation.discountAmount,
+          metodoPago: dto.metodoPago,
+          estado: 'completado',
+          comprobanteFiscal: fiscalTicket,
+          detallesTransaccion: {
+            idempotencyKey: dto.idempotencyKey ?? null,
+            conceptoNombre: concept.nombre,
+            conceptoDescripcion: concept.descripcion ?? null,
+            obraSocial: patient.obraSocial?.nombre ?? 'Self-Pay',
+            porcentajeCoberturaAplicado: coveragePct,
+            copagoPaciente: calculation.patientCopayAmount,
+            recordedBy: user?.sub ?? 'system',
+            movements: [
+              {
+                type: 'CHARGE',
+                amount: calculation.patientCopayAmount,
+                actor: user?.sub ?? 'system',
+                at: new Date().toISOString(),
+              },
+            ],
+          },
+        });
+        const saved = await manager.getRepository(Pago).save(payment);
+        return saved.idPago;
+      });
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        if (dto.idempotencyKey) {
+          const existingByKey = await this.paymentRepo
+            .createQueryBuilder('p')
+            .where("p.detalles_transaccion->>'idempotencyKey' = :key", { key: dto.idempotencyKey })
+            .getOne();
+          if (existingByKey) {
+            return await this.findOne(existingByKey.idPago);
+          }
+        }
+        throw new ConflictException(`Duplicate fiscal receipt identifier: ${fiscalTicket}`);
+      }
+      throw err;
+    }
 
-    const saved = await this.paymentRepo.save(payment);
-    const fullPayment = await this.findOne(saved.idPago);
+    const fullPayment = await this.findOne(savedId);
 
     // Emit choreographed event to Kafka
     await this.kafka.emit('billing.payment_received', fullPayment.idPago, {
       idPago: fullPayment.idPago,
       idPaciente: fullPayment.idPaciente,
       pacienteNombre: `${patient.nombre} ${patient.apellido}`,
-      pacienteEmail: patient.email || 'paciente@centromedico.mx',
+      pacienteEmail: patient.email || '',
       montoBruto: Number(fullPayment.montoBruto),
       montoNeto: Number(fullPayment.montoNeto),
       descuentoCobertura: Number(fullPayment.descuentoCobertura),
       metodoPago: fullPayment.metodoPago,
       comprobanteFiscal: fullPayment.comprobanteFiscal,
-      concepto: fullPayment.concepto?.nombre ?? 'Comprehensive Medical Care',
+      concepto: fullPayment.concepto?.nombre ?? concept.nombre,
       fechaPago: fullPayment.fechaPago,
     });
 
     this.logger.log(
-      `💳 Payment #${saved.idPago} recorded successfully (${fullPayment.comprobanteFiscal}) for $${calculation.basePrice} USD`,
+      `Payment #${savedId} recorded successfully (${fullPayment.comprobanteFiscal}) for $${calculation.basePrice} USD`,
     );
 
     return fullPayment;
+  }
+
+  async refundPayment(
+    id: number,
+    motivo?: string,
+    user?: AuthenticatedUser,
+  ): Promise<Pago> {
+    const payment = await this.findOne(id);
+    if (payment.estado !== 'completado') {
+      throw new ConflictException(
+        `Cannot refund payment #${id} in state "${payment.estado}". Only completed payments can be refunded.`,
+      );
+    }
+
+    const details = (payment.detallesTransaccion as Record<string, any>) || {};
+    const movements = Array.isArray(details.movements) ? [...details.movements] : [];
+    movements.push({
+      type: 'REFUND',
+      amount: -Number(payment.montoNeto),
+      reason: motivo || 'Billing refund',
+      actor: user?.sub ?? 'system',
+      at: new Date().toISOString(),
+    });
+
+    payment.estado = 'reembolsado';
+    payment.detallesTransaccion = { ...details, movements };
+    await this.paymentRepo.save(payment);
+
+    await this.kafka.emit('billing.payment_refunded', payment.idPago, {
+      idPago: payment.idPago,
+      idPaciente: payment.idPaciente,
+      comprobanteFiscal: payment.comprobanteFiscal,
+      montoNeto: Number(payment.montoNeto),
+      motivo: motivo || 'Billing refund',
+    });
+
+    return await this.findOne(id);
+  }
+
+  async voidPayment(
+    id: number,
+    motivo?: string,
+    user?: AuthenticatedUser,
+  ): Promise<Pago> {
+    const payment = await this.findOne(id);
+    if (payment.estado === 'anulado' || payment.estado === 'reembolsado') {
+      throw new ConflictException(
+        `Cannot void payment #${id} because it is already "${payment.estado}".`,
+      );
+    }
+
+    const details = (payment.detallesTransaccion as Record<string, any>) || {};
+    const movements = Array.isArray(details.movements) ? [...details.movements] : [];
+    movements.push({
+      type: 'VOID',
+      amount: -Number(payment.montoNeto),
+      reason: motivo || 'Payment voided',
+      actor: user?.sub ?? 'system',
+      at: new Date().toISOString(),
+    });
+
+    payment.estado = 'anulado';
+    payment.detallesTransaccion = { ...details, movements };
+    await this.paymentRepo.save(payment);
+
+    await this.kafka.emit('billing.payment_voided', payment.idPago, {
+      idPago: payment.idPago,
+      idPaciente: payment.idPaciente,
+      comprobanteFiscal: payment.comprobanteFiscal,
+      motivo: motivo || 'Payment voided',
+    });
+
+    return await this.findOne(id);
   }
 
   async getRevenueSummary(): Promise<any> {
@@ -227,7 +396,20 @@ export class BillingService {
     };
   }
 
-  async calculateDoctorSettlement(doctorId: number, periodo?: string): Promise<any> {
+  async calculateDoctorSettlement(
+    doctorId: number,
+    periodo?: string,
+    user?: AuthenticatedUser,
+  ): Promise<any> {
+    if (
+      user &&
+      !this.isBillingStaff(user) &&
+      user.roles.includes('doctor_user') &&
+      user.doctorId &&
+      user.doctorId !== doctorId
+    ) {
+      throw new ForbiddenException('Physicians can only view their own fee settlements');
+    }
     const period = periodo || new Date().toISOString().slice(0, 7); // YYYY-MM
 
     const query = `
