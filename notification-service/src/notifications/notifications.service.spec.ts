@@ -3,14 +3,14 @@ import { escapeHtml, NOTIFICATION_TEMPLATES } from './templates/email-templates.
 import { NotificationsService } from './notifications.service.js';
 
 describe('Notification Templates & DLQ Persistence', () => {
-  it('escapa payloads HTML peligrosos en plantillas de correo', () => {
+  it('escapes dangerous HTML payloads in email templates', () => {
     const raw = '<script>alert("xss")</script>';
     expect(escapeHtml(raw)).toBe('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
 
     const rendered = NOTIFICATION_TEMPLATES.appointmentCreated({
       pacienteNombre: raw,
       medicoNombre: 'Dr. House',
-      especialidad: 'Diagnóstico',
+      especialidad: 'Diagnostics',
       consultorio: 'C-101',
       fechaInicio: '2026-11-15',
       idTurno: 12,
@@ -19,8 +19,8 @@ describe('Notification Templates & DLQ Persistence', () => {
     expect(rendered.html).toContain('&lt;script&gt;');
   });
 
-  it('persiste eventos fallidos en bitacora_dlq via TypeORM', async () => {
-    const saved = { idDlq: 1, tipoEvento: 'Cita #1', resuelto: false };
+  it('persists failed events in bitacora_dlq via TypeORM', async () => {
+    const saved = { idDlq: 1, tipoEvento: 'Appointment #1', resuelto: false };
     const mockDlqRepo = {
       create: vi.fn().mockImplementation((x) => x),
       save: vi.fn().mockResolvedValue(saved),
@@ -35,8 +35,8 @@ describe('Notification Templates & DLQ Persistence', () => {
       eventId: 'evt-1',
       canal: 'EMAIL' as const,
       destinatario: 'pac@example.com',
-      asunto: 'Cita #1',
-      contenido: 'Cuerpo',
+      asunto: 'Appointment #1',
+      contenido: 'Body',
       estado: 'ENVIADO' as const,
       fechaEnvio: new Date().toISOString(),
     };

@@ -1,14 +1,14 @@
 # ============================================================================
-# Multi-stage Dockerfile de Producción para Notification-Service (NestJS 12)
+# Production Multi-stage Dockerfile for Notification-Service (NestJS 12)
 # ============================================================================
 
-# Etapa 1: Dependencias
+# Stage 1: Dependencies
 FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Etapa 2: Compilación de TypeScript
+# Stage 2: TypeScript Compilation
 FROM node:24-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -16,7 +16,7 @@ COPY . .
 RUN npm run build
 RUN npm prune --omit=dev
 
-# Etapa 3: Runtime de producción ultraligero y seguro (non-root)
+# Stage 3: Ultra-lightweight and secure production runtime (non-root)
 FROM node:24-alpine AS runner
 WORKDIR /app
 

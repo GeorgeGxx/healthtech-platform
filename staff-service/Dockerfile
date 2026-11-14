@@ -1,5 +1,5 @@
 # ============================================================================
-# Multi-stage Dockerfile de Producción para Staff-Service (NestJS 12)
+# Production Multi-stage Dockerfile for Staff-Service (NestJS 12)
 # ============================================================================
 
 FROM node:24-alpine AS deps

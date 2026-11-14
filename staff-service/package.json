@@ -1,7 +1,7 @@
 {
   "name": "staff-service",
   "version": "1.0.0",
-  "description": "Microservicio Autónomo de Personal Médico, Especialidades y Consultorios (NestJS 12 + PostgreSQL 18 + Redis 8.8)",
+  "description": "Autonomous Medical Staff, Specialties, and Offices Microservice (NestJS 12 + PostgreSQL 18 + Redis 8.8)",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

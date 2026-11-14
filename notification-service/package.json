@@ -1,7 +1,7 @@
 {
   "name": "notification-service",
   "version": "1.0.0",
-  "description": "Microservicio de Notificaciones Multicanal (Kafka 8.x + Redis 8.8 + OpenTelemetry) para Centro Médico Nacional",
+  "description": "Multichannel Notifications Microservice (Kafka 8.x + Redis 8.8 + OpenTelemetry) for National Medical Center",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

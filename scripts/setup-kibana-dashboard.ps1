@@ -1,19 +1,19 @@
-# Script de aprovisionamiento de Elasticsearch y Kibana para el Centro Médico
+# Elasticsearch and Kibana provisioning script for the Medical Center
 # Indices: healthtech-pharmacy-stock, healthtech-beds-census, healthtech-clinical-operations
 
 $esUrl = "http://localhost:9200"
 $kibanaUrl = "http://localhost:5601"
 
-Write-Host "1. Verificando conectividad con Elasticsearch ($esUrl)..." -ForegroundColor Cyan
+Write-Host "1. Checking Elasticsearch connectivity ($esUrl)..." -ForegroundColor Cyan
 $esHealth = Invoke-RestMethod -Uri "$esUrl" -Method Get
-Write-Host "Elasticsearch v$($esHealth.version.number) disponible y respondiendo." -ForegroundColor Green
+Write-Host "Elasticsearch v$($esHealth.version.number) available and responding." -ForegroundColor Green
 
-Write-Host "2. Verificando conectividad con Kibana ($kibanaUrl)..." -ForegroundColor Cyan
+Write-Host "2. Checking Kibana connectivity ($kibanaUrl)..." -ForegroundColor Cyan
 $kbnHealth = Invoke-RestMethod -Uri "$kibanaUrl/api/status" -Method Get
 Write-Host "Kibana status: $($kbnHealth.status.overall.level)" -ForegroundColor Green
 
-# 3. Creando mapeo e índice para Inventario de Farmacia
-Write-Host "3. Creando índice healthtech-pharmacy-stock..." -ForegroundColor Cyan
+# 3. Creating mapping and index for Pharmacy Inventory
+Write-Host "3. Creating index healthtech-pharmacy-stock..." -ForegroundColor Cyan
 $pharmacyMapping = @{
     settings = @{
         number_of_shards = 1
@@ -43,8 +43,8 @@ $pharmacyMapping = @{
 Invoke-RestMethod -Uri "$esUrl/healthtech-pharmacy-stock" -Method Delete -ErrorAction SilentlyContinue | Out-Null
 Invoke-RestMethod -Uri "$esUrl/healthtech-pharmacy-stock" -Method Put -Body $pharmacyMapping -ContentType "application/json" | Out-Null
 
-# 4. Creando mapeo e índice para Censo de Camas Hospitalarias
-Write-Host "4. Creando índice healthtech-beds-census..." -ForegroundColor Cyan
+# 4. Creating mapping and index for Hospital Bed Census
+Write-Host "4. Creating index healthtech-beds-census..." -ForegroundColor Cyan
 $bedsMapping = @{
     settings = @{
         number_of_shards = 1
@@ -71,8 +71,8 @@ $bedsMapping = @{
 Invoke-RestMethod -Uri "$esUrl/healthtech-beds-census" -Method Delete -ErrorAction SilentlyContinue | Out-Null
 Invoke-RestMethod -Uri "$esUrl/healthtech-beds-census" -Method Put -Body $bedsMapping -ContentType "application/json" | Out-Null
 
-# 5. Creando mapeo e índice para Operaciones Clínicas
-Write-Host "5. Creando índice healthtech-clinical-operations..." -ForegroundColor Cyan
+# 5. Creating mapping and index for Clinical Operations
+Write-Host "5. Creating index healthtech-clinical-operations..." -ForegroundColor Cyan
 $opsMapping = @{
     settings = @{
         number_of_shards = 1
@@ -97,9 +97,9 @@ $opsMapping = @{
 Invoke-RestMethod -Uri "$esUrl/healthtech-clinical-operations" -Method Delete -ErrorAction SilentlyContinue | Out-Null
 Invoke-RestMethod -Uri "$esUrl/healthtech-clinical-operations" -Method Put -Body $opsMapping -ContentType "application/json" | Out-Null
 
-Write-Host "Indices creados exitosamente en Elasticsearch." -ForegroundColor Green
+Write-Host "Indices created successfully in Elasticsearch." -ForegroundColor Green
 
-# Ejecutar seeder de documentos, Data Views y Dashboard en Kibana
+# Run document, Data Views, and Kibana Dashboard seeder
 $scriptPath = Join-Path $PSScriptRoot "seed-elasticsearch-kibana.mjs"
 if (Test-Path $scriptPath) {
     node $scriptPath

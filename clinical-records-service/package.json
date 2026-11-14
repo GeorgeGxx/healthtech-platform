@@ -1,7 +1,7 @@
 {
   "name": "clinical-records-service",
   "version": "1.0.0",
-  "description": "Microservicio Autónomo de Expediente Clínico Electrónico (ECE NOM-004), Censo de Camas e Internaciones (NestJS 12 + PostgreSQL 18)",
+  "description": "Autonomous Electronic Health Record (EHR NOM-004), Bed Census, and Hospitalizations Microservice (NestJS 12 + PostgreSQL 18)",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

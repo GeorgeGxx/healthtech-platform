@@ -69,7 +69,7 @@ export class FhirPatientMapper {
     if (p.domicilio || p.idPais) {
       addresses.push({
         use: 'home',
-        line: [p.domicilio || 'Domicilio no registrado'],
+        line: [p.domicilio || 'Address not registered'],
         country: p.idPais || 'ARG',
       });
     }
@@ -106,7 +106,7 @@ export class FhirPatientMapper {
       birthDate: p.fechaNacimiento ? String(p.fechaNacimiento) : undefined,
       address: addresses,
       managingOrganization: {
-        display: 'Centro Médico Nacional - HealthTech',
+        display: 'National Medical Center - HealthTech',
       },
     };
   }

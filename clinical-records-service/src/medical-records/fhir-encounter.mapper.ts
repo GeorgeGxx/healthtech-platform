@@ -48,11 +48,11 @@ export class FhirEncounterMapper {
   static toFhir(record: HistoriaClinica): FhirEncounterResource {
     const patientName = record.paciente
       ? `${record.paciente.nombre} ${record.paciente.apellido}`
-      : `Paciente #${record.idPaciente}`;
+      : `Patient #${record.idPaciente}`;
 
     const doctorName = record.medico
-      ? `Dr(a). ${record.medico.nombre} ${record.medico.apellido} (Mat: ${record.medico.matricula})`
-      : `Médico #${record.idMedico}`;
+      ? `Dr. ${record.medico.nombre} ${record.medico.apellido} (License: ${record.medico.matricula})`
+      : `Physician #${record.idMedico}`;
 
     return {
       resourceType: 'Encounter',
@@ -61,7 +61,7 @@ export class FhirEncounterMapper {
       class: {
         system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
         code: 'AMB',
-        display: 'Ambulatory / Consulta Externa',
+        display: 'Ambulatory / Outpatient Consultation',
       },
       subject: {
         reference: `Patient/${record.idPaciente}`,
@@ -80,7 +80,7 @@ export class FhirEncounterMapper {
       },
       reasonCode: [
         {
-          text: record.diagnosticoDescripcion || 'Consulta médica general',
+          text: record.diagnosticoDescripcion || 'General medical consultation',
         },
       ],
       diagnosis: [
@@ -92,15 +92,15 @@ export class FhirEncounterMapper {
             coding: [
               {
                 system: 'http://hl7.org/fhir/sid/icd-10',
-                code: record.diagnosticoCodigoCie || 'CIE-10',
-                display: 'Diagnóstico Principal de Consulta',
+                code: record.diagnosticoCodigoCie || 'ICD-10',
+                display: 'Primary Consultation Diagnosis',
               },
             ],
           },
         },
       ],
       serviceProvider: {
-        display: 'Centro Médico Nacional - HealthTech Platform',
+        display: 'National Medical Center - HealthTech Platform',
       },
     };
   }

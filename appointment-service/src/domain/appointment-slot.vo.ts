@@ -7,22 +7,22 @@ export class AppointmentSlot {
     this.endTime = new Date(end);
 
     if (isNaN(this.startTime.getTime()) || isNaN(this.endTime.getTime())) {
-      throw new Error('Las fechas ingresadas son inválidas');
+      throw new Error('The provided dates are invalid');
     }
 
     if (this.endTime <= this.startTime) {
-      throw new Error('La hora de fin debe ser posterior a la hora de inicio');
+      throw new Error('End time must be after start time');
     }
 
     const durationMinutes =
       (this.endTime.getTime() - this.startTime.getTime()) / (1000 * 60);
 
     if (durationMinutes < 15) {
-      throw new Error('La duración mínima de una cita es de 15 minutos');
+      throw new Error('Minimum appointment duration is 15 minutes');
     }
 
     if (durationMinutes > 180) {
-      throw new Error('La duración máxima de una cita es de 180 minutos');
+      throw new Error('Maximum appointment duration is 180 minutes');
     }
   }
 

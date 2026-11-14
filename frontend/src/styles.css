@@ -17,7 +17,7 @@
   }
 }
 
-/* Fondo ambiental descansado para la vista (Soft Clinical Canvas) */
+/* Soft ambient background for comfortable viewing (Soft Clinical Canvas) */
 .bg-ambient {
   background-color: #f8fafc;
   background-image: 
@@ -26,7 +26,7 @@
     radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.03) 0px, transparent 50%);
 }
 
-/* Paneles de Contenido con Glassmorphism Suave */
+/* Content Panels with Soft Glassmorphism */
 .glass-panel {
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(12px);
@@ -35,7 +35,7 @@
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03), 0 10px 24px -4px rgba(15, 23, 42, 0.04);
 }
 
-/* Tarjetas Clínicas con Elevación y Borde Luminoso Sutil */
+/* Clinical Cards with Elevation and Subtle Luminous Border */
 .glass-card {
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.9);
@@ -49,7 +49,7 @@
   border-color: rgba(16, 185, 129, 0.4);
 }
 
-/* Gradientes Hospitalarios Suaves */
+/* Soft Hospital Gradients */
 .gradient-emerald {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
 }
@@ -66,7 +66,7 @@
   background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
 }
 
-/* Animación de entrada fluida */
+/* Smooth fade-in animation */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -80,7 +80,7 @@
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Animación de apertura suave para modales */
+/* Smooth modal open animation */
 @keyframes modalPop {
   0% {
     opacity: 0;
@@ -96,7 +96,7 @@
   animation: modalPop 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Animación de panel lateral deslizante */
+/* Sliding side panel animation */
 @keyframes slideLeft {
   0% {
     transform: translateX(100%);
@@ -110,7 +110,7 @@
   animation: slideLeft 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Scrollbar ergonómica */
+/* Ergonomic scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -129,7 +129,7 @@
   background: rgba(148, 163, 184, 0.7);
 }
 
-/* Modales Clínicos 100% Responsivos e Inmunes a Desbordamiento */
+/* 100% Responsive, Overflow-Proof Clinical Modals */
 .clinical-modal-overlay {
   position: fixed;
   top: 0;
@@ -206,4 +206,3 @@
   border-top: 1px solid #f1f5f9;
   flex-shrink: 0;
 }
-

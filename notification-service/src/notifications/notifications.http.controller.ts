@@ -75,15 +75,15 @@ export class NotificationsHttpController {
         pacienteNombre: body.pacienteNombre || 'Juan Pérez García',
         pacienteEmail: body.destinatario || 'juan.perez@centromedico.mx',
         medicoNombre: body.medicoNombre || 'Dra. Laura Gómez',
-        especialidad: body.especialidad || 'Cardiología',
-        consultorio: body.consultorio || 'Consultorio 204',
+        especialidad: body.especialidad || 'Cardiology',
+        consultorio: body.consultorio || 'Office 204',
         fechaInicio: body.fechaHora || new Date().toISOString(),
       },
     };
 
     const result = await this.notificationsService.processAppointmentEvent(mockEvent);
     return {
-      mensaje: 'Notificación de prueba procesada con éxito',
+      mensaje: 'Test notification processed successfully',
       despachos: result,
     };
   }
@@ -104,7 +104,7 @@ export class NotificationsHttpController {
   async retryDlq(@Param('id') id: string) {
     const reintento = await this.notificationsService.retryDlqItem(id);
     if (!reintento) {
-      return { status: 'NOT_FOUND', mensaje: `Notificación ${id} no encontrada en DLQ` };
+      return { status: 'NOT_FOUND', mensaje: `Notification ${id} not found in DLQ` };
     }
     return { status: 'RETRY_SUCCESS', notificacion: reintento };
   }

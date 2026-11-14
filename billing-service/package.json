@@ -1,7 +1,7 @@
 {
   "name": "billing-service",
   "version": "1.0.0",
-  "description": "Microservicio Autónomo de Caja, Facturación y Copagos (NestJS 12 + PostgreSQL 18 + Kafka 8.3.2)",
+  "description": "Autonomous Cashier, Billing, and Copayments Microservice (NestJS 12 + PostgreSQL 18 + Kafka 8.3.2)",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

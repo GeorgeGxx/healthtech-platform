@@ -1,7 +1,7 @@
 {
   "realm": "healthtech-realm",
   "enabled": true,
-  "displayName": "Centro Médico Nacional HealthTech",
+  "displayName": "National Medical Center HealthTech",
   "sslRequired": "external",
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
@@ -12,23 +12,23 @@
     "realm": [
       {
         "name": "admin_user",
-        "description": "Administrador General del Hospital con acceso total y panel de gestión"
+        "description": "General Hospital Administrator with full access and management dashboard"
       },
       {
         "name": "basic_user",
-        "description": "Usuario paciente con acceso exclusivo a sus datos, citas y expediente clínico"
+        "description": "Patient user with exclusive access to their own data, appointments, and clinical record"
       },
       {
         "name": "doctor_user",
-        "description": "Médico Adscrito con permisos sobre Expediente Clínico (EHR) y Prescripciones"
+        "description": "Attending Physician with permissions over Electronic Health Records (EHR) and Prescriptions"
       },
       {
         "name": "nurse_user",
-        "description": "Personal de Enfermería con permisos sobre Censo de Camas y Signos Vitales"
+        "description": "Nursing Staff with permissions over Bed Census and Vital Signs"
       },
       {
         "name": "receptionist_user",
-        "description": "Recepcionista y Coordinador de Citas Médicas y Cobranza"
+        "description": "Receptionist and Medical Appointments & Billing Coordinator"
       }
     ]
   },

@@ -1,8 +1,8 @@
 // scripts/seed-elasticsearch-kibana.mjs
-// Aprovisionamiento integral de los 3 Pilares de Observabilidad en Kibana 9.5.5
-// Pilar 1: Seguridad & Auditoría HIPAA (NOM-024)
-// Pilar 2: Inteligencia Hospitalaria & Finanzas
-// Pilar 3: Salud del Sistema & Telemetría SRE / APM
+// Comprehensive provisioning of the 3 Observability Pillars in Kibana 9.5.5
+// Pillar 1: Security & HIPAA Audit (NOM-024)
+// Pillar 2: Hospital Intelligence & Finance
+// Pillar 3: System Health & SRE / APM Telemetry
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,29 +20,29 @@ const KBN_HEADERS = {
 };
 
 async function main() {
-  console.log('🚀 Iniciando aprovisionamiento integral de los 3 Pilares en Elasticsearch y Kibana 9.5.5...');
+  console.log('🚀 Starting comprehensive provisioning of the 3 Pillars in Elasticsearch and Kibana 9.5.5...');
 
-  // 1. Verificar estado de ES y Kibana
+  // 1. Check ES and Kibana status
   try {
     const esRes = await fetch(ES_URL);
     const esData = await esRes.json();
-    console.log(`✅ Elasticsearch v${esData.version.number} conectado.`);
+    console.log(`✅ Elasticsearch v${esData.version.number} connected.`);
   } catch (err) {
-    console.error('❌ Error conectando a Elasticsearch:', err.message);
+    console.error('❌ Error connecting to Elasticsearch:', err.message);
     process.exit(1);
   }
 
   try {
     const kbnRes = await fetch(`${KBN_URL}/api/status`);
     const kbnData = await kbnRes.json();
-    console.log(`✅ Kibana conectado. Nivel de estado: ${kbnData.status.overall.level}`);
+    console.log(`✅ Kibana connected. Status level: ${kbnData.status.overall.level}`);
   } catch (err) {
-    console.error('❌ Error conectando a Kibana:', err.message);
+    console.error('❌ Error connecting to Kibana:', err.message);
     process.exit(1);
   }
 
-  // 2. Mapeos de Índices en Elasticsearch
-  console.log('\n📦 Creando y configurando los 5 índices en Elasticsearch...');
+  // 2. Elasticsearch Index Mappings
+  console.log('\n📦 Creating and configuring the 5 indices in Elasticsearch...');
 
   const pharmacyIndex = 'healthtech-pharmacy-stock';
   await fetch(`${ES_URL}/${pharmacyIndex}`, { method: 'DELETE' });
@@ -72,7 +72,7 @@ async function main() {
       },
     }),
   });
-  console.log(`  ✓ Índice ${pharmacyIndex} creado`);
+  console.log(`  ✓ Index ${pharmacyIndex} created`);
 
   const bedsIndex = 'healthtech-beds-census';
   await fetch(`${ES_URL}/${bedsIndex}`, { method: 'DELETE' });
@@ -99,7 +99,7 @@ async function main() {
       },
     }),
   });
-  console.log(`  ✓ Índice ${bedsIndex} creado`);
+  console.log(`  ✓ Index ${bedsIndex} created`);
 
   const opsIndex = 'healthtech-clinical-operations';
   await fetch(`${ES_URL}/${opsIndex}`, { method: 'DELETE' });
@@ -132,9 +132,9 @@ async function main() {
       },
     }),
   });
-  console.log(`  ✓ Índice ${opsIndex} creado`);
+  console.log(`  ✓ Index ${opsIndex} created`);
 
-  // Índice Pilar 1: Seguridad & Auditoría HIPAA
+  // Pillar 1 Index: Security & HIPAA Audit
   const auditIndex = 'healthtech-security-audit';
   await fetch(`${ES_URL}/${auditIndex}`, { method: 'DELETE' });
   await fetch(`${ES_URL}/${auditIndex}`, {
@@ -160,9 +160,9 @@ async function main() {
       },
     }),
   });
-  console.log(`  ✓ Índice ${auditIndex} (Pilar 1: Auditoría HIPAA) creado`);
+  console.log(`  ✓ Index ${auditIndex} (Pillar 1: HIPAA Audit) created`);
 
-  // Índice Pilar 3: Salud del Sistema & Telemetría SRE
+  // Pillar 3 Index: System Health & SRE Telemetry
   const telemetryIndex = 'healthtech-telemetry-metrics';
   await fetch(`${ES_URL}/${telemetryIndex}`, { method: 'DELETE' });
   await fetch(`${ES_URL}/${telemetryIndex}`, {
@@ -191,18 +191,18 @@ async function main() {
       },
     }),
   });
-  console.log(`  ✓ Índice ${telemetryIndex} (Pilar 3: Telemetría SRE) creado`);
+  console.log(`  ✓ Index ${telemetryIndex} (Pillar 3: SRE Telemetry) created`);
 
   const now = new Date().toISOString();
 
-  // 3. Poblar Medicamentos desde la Base de Datos PostgreSQL
-  console.log('\n💊 Indexando catálogo de fármacos y existencias desde PostgreSQL...');
+  // 3. Seed Medications from PostgreSQL Database
+  console.log('\n💊 Indexing medication catalog and stock from PostgreSQL...');
   let medData = [];
   try {
     const res = await fetch('http://localhost/api/pharmacy');
     if (res.ok) medData = await res.json();
   } catch (err) {
-    console.warn('  ⚠️ Fallback en fármacos:', err.message);
+    console.warn('  ⚠️ Medication fallback:', err.message);
   }
 
   if (!medData || medData.length === 0) {
@@ -259,16 +259,16 @@ async function main() {
     headers: { 'Content-Type': 'application/x-ndjson' },
     body: bulkMed,
   });
-  console.log(`  ✓ ${medData.length} medicamentos indexados en ${pharmacyIndex}`);
+  console.log(`  ✓ ${medData.length} medications indexed in ${pharmacyIndex}`);
 
-  // 4. Poblar Censo de Camas Hospitalarias desde PostgreSQL
-  console.log('\n🛏️ Sincronizando censo de camas desde PostgreSQL...');
+  // 4. Seed Hospital Bed Census from PostgreSQL
+  console.log('\n🛏️ Syncing bed census from PostgreSQL...');
   let censusData = [];
   try {
     const res = await fetch('http://localhost/api/hospitalizations/bed-census');
     if (res.ok) censusData = await res.json();
   } catch (err) {
-    console.warn('  ⚠️ Fallback en camas:', err.message);
+    console.warn('  ⚠️ Bed census fallback:', err.message);
   }
 
   if (!censusData || censusData.length === 0) {
@@ -318,16 +318,16 @@ async function main() {
     headers: { 'Content-Type': 'application/x-ndjson' },
     body: bulkBeds,
   });
-  console.log(`  ✓ ${censusData.length} camas sincronizadas en ${bedsIndex}`);
+  console.log(`  ✓ ${censusData.length} beds synced in ${bedsIndex}`);
 
-  // 5. Poblar Operaciones Clínicas y Facturación desde PostgreSQL
-  console.log('\n📊 Sincronizando operaciones clínicas y facturación desde PostgreSQL...');
+  // 5. Seed Clinical Operations and Billing from PostgreSQL
+  console.log('\n📊 Syncing clinical operations and billing from PostgreSQL...');
   let billingData = [];
   try {
     const billRes = await fetch('http://localhost/api/billing');
     if (billRes.ok) billingData = await billRes.json();
   } catch (err) {
-    console.warn('  ⚠️ Fallback en billing:', err.message);
+    console.warn('  ⚠️ Billing fallback:', err.message);
   }
 
   const helperAseguradora = (afiliado, metodoPago) => {
@@ -389,11 +389,11 @@ async function main() {
       headers: { 'Content-Type': 'application/x-ndjson' },
       body: bulkOps,
     });
-    console.log(`  ✓ ${billingData.length} pagos reales de PostgreSQL indexados en ${opsIndex}`);
+    console.log(`  ✓ ${billingData.length} real PostgreSQL payments indexed in ${opsIndex}`);
   }
 
-  // 6. Poblar Auditoría de Seguridad HIPAA (Pilar 1)
-  console.log('\n🛡️ Indexando bitácora de seguridad y auditoría HIPAA desde PostgreSQL y estándares NOM-024 / HIPAA...');
+  // 6. Seed HIPAA Security Audit (Pillar 1)
+  console.log('\n🛡️ Indexing HIPAA security & audit log from PostgreSQL and NOM-024 / HIPAA standards...');
   let auditData = [];
   try {
     const auditRes = await fetch('http://localhost/api/audit?limit=100', {
@@ -401,13 +401,13 @@ async function main() {
     });
     if (auditRes.ok) auditData = await auditRes.json();
   } catch (err) {
-    console.warn('  ⚠️ Error consultando API de auditoría:', err.message);
+    console.warn('  ⚠️ Error querying audit API:', err.message);
   }
 
   let bulkAudit = '';
   let auditCounter = 1;
 
-  // Indexar eventos reales de PostgreSQL
+  // Index real PostgreSQL events
   for (const a of auditData) {
     const estado = a.accion.includes('FALLIDO') ? 'FALLIDO' : a.accion.includes('BLOQUEADO') ? 'BLOQUEADO' : 'EXITOSO';
     bulkAudit += JSON.stringify({ index: { _index: auditIndex, _id: `AUDIT-REAL-${a.idAuditoria}` } }) + '\n';
@@ -429,7 +429,7 @@ async function main() {
     auditCounter++;
   }
 
-  // Generar eventos exhaustivos de cumplimiento HIPAA / NOM-024 continuos (últimos 15 min y últimas 24h)
+  // Generate continuous comprehensive HIPAA / NOM-024 compliance events (last 15 min & last 24h)
   const auditUsers = [
     { id: 'usr-doc-01', name: 'Dr. Alberto Arévalo', role: 'doctor_user', ip: '192.168.10.45' },
     { id: 'usr-doc-02', name: 'Dra. Laura Gómez', role: 'doctor_user', ip: '192.168.10.46' },
@@ -451,9 +451,9 @@ async function main() {
   ];
 
   const deltasMinutes = [
-    1, 2, 3, 5, 7, 9, 11, 13, 15, // Granularidad alta en los últimos 15 min
-    20, 25, 30, 45, 60, 90, 120, // Últimas 2 horas
-    180, 240, 360, 480, 600, 720, 960, 1200, 1440 // Últimas 24 horas
+    1, 2, 3, 5, 7, 9, 11, 13, 15, // High granularity in the last 15 min
+    20, 25, 30, 45, 60, 90, 120, // Last 2 hours
+    180, 240, 360, 480, 600, 720, 960, 1200, 1440 // Last 24 hours
   ];
 
   for (const m of deltasMinutes) {
@@ -489,11 +489,11 @@ async function main() {
       headers: { 'Content-Type': 'application/x-ndjson' },
       body: bulkAudit,
     });
-    console.log(`  ✓ ${auditCounter} eventos de auditoría HIPAA indexados en ${auditIndex}`);
+    console.log(`  ✓ ${auditCounter} HIPAA audit events indexed in ${auditIndex}`);
   }
 
-  // 7. Poblar Métricas de Telemetría SRE / APM (Pilar 3)
-  console.log('\n⚙️ Generando telemetría de rendimiento y salud de microservicios (SRE / APM)...');
+  // 7. Seed SRE / APM Telemetry Metrics (Pillar 3)
+  console.log('\n⚙️ Generating microservice performance and health telemetry (SRE / APM)...');
   const servicesList = [
     { name: 'appointment-service', port: 3001, type: 'NestJS Microservice', baseLat: 12.5, rpm: 180, cpu: 11.2, mem: 145 },
     { name: 'patient-service', port: 3002, type: 'NestJS Microservice', baseLat: 10.4, rpm: 160, cpu: 9.8, mem: 138 },
@@ -563,7 +563,7 @@ async function main() {
       }) + '\n';
     }
 
-    // Registrar estado de salud de cada microservicio en cada intervalo
+    // Record health status of each microservice at each interval
     for (const s of servicesList) {
       const sLat = Math.max(0.4, Math.round((s.baseLat + (Math.random() - 0.5) * 2) * 10) / 10);
       bulkTelemetry += JSON.stringify({ index: { _index: telemetryIndex, _id: `SVC-${s.name}-${m}` } }) + '\n';
@@ -588,12 +588,12 @@ async function main() {
     headers: { 'Content-Type': 'application/x-ndjson' },
     body: bulkTelemetry,
   });
-  console.log(`  ✓ ${telId} registros de telemetría y salud de microservicios indexados en ${telemetryIndex}`);
+  console.log(`  ✓ ${telId} microservice telemetry and health records indexed in ${telemetryIndex}`);
 
   await fetch(`${ES_URL}/${pharmacyIndex},${bedsIndex},${opsIndex},${auditIndex},${telemetryIndex}/_refresh`, { method: 'POST' });
 
-  // 8. Configurar Data Views en Kibana
-  console.log('\n👁️ Registrando Data Views deterministas en Kibana...');
+  // 8. Configure Data Views in Kibana
+  console.log('\n👁️ Registering deterministic Data Views in Kibana...');
   const pharmacyDvId = 'healthtech-pharmacy-dv';
   const bedsDvId = 'healthtech-beds-dv';
   const opsDvId = 'healthtech-ops-dv';
@@ -601,11 +601,11 @@ async function main() {
   const telemetryDvId = 'healthtech-telemetry-dv';
 
   const dataViews = [
-    { id: pharmacyDvId, title: 'healthtech-pharmacy-stock*', name: 'Farmacia - Stock y Alertas de Medicamentos' },
-    { id: bedsDvId, title: 'healthtech-beds-census*', name: 'Censo de Camas y Ocupación Hospitalaria' },
-    { id: opsDvId, title: 'healthtech-clinical-operations*', name: 'Operaciones Clínicas y Consultas' },
-    { id: auditDvId, title: 'healthtech-security-audit*', name: 'Seguridad y Auditoría HIPAA (NOM-024)', timeFieldName: '@timestamp' },
-    { id: telemetryDvId, title: 'healthtech-telemetry-metrics*', name: 'Salud de Plataforma SRE y APM', timeFieldName: '@timestamp' },
+    { id: pharmacyDvId, title: 'healthtech-pharmacy-stock*', name: 'Pharmacy - Stock & Medication Alerts' },
+    { id: bedsDvId, title: 'healthtech-beds-census*', name: 'Bed Census & Hospital Occupancy' },
+    { id: opsDvId, title: 'healthtech-clinical-operations*', name: 'Clinical Operations & Consultations' },
+    { id: auditDvId, title: 'healthtech-security-audit*', name: 'Security & HIPAA Audit (NOM-024)', timeFieldName: '@timestamp' },
+    { id: telemetryDvId, title: 'healthtech-telemetry-metrics*', name: 'SRE Platform Health & APM', timeFieldName: '@timestamp' },
   ];
 
   for (const dv of dataViews) {
@@ -620,23 +620,23 @@ async function main() {
         },
       }),
     });
-    console.log(`  ✓ Data View "${dv.name}" registrado (${dv.id})`);
+    console.log(`  ✓ Data View "${dv.name}" registered (${dv.id})`);
   }
 
-  // 9. Crear Visualizaciones Oficiales
-  console.log('\n🎨 Creando Visualizaciones Oficiales de los 3 Pilares...');
+  // 9. Create Official Visualizations
+  console.log('\n🎨 Creating Official Visualizations for the 3 Pillars...');
 
-  // --- PILAR 1: Dashboard Negocio (Camas, Farmacia & Facturación) ---
+  // --- PILLAR 1: Business Dashboard (Beds, Pharmacy & Billing) ---
   const visHeaderOps = {
     attributes: {
-      title: 'Banner - Dashboard Negocio (Camas, Farmacia & Facturación)',
+      title: 'Banner - Business Dashboard (Beds, Pharmacy & Billing)',
       visState: JSON.stringify({
-        title: 'Banner - Dashboard Negocio',
+        title: 'Banner - Business Dashboard',
         type: 'markdown',
         params: {
           markdown:
-            '# 🏥 Centro Médico • Dashboard Negocio: Camas, Farmacia & Facturación\n' +
-            '> **Navegación Unificada**: [🛡️ Ir a Dashboard Tech (Salud del Sistema, SRE / APM, Seguridad & Auditoría HIPAA)](#/view/tech-sre-security-dashboard) &bull; **Filtros Dinámicos e Inteligencia Hospitalaria en Tiempo Real**',
+            '# 🏥 Medical Center • Business Dashboard: Beds, Pharmacy & Billing\n' +
+            '> **Unified Navigation**: [🛡️ Go to Tech Dashboard (System Health, SRE / APM, Security & HIPAA Audit)](#/view/tech-sre-security-dashboard) &bull; **Dynamic Filters & Real-Time Hospital Intelligence**',
         },
       }),
       uiStateJSON: '{}',
@@ -648,16 +648,16 @@ async function main() {
 
   const visControls = {
     attributes: {
-      title: 'Filtros Dinámicos - Piso, Alerta y Categoría',
+      title: 'Dynamic Filters - Floor, Alert & Category',
       uiStateJSON: '{}',
       visState: JSON.stringify({
-        title: 'Filtros Dinámicos del Hospital',
+        title: 'Dynamic Hospital Filters',
         type: 'input_control_vis',
         params: {
           controls: [
-            { id: 'ctrl-piso', fieldName: 'piso', label: '🏢 Filtrar por Piso Hospitalario', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 5 }, indexPatternRefName: 'ctrl_piso_dv' },
-            { id: 'ctrl-alerta', fieldName: 'nivel_alerta', label: '🚨 Nivel de Alerta de Fármacos', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 5 }, indexPatternRefName: 'ctrl_alerta_dv' },
-            { id: 'ctrl-cat', fieldName: 'categoria_terapeutica', label: '💊 Categoría Terapéutica', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 10 }, indexPatternRefName: 'ctrl_cat_dv' },
+            { id: 'ctrl-piso', fieldName: 'piso', label: '🏢 Filter by Hospital Floor', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 5 }, indexPatternRefName: 'ctrl_piso_dv' },
+            { id: 'ctrl-alerta', fieldName: 'nivel_alerta', label: '🚨 Medication Alert Level', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 5 }, indexPatternRefName: 'ctrl_alerta_dv' },
+            { id: 'ctrl-cat', fieldName: 'categoria_terapeutica', label: '💊 Therapeutic Category', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 10 }, indexPatternRefName: 'ctrl_cat_dv' },
           ],
           updateFiltersOnChange: true,
           useTimeFilter: false,
@@ -674,15 +674,15 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-controls-filter?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visControls) });
 
-  // KPIs de Camas y Farmacia
+  // Bed and Pharmacy KPIs
   const visMetricBedsFree = {
     attributes: {
-      title: 'KPI Dinámico - Camas Libres',
+      title: 'Dynamic KPI - Available Beds',
       visState: JSON.stringify({
-        title: 'Camas Libres',
+        title: 'Available Beds',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Disponibles para asignación inmediata', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🟢 Camas Libres' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Available for immediate assignment', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🟢 Available Beds' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estado: "Disponible"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -692,12 +692,12 @@ async function main() {
 
   const visMetricBedsOcc = {
     attributes: {
-      title: 'KPI Dinámico - Camas Ocupadas',
+      title: 'Dynamic KPI - Occupied Beds',
       visState: JSON.stringify({
-        title: 'Camas Ocupadas',
+        title: 'Occupied Beds',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Pacientes en internación activa', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🔴 Camas Ocupadas' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Patients actively hospitalized', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🔴 Occupied Beds' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estado: "Ocupada"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -707,12 +707,12 @@ async function main() {
 
   const visMetricPharmCrit = {
     attributes: {
-      title: 'KPI Dinámico - Fármacos en Alerta Crítica',
+      title: 'Dynamic KPI - Critical Alert Medications',
       visState: JSON.stringify({
-        title: 'Alerta Crítica',
+        title: 'Critical Alert',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Líneas que requieren reposición urgente', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🚨 Fármacos Críticos' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Lines requiring urgent restocking', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🚨 Critical Medications' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'nivel_alerta: "Crítico" or nivel_alerta: "CRITICO"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -722,12 +722,12 @@ async function main() {
 
   const visMetricPharmStock = {
     attributes: {
-      title: 'KPI Dinámico - Total Stock Fármacos',
+      title: 'Dynamic KPI - Total Medication Stock',
       visState: JSON.stringify({
-        title: 'Total Unidades Stock',
+        title: 'Total Stock Units',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Unidades en almacenes hospitalarios', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'stock_actual', customLabel: '📦 Unidades en Almacén' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Units in hospital warehouses', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'stock_actual', customLabel: '📦 Units in Warehouse' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -737,12 +737,12 @@ async function main() {
 
   const visMetricRevenue = {
     attributes: {
-      title: 'KPI Dinámico - Facturación Clínica MXN',
+      title: 'Dynamic KPI - Clinical Billing MXN',
       visState: JSON.stringify({
-        title: 'Facturación Hospitalaria',
+        title: 'Hospital Billing',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Recaudación total según tabla pago de PostgreSQL', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'monto_total_mxn', customLabel: '💵 Recaudación Total (MXN)' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Total revenue per PostgreSQL pago table', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'monto_total_mxn', customLabel: '💵 Total Revenue (MXN)' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -750,17 +750,17 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-revenue?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visMetricRevenue) });
 
-  // Visualización Gráfica: Recaudación por Obra Social / Aseguradora
+  // Chart Visualization: Revenue by Insurer
   const visRevenueByInsurer = {
     attributes: {
-      title: 'Gráfica de Dona - Recaudación por Aseguradora / Obra Social',
+      title: 'Donut Chart - Revenue by Insurer / Health Plan',
       visState: JSON.stringify({
-        title: 'Recaudación por Aseguradora (MXN)',
+        title: 'Revenue by Insurer (MXN)',
         type: 'pie',
         params: { type: 'pie', addTooltip: true, addLegend: true, legendPosition: 'right', isDonut: true },
         aggs: [
-          { id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'monto_total_mxn', customLabel: 'Total Facturado (MXN)' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'aseguradora', size: 10, order: 'desc', orderBy: '1', customLabel: 'Aseguradora / Obra Social' } },
+          { id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'monto_total_mxn', customLabel: 'Total Billed (MXN)' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'aseguradora', size: 10, order: 'desc', orderBy: '1', customLabel: 'Insurer / Health Plan' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -769,15 +769,15 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-pie-revenue-by-insurer?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visRevenueByInsurer) });
 
-  // KPI Dinámico: Honorarios Médicos Netos (80%)
+  // Dynamic KPI: Net Physician Fees (80%)
   const visMetricDoctorPayout = {
     attributes: {
-      title: 'KPI Dinámico - Honorarios Médicos Netos Acumulados',
+      title: 'Dynamic KPI - Accumulated Net Physician Fees',
       visState: JSON.stringify({
-        title: 'Honorarios Médicos (80%)',
+        title: 'Physician Fees (80%)',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Honorarios a liquidar según balance médico', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'honorario_medico_mxn', customLabel: '👨‍⚕️ Honorarios Médicos (MXN)' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Fees payable per medical balance', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'honorario_medico_mxn', customLabel: '👨‍⚕️ Physician Fees (MXN)' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -785,15 +785,15 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-doctor-payout?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visMetricDoctorPayout) });
 
-  // KPI Dinámico: Margen Retención Clínica 20%
+  // Dynamic KPI: Clinic Retention Margin 20%
   const visMetricClinicMargin = {
     attributes: {
-      title: 'KPI Dinámico - Margen Retención Clínica 20%',
+      title: 'Dynamic KPI - Clinic Retention Margin 20%',
       visState: JSON.stringify({
-        title: 'Margen Centro Médico (20%)',
+        title: 'Medical Center Margin (20%)',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Comisión del 20% para operación hospitalaria', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'comision_clinica_mxn', customLabel: '🏥 Margen Clínica (MXN)' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: '20% commission for hospital operations', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'comision_clinica_mxn', customLabel: '🏥 Clinic Margin (MXN)' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -801,17 +801,17 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-metric-clinic-margin?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visMetricClinicMargin) });
 
-  // Gráfica de Dona: Modalidad Telemedicina WebRTC vs Consulta Presencial
+  // Donut Chart: WebRTC Telemedicine vs In-Person Consultation Modality
   const visPieModality = {
     attributes: {
-      title: 'Gráfica de Dona - Modalidad de Consulta: Telemedicina WebRTC vs Presencial',
+      title: 'Donut Chart - Consultation Modality: WebRTC Telemedicine vs In-Person',
       visState: JSON.stringify({
-        title: 'Modalidad de Consulta',
+        title: 'Consultation Modality',
         type: 'pie',
         params: { type: 'pie', addTooltip: true, addLegend: true, legendPosition: 'right', isDonut: true },
         aggs: [
-          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Total Consultas' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'modalidad', size: 5, order: 'desc', orderBy: '1', customLabel: 'Modalidad Asistencial' } },
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Total Consultations' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'modalidad', size: 5, order: 'desc', orderBy: '1', customLabel: 'Care Modality' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -820,27 +820,27 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-pie-modality?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visPieModality) });
 
-  // Gráfica de Barras Stock Actual vs Mínimo
+  // Bar Chart: Current vs Minimum Stock
   const visBarStock = {
     attributes: {
-      title: 'Gráfica de Barras - Stock Actual vs Mínimo por Fármaco',
+      title: 'Bar Chart - Current vs Minimum Stock by Medication',
       visState: JSON.stringify({
-        title: 'Comparativa de Existencias: Stock Actual vs Mínimo',
+        title: 'Inventory Comparison: Current vs Minimum Stock',
         type: 'horizontal_bar',
         params: {
           type: 'histogram', grid: { categoryLines: false },
           categoryAxes: [{ id: 'CategoryAxis-1', type: 'category', position: 'left', show: true, scale: { type: 'linear' }, labels: { show: true, truncate: 100 }, title: {} }],
-          valueAxes: [{ id: 'ValueAxis-1', name: 'LeftAxis-1', type: 'value', position: 'bottom', show: true, scale: { type: 'linear', mode: 'normal' }, labels: { show: true, rotate: 0, filter: false, truncate: 100 }, title: { text: 'Unidades de Medicamento' } }],
+          valueAxes: [{ id: 'ValueAxis-1', name: 'LeftAxis-1', type: 'value', position: 'bottom', show: true, scale: { type: 'linear', mode: 'normal' }, labels: { show: true, rotate: 0, filter: false, truncate: 100 }, title: { text: 'Medication Units' } }],
           seriesParams: [
-            { show: true, type: 'histogram', mode: 'normal', data: { label: 'Stock Actual', id: '1' }, valueAxis: 'ValueAxis-1', drawLinesBetweenPoints: true, showCircles: true },
-            { show: true, type: 'histogram', mode: 'normal', data: { label: 'Stock Mínimo Requerido', id: '2' }, valueAxis: 'ValueAxis-1', drawLinesBetweenPoints: true, showCircles: true },
+            { show: true, type: 'histogram', mode: 'normal', data: { label: 'Current Stock', id: '1' }, valueAxis: 'ValueAxis-1', drawLinesBetweenPoints: true, showCircles: true },
+            { show: true, type: 'histogram', mode: 'normal', data: { label: 'Required Minimum Stock', id: '2' }, valueAxis: 'ValueAxis-1', drawLinesBetweenPoints: true, showCircles: true },
           ],
           addTooltip: true, addLegend: true, legendPosition: 'top',
         },
         aggs: [
-          { id: '1', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_actual', customLabel: 'Stock Actual' } },
-          { id: '2', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_minimo', customLabel: 'Stock Mínimo Requerido' } },
-          { id: '3', enabled: true, type: 'terms', schema: 'segment', params: { field: 'nombre_comercial.keyword', size: 15, order: 'asc', orderBy: '1', customLabel: 'Medicamento' } },
+          { id: '1', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_actual', customLabel: 'Current Stock' } },
+          { id: '2', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_minimo', customLabel: 'Required Minimum Stock' } },
+          { id: '3', enabled: true, type: 'terms', schema: 'segment', params: { field: 'nombre_comercial.keyword', size: 15, order: 'asc', orderBy: '1', customLabel: 'Medication' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -851,21 +851,21 @@ async function main() {
 
   const visBarBeds = {
     attributes: {
-      title: 'Gráfica de Barras Apiladas - Camas por Piso y Estado',
+      title: 'Stacked Bar Chart - Beds by Floor and Status',
       visState: JSON.stringify({
-        title: 'Camas por Piso y Estado de Ocupación',
+        title: 'Beds by Floor and Occupancy Status',
         type: 'histogram',
         params: {
           type: 'histogram', grid: { categoryLines: false },
           categoryAxes: [{ id: 'CategoryAxis-1', type: 'category', position: 'bottom', show: true, scale: { type: 'linear' }, labels: { show: true, truncate: 100 }, title: {} }],
-          valueAxes: [{ id: 'ValueAxis-1', name: 'LeftAxis-1', type: 'value', position: 'left', show: true, scale: { type: 'linear', mode: 'normal' }, labels: { show: true, rotate: 0, filter: false, truncate: 100 }, title: { text: 'Cantidad de Camas' } }],
-          seriesParams: [{ show: true, type: 'histogram', mode: 'stacked', data: { label: 'Cantidad de Camas', id: '1' }, valueAxis: 'ValueAxis-1', drawLinesBetweenPoints: true, showCircles: true }],
+          valueAxes: [{ id: 'ValueAxis-1', name: 'LeftAxis-1', type: 'value', position: 'left', show: true, scale: { type: 'linear', mode: 'normal' }, labels: { show: true, rotate: 0, filter: false, truncate: 100 }, title: { text: 'Bed Count' } }],
+          seriesParams: [{ show: true, type: 'histogram', mode: 'stacked', data: { label: 'Bed Count', id: '1' }, valueAxis: 'ValueAxis-1', drawLinesBetweenPoints: true, showCircles: true }],
           addTooltip: true, addLegend: true, legendPosition: 'right',
         },
         aggs: [
-          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Cantidad de Camas' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'piso', size: 5, order: 'asc', orderBy: '_key', customLabel: 'Piso Hospitalario' } },
-          { id: '3', enabled: true, type: 'terms', schema: 'group', params: { field: 'estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Estado' } },
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Bed Count' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'piso', size: 5, order: 'asc', orderBy: '_key', customLabel: 'Hospital Floor' } },
+          { id: '3', enabled: true, type: 'terms', schema: 'group', params: { field: 'estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Status' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -876,14 +876,14 @@ async function main() {
 
   const visBedsDonut = {
     attributes: {
-      title: 'Gráfica de Dona - Censo de Camas por Estado',
+      title: 'Donut Chart - Bed Census by Status',
       visState: JSON.stringify({
-        title: 'Proporción de Camas por Estado',
+        title: 'Bed Proportion by Status',
         type: 'pie',
         params: { type: 'pie', addTooltip: true, addLegend: true, legendPosition: 'right', isDonut: true },
         aggs: [
-          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Número de Camas' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Estado de Ocupación' } },
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Number of Beds' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Occupancy Status' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -894,14 +894,14 @@ async function main() {
 
   const visPharmacyPie = {
     attributes: {
-      title: 'Gráfica de Dona - Stock por Categoría Terapéutica',
+      title: 'Donut Chart - Stock by Therapeutic Category',
       visState: JSON.stringify({
-        title: 'Stock por Categoría Terapéutica',
+        title: 'Stock by Therapeutic Category',
         type: 'pie',
         params: { type: 'pie', addTooltip: true, addLegend: true, legendPosition: 'right', isDonut: true },
         aggs: [
-          { id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'stock_actual', customLabel: 'Total Unidades Stock' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'categoria_terapeutica', size: 10, order: 'desc', orderBy: '1', customLabel: 'Categoría Terapéutica' } },
+          { id: '1', enabled: true, type: 'sum', schema: 'metric', params: { field: 'stock_actual', customLabel: 'Total Stock Units' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'categoria_terapeutica', size: 10, order: 'desc', orderBy: '1', customLabel: 'Therapeutic Category' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -912,19 +912,19 @@ async function main() {
 
   const visPharmacyTable = {
     attributes: {
-      title: 'Tabla Dinámica - Inventario de Fármacos y Semáforo de Alertas',
+      title: 'Dynamic Table - Medication Inventory & Alert Traffic Light',
       visState: JSON.stringify({
-        title: 'Inventario Dinámico de Medicamentos',
+        title: 'Dynamic Medication Inventory',
         type: 'table',
         params: { perPage: 10, showPartialRows: false, showMetricsAtAllLevels: false, showTotal: true, totalFunc: 'sum' },
         aggs: [
-          { id: '1', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_actual', customLabel: 'Stock Actual' } },
-          { id: '2', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_minimo', customLabel: 'Stock Mínimo' } },
-          { id: '3', enabled: true, type: 'avg', schema: 'metric', params: { field: 'precio_unitario_mxn', customLabel: 'Precio Unitario (MXN)' } },
-          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'nombre_comercial.keyword', size: 25, order: 'asc', orderBy: '1', customLabel: 'Medicamento' } },
-          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'categoria_terapeutica', size: 10, order: 'desc', orderBy: '1', customLabel: 'Categoría Terapéutica' } },
-          { id: '6', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'nivel_alerta', size: 5, order: 'desc', orderBy: '1', customLabel: 'Semáforo Alerta' } },
-          { id: '7', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'ubicacion_almacen', size: 5, order: 'desc', orderBy: '1', customLabel: 'Ubicación Almacén' } },
+          { id: '1', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_actual', customLabel: 'Current Stock' } },
+          { id: '2', enabled: true, type: 'max', schema: 'metric', params: { field: 'stock_minimo', customLabel: 'Minimum Stock' } },
+          { id: '3', enabled: true, type: 'avg', schema: 'metric', params: { field: 'precio_unitario_mxn', customLabel: 'Unit Price (MXN)' } },
+          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'nombre_comercial.keyword', size: 25, order: 'asc', orderBy: '1', customLabel: 'Medication' } },
+          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'categoria_terapeutica', size: 10, order: 'desc', orderBy: '1', customLabel: 'Therapeutic Category' } },
+          { id: '6', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'nivel_alerta', size: 5, order: 'desc', orderBy: '1', customLabel: 'Alert Level' } },
+          { id: '7', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'ubicacion_almacen', size: 5, order: 'desc', orderBy: '1', customLabel: 'Warehouse Location' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -935,20 +935,20 @@ async function main() {
 
   const visBedsTable = {
     attributes: {
-      title: 'Tabla Dinámica - Censo Hospitalario de Camas en Tiempo Real',
+      title: 'Dynamic Table - Real-Time Hospital Bed Census',
       visState: JSON.stringify({
-        title: 'Censo de Camas Hospitalarias',
+        title: 'Hospital Bed Census',
         type: 'table',
         params: { perPage: 10, showPartialRows: false, showMetricsAtAllLevels: false, showTotal: false, totalFunc: 'sum' },
         aggs: [
-          { id: '1', enabled: true, type: 'max', schema: 'metric', params: { field: 'tarifa_noche_mxn', customLabel: 'Tarifa Noche (MXN)' } },
-          { id: '2', enabled: true, type: 'max', schema: 'metric', params: { field: 'dias_estancia', customLabel: 'Días Estancia' } },
-          { id: '3', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'numero', size: 25, order: 'asc', orderBy: '_key', customLabel: 'Habitación' } },
-          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'piso', size: 5, order: 'asc', orderBy: '_key', customLabel: 'Piso' } },
-          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'tipo', size: 10, order: 'desc', orderBy: '1', customLabel: 'Tipo de Unidad' } },
-          { id: '6', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Estado' } },
-          { id: '7', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'paciente_nombre.keyword', size: 25, order: 'desc', orderBy: '1', missingBucket: true, missingBucketLabel: '🟢 [Cama Libre]', customLabel: 'Paciente Asignado' } },
-          { id: '8', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'medico_responsable', size: 25, order: 'desc', orderBy: '1', missingBucket: true, missingBucketLabel: '🟢 [Médico de Guardia]', customLabel: 'Médico Responsable' } },
+          { id: '1', enabled: true, type: 'max', schema: 'metric', params: { field: 'tarifa_noche_mxn', customLabel: 'Nightly Rate (MXN)' } },
+          { id: '2', enabled: true, type: 'max', schema: 'metric', params: { field: 'dias_estancia', customLabel: 'Days of Stay' } },
+          { id: '3', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'numero', size: 25, order: 'asc', orderBy: '_key', customLabel: 'Room' } },
+          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'piso', size: 5, order: 'asc', orderBy: '_key', customLabel: 'Floor' } },
+          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'tipo', size: 10, order: 'desc', orderBy: '1', customLabel: 'Unit Type' } },
+          { id: '6', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'estado', size: 5, order: 'desc', orderBy: '1', customLabel: 'Status' } },
+          { id: '7', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'paciente_nombre.keyword', size: 25, order: 'desc', orderBy: '1', missingBucket: true, missingBucketLabel: '🟢 [Available Bed]', customLabel: 'Assigned Patient' } },
+          { id: '8', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'medico_responsable', size: 25, order: 'desc', orderBy: '1', missingBucket: true, missingBucketLabel: '🟢 [Attending Physician]', customLabel: 'Attending Physician' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -957,17 +957,17 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-table-beds-dynamic?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visBedsTable) });
 
-  // --- PILAR 2: Visualizaciones de Dashboard Tech (SRE / APM, Seguridad & Auditoría HIPAA) ---
+  // --- PILLAR 2: Tech Dashboard Visualizations (SRE / APM, Security & HIPAA Audit) ---
   const visHeaderTech = {
     attributes: {
-      title: 'Banner - Dashboard Tech (SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA)',
+      title: 'Banner - Tech Dashboard (SRE / APM, System Health, Security & HIPAA Audit)',
       visState: JSON.stringify({
-        title: 'Banner - Dashboard Tech',
+        title: 'Banner - Tech Dashboard',
         type: 'markdown',
         params: {
           markdown:
-            '# 🛡️ Centro Médico • Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA\n' +
-            '> **Navegación Unificada**: [🏥 Ir a Dashboard Negocio (Camas, Farmacia & Facturación)](#/view/business-operations-dashboard) &bull; **Telemetría OpenTelemetry & Auditoría Forense HIPAA (NOM-024)**',
+            '# 🛡️ Medical Center • Tech Dashboard: SRE / APM, System Health, Security & HIPAA Audit\n' +
+            '> **Unified Navigation**: [🏥 Go to Business Dashboard (Beds, Pharmacy & Billing)](#/view/business-operations-dashboard) &bull; **OpenTelemetry Telemetry & HIPAA Forensic Audit (NOM-024)**',
         },
       }),
       uiStateJSON: '{}',
@@ -979,15 +979,15 @@ async function main() {
 
   const visControlsAudit = {
     attributes: {
-      title: 'Filtros Dinámicos - Auditoría HIPAA',
+      title: 'Dynamic Filters - HIPAA Audit',
       visState: JSON.stringify({
-        title: 'Filtros de Seguridad',
+        title: 'Security Filters',
         type: 'input_control_vis',
         params: {
           controls: [
-            { id: 'ctrl-rol', fieldName: 'rol', label: '👤 Filtrar por Rol de Usuario', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 5 }, indexPatternRefName: 'ctrl_audit_dv' },
-            { id: 'ctrl-accion', fieldName: 'accion', label: '⚡ Tipo de Acción', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 8 }, indexPatternRefName: 'ctrl_audit_dv' },
-            { id: 'ctrl-entidad', fieldName: 'entidad', label: '📁 Recurso Afectado', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 6 }, indexPatternRefName: 'ctrl_audit_dv' },
+            { id: 'ctrl-rol', fieldName: 'rol', label: '👤 Filter by User Role', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 5 }, indexPatternRefName: 'ctrl_audit_dv' },
+            { id: 'ctrl-accion', fieldName: 'accion', label: '⚡ Action Type', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 8 }, indexPatternRefName: 'ctrl_audit_dv' },
+            { id: 'ctrl-entidad', fieldName: 'entidad', label: '📁 Affected Resource', type: 'list', options: { type: 'terms', multiselect: true, dynamicOptions: true, size: 6 }, indexPatternRefName: 'ctrl_audit_dv' },
           ],
           updateFiltersOnChange: true,
           useTimeFilter: false,
@@ -1002,12 +1002,12 @@ async function main() {
 
   const visMetricAuditTotal = {
     attributes: {
-      title: 'KPI Auditoría - Total Eventos Registrados',
+      title: 'Audit KPI - Total Recorded Events',
       visState: JSON.stringify({
-        title: 'Total Eventos Registrados',
+        title: 'Total Recorded Events',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Bitácora inmutable en PostgreSQL 18', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '📋 Total Eventos Auditados' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Immutable audit log in PostgreSQL 18', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '📋 Total Audited Events' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -1017,12 +1017,12 @@ async function main() {
 
   const visMetricAuditPhi = {
     attributes: {
-      title: 'KPI Auditoría - Consultas a PHI',
+      title: 'Audit KPI - PHI Queries',
       visState: JSON.stringify({
-        title: 'Consultas a Expedientes PHI',
+        title: 'PHI Record Queries',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Lecturas de datos clínicos protegidos', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🔍 Accesos a PHI' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Protected clinical data reads', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🔍 PHI Accesses' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'accion: "CONSULTA_PHI"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -1032,12 +1032,12 @@ async function main() {
 
   const visMetricAuditFailed = {
     attributes: {
-      title: 'KPI Auditoría - Intentos de Acceso Bloqueados',
+      title: 'Audit KPI - Blocked Access Attempts',
       visState: JSON.stringify({
-        title: 'Intentos Bloqueados / Alertas',
+        title: 'Blocked Attempts / Alerts',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Defensa perimetral contra fuerza bruta', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🚨 Alertas de Seguridad' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Perimeter defense against brute force', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🚨 Security Alerts' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estado_resultado: "FALLIDO" or estado_resultado: "BLOQUEADO"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -1047,12 +1047,12 @@ async function main() {
 
   const visMetricAuditLogout = {
     attributes: {
-      title: 'KPI Auditoría - Cierres de Sesión Automáticos HIPAA',
+      title: 'Audit KPI - HIPAA Automatic Session Logouts',
       visState: JSON.stringify({
-        title: 'Auto-Logouts HIPAA',
+        title: 'HIPAA Auto-Logouts',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Inactividad de 15 minutos cumplida', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '⏱️ Auto-Logout Cumplido' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: '15-minute inactivity enforced', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '⏱️ Auto-Logout Enforced' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'accion: "AUTO_LOGOUT_HIPAA"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -1062,21 +1062,21 @@ async function main() {
 
   const visBarAuditRoles = {
     attributes: {
-      title: 'Gráfica de Barras - Eventos de Auditoría por Rol',
+      title: 'Bar Chart - Audit Events by Role',
       visState: JSON.stringify({
-        title: 'Actividad por Rol Hospitalario',
+        title: 'Activity by Hospital Role',
         type: 'histogram',
         params: {
           type: 'histogram', grid: { categoryLines: false },
           categoryAxes: [{ id: 'CategoryAxis-1', type: 'category', position: 'bottom', show: true, scale: { type: 'linear' }, labels: { show: true, truncate: 100 }, title: {} }],
-          valueAxes: [{ id: 'ValueAxis-1', name: 'LeftAxis-1', type: 'value', position: 'left', show: true, scale: { type: 'linear', mode: 'normal' }, labels: { show: true }, title: { text: 'Eventos Auditados' } }],
-          seriesParams: [{ show: true, type: 'histogram', mode: 'stacked', data: { label: 'Eventos', id: '1' }, valueAxis: 'ValueAxis-1' }],
+          valueAxes: [{ id: 'ValueAxis-1', name: 'LeftAxis-1', type: 'value', position: 'left', show: true, scale: { type: 'linear', mode: 'normal' }, labels: { show: true }, title: { text: 'Audited Events' } }],
+          seriesParams: [{ show: true, type: 'histogram', mode: 'stacked', data: { label: 'Events', id: '1' }, valueAxis: 'ValueAxis-1' }],
           addTooltip: true, addLegend: true, legendPosition: 'right',
         },
         aggs: [
-          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Eventos' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'rol', size: 5, order: 'desc', orderBy: '1', customLabel: 'Rol de Usuario' } },
-          { id: '3', enabled: true, type: 'terms', schema: 'group', params: { field: 'accion', size: 5, order: 'desc', orderBy: '1', customLabel: 'Acción' } },
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Events' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'rol', size: 5, order: 'desc', orderBy: '1', customLabel: 'User Role' } },
+          { id: '3', enabled: true, type: 'terms', schema: 'group', params: { field: 'accion', size: 5, order: 'desc', orderBy: '1', customLabel: 'Action' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -1087,14 +1087,14 @@ async function main() {
 
   const visPieAuditActions = {
     attributes: {
-      title: 'Gráfica de Dona - Distribución de Acciones sobre PHI',
+      title: 'Donut Chart - Distribution of Actions on PHI',
       visState: JSON.stringify({
-        title: 'Distribución de Acciones HIPAA',
+        title: 'HIPAA Action Distribution',
         type: 'pie',
         params: { type: 'pie', addTooltip: true, addLegend: true, legendPosition: 'right', isDonut: true },
         aggs: [
-          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Total Acciones' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'accion', size: 8, order: 'desc', orderBy: '1', customLabel: 'Acción Ejecutada' } },
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Total Actions' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'accion', size: 8, order: 'desc', orderBy: '1', customLabel: 'Executed Action' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -1105,19 +1105,19 @@ async function main() {
 
   const visTableAuditForensic = {
     attributes: {
-      title: 'Tabla Dinámica - Bitácora Forense de Seguridad HIPAA en Vivo',
+      title: 'Dynamic Table - Live HIPAA Security Forensic Log',
       visState: JSON.stringify({
-        title: 'Bitácora Forense de Auditoría HIPAA (§ 164.312)',
+        title: 'HIPAA Audit Forensic Log (§ 164.312)',
         type: 'table',
         params: { perPage: 10, showPartialRows: false, showMetricsAtAllLevels: false, showTotal: false },
         aggs: [
-          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Eventos' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'nombre_usuario.keyword', size: 15, order: 'desc', orderBy: '1', customLabel: 'Usuario' } },
-          { id: '3', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'rol', size: 6, order: 'desc', orderBy: '1', customLabel: 'Rol' } },
-          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'accion', size: 10, order: 'desc', orderBy: '1', customLabel: 'Acción' } },
-          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'entidad', size: 8, order: 'desc', orderBy: '1', customLabel: 'Recurso Clínico' } },
-          { id: '6', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'ip_cliente', size: 10, order: 'desc', orderBy: '1', customLabel: 'IP Origen' } },
-          { id: '7', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'estado_resultado', size: 4, order: 'desc', orderBy: '1', customLabel: 'Resultado' } },
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Events' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'nombre_usuario.keyword', size: 15, order: 'desc', orderBy: '1', customLabel: 'User' } },
+          { id: '3', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'rol', size: 6, order: 'desc', orderBy: '1', customLabel: 'Role' } },
+          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'accion', size: 10, order: 'desc', orderBy: '1', customLabel: 'Action' } },
+          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'entidad', size: 8, order: 'desc', orderBy: '1', customLabel: 'Clinical Resource' } },
+          { id: '6', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'ip_cliente', size: 10, order: 'desc', orderBy: '1', customLabel: 'Source IP' } },
+          { id: '7', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'estado_resultado', size: 4, order: 'desc', orderBy: '1', customLabel: 'Result' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -1126,18 +1126,18 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-table-audit-forensic?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visTableAuditForensic) });
 
-  // --- PILAR 3: Visualizaciones de Salud del Sistema SRE / APM Telemetría ---
+  // --- PILLAR 3: SRE / APM System Health Telemetry Visualizations ---
   const visHeaderSre = {
     attributes: {
-      title: 'Banner - Salud de la Plataforma & Telemetría SRE / APM',
+      title: 'Banner - Platform Health & SRE / APM Telemetry',
       visState: JSON.stringify({
         title: 'Banner - SRE / APM',
         type: 'markdown',
         params: {
           markdown:
-            '# ⚙️ Centro Médico Nacional • Monitoreo de Microservicios, Kong Gateway & APM\n' +
-            '> **Observabilidad de Nivel Empresarial con OpenTelemetry**: Rendimiento en tiempo real de NestJS 12, PostgreSQL 18, Redis 8 y Kong Gateway.  \n' +
-            '> **Acceso Rápido**: [🏥 1. Camas, Farmacia & Facturación](#/view/centro-medico-dashboard) &bull; [🛡️ 2. Seguridad & Auditoría HIPAA](#/view/hipaa-security-audit-dashboard) &bull; [⚙️ 3. Salud del Sistema SRE / APM](#/view/sre-telemetry-dashboard)',
+            '# ⚙️ National Medical Center • Microservices, Kong Gateway & APM Monitoring\n' +
+            '> **Enterprise-Grade Observability with OpenTelemetry**: Real-time performance of NestJS 12, PostgreSQL 18, Redis 8, and Kong Gateway.  \n' +
+            '> **Quick Access**: [🏥 1. Beds, Pharmacy & Billing](#/view/centro-medico-dashboard) &bull; [🛡️ 2. Security & HIPAA Audit](#/view/hipaa-security-audit-dashboard) &bull; [⚙️ 3. SRE / APM System Health](#/view/sre-telemetry-dashboard)',
         },
       }),
       uiStateJSON: '{}',
@@ -1149,11 +1149,11 @@ async function main() {
 
   const visMetricSreUptime = {
     attributes: {
-      title: 'KPI SRE - Disponibilidad Global SLA',
+      title: 'SRE KPI - Global SLA Availability',
       visState: JSON.stringify({
-        title: 'Disponibilidad SLA',
+        title: 'SLA Availability',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Todos los contenedores en estado Healthy', fontSize: 44 } } },
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'All containers in Healthy state', fontSize: 44 } } },
         aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🟢 99.98% Uptime SLA' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estado_salud: "Healthy"', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -1164,12 +1164,12 @@ async function main() {
 
   const visMetricSreLatency = {
     attributes: {
-      title: 'KPI SRE - Latencia Promedio API (ms)',
+      title: 'SRE KPI - Average API Latency (ms)',
       visState: JSON.stringify({
-        title: 'Latencia Media API',
+        title: 'Average API Latency',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Tiempo medio de respuesta por Kong/NestJS', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'latencia_ms', customLabel: '⚡ Latencia Media (ms)' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Average response time via Kong/NestJS', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'latencia_ms', customLabel: '⚡ Avg Latency (ms)' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -1179,12 +1179,12 @@ async function main() {
 
   const visMetricSreRpm = {
     attributes: {
-      title: 'KPI SRE - Peticiones por Minuto (RPM)',
+      title: 'SRE KPI - Requests Per Minute (RPM)',
       visState: JSON.stringify({
         title: 'Throughput (RPM)',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Rendimiento agregado en Kong Gateway', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'peticiones_por_minuto', customLabel: '📊 Peticiones / Min' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Aggregate throughput on Kong Gateway', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'peticiones_por_minuto', customLabel: '📊 Requests / Min' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -1194,12 +1194,12 @@ async function main() {
 
   const visMetricFhirCalls = {
     attributes: {
-      title: 'KPI SRE - Peticiones Estándar HL7 FHIR R4',
+      title: 'SRE KPI - HL7 FHIR R4 Standard Requests',
       visState: JSON.stringify({
         title: 'HL7 FHIR R4 Calls',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Interoperabilidad internacional activa', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🌐 Recursos FHIR Consultados' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: 'Active international interoperability', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: '🌐 FHIR Resources Queried' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: 'estandar_fhir: *', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -1209,12 +1209,12 @@ async function main() {
 
   const visMetricDlqStatus = {
     attributes: {
-      title: 'KPI SRE - Resiliencia Kafka Dead Letter Queue',
+      title: 'SRE KPI - Kafka Dead Letter Queue Resilience',
       visState: JSON.stringify({
-        title: 'Kafka DLQ Pendientes',
+        title: 'Pending Kafka DLQ',
         type: 'metric',
-        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: '0 eventos pendientes en Dead Letter Queue', fontSize: 44 } } },
-        aggs: [{ id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'dlq_pendientes', customLabel: '🛡️ DLQ Eventos Pendientes' } }],
+        params: { metric: { percentageMode: false, useRanges: false, colorSchema: 'Green to Red', metricColorMode: 'Labels', colorsRange: [{ from: 0, to: 100 }], labels: { show: true }, style: { bgFill: '#000', bgColor: false, labelColor: false, subText: '0 pending events in Dead Letter Queue', fontSize: 44 } } },
+        aggs: [{ id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'dlq_pendientes', customLabel: '🛡️ Pending DLQ Events' } }],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
     },
@@ -1224,20 +1224,20 @@ async function main() {
 
   const visBarSreEndpoints = {
     attributes: {
-      title: 'Gráfica de Barras - Latencia Media por Endpoint',
+      title: 'Bar Chart - Average Latency by Endpoint',
       visState: JSON.stringify({
-        title: 'Latencia por Endpoint de la API (ms)',
+        title: 'Latency by API Endpoint (ms)',
         type: 'horizontal_bar',
         params: {
           type: 'histogram', grid: { categoryLines: false },
           categoryAxes: [{ id: 'CategoryAxis-1', type: 'category', position: 'left', show: true, scale: { type: 'linear' }, labels: { show: true, truncate: 100 }, title: {} }],
-          valueAxes: [{ id: 'ValueAxis-1', name: 'LeftAxis-1', type: 'value', position: 'bottom', show: true, scale: { type: 'linear', mode: 'normal' }, labels: { show: true }, title: { text: 'Latencia Media (ms)' } }],
-          seriesParams: [{ show: true, type: 'histogram', mode: 'normal', data: { label: 'Latencia ms', id: '1' }, valueAxis: 'ValueAxis-1' }],
+          valueAxes: [{ id: 'ValueAxis-1', name: 'LeftAxis-1', type: 'value', position: 'bottom', show: true, scale: { type: 'linear', mode: 'normal' }, labels: { show: true }, title: { text: 'Average Latency (ms)' } }],
+          seriesParams: [{ show: true, type: 'histogram', mode: 'normal', data: { label: 'Latency ms', id: '1' }, valueAxis: 'ValueAxis-1' }],
           addTooltip: true, addLegend: false,
         },
         aggs: [
-          { id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'latencia_ms', customLabel: 'Latencia Promedio (ms)' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'endpoint', size: 10, order: 'desc', orderBy: '1', customLabel: 'Ruta API' } },
+          { id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'latencia_ms', customLabel: 'Average Latency (ms)' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'endpoint', size: 10, order: 'desc', orderBy: '1', customLabel: 'API Route' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -1248,14 +1248,14 @@ async function main() {
 
   const visPieSreStatus = {
     attributes: {
-      title: 'Gráfica de Dona - Códigos de Estado HTTP',
+      title: 'Donut Chart - HTTP Status Codes',
       visState: JSON.stringify({
-        title: 'Distribución Códigos HTTP',
+        title: 'HTTP Status Code Distribution',
         type: 'pie',
         params: { type: 'pie', addTooltip: true, addLegend: true, legendPosition: 'right', isDonut: true },
         aggs: [
-          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Respuestas' } },
-          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'codigo_estado', size: 8, order: 'desc', orderBy: '1', customLabel: 'Código de Estado' } },
+          { id: '1', enabled: true, type: 'count', schema: 'metric', params: { customLabel: 'Responses' } },
+          { id: '2', enabled: true, type: 'terms', schema: 'segment', params: { field: 'codigo_estado', size: 8, order: 'desc', orderBy: '1', customLabel: 'Status Code' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -1267,17 +1267,17 @@ async function main() {
 
   const visTableSreServices = {
     attributes: {
-      title: 'Tabla Dinámica - Matriz de Salud de Microservicios',
+      title: 'Dynamic Table - Microservices Health Matrix',
       visState: JSON.stringify({
-        title: 'Matriz de Salud de Microservicios',
+        title: 'Microservices Health Matrix',
         type: 'table',
         params: { perPage: 15, showPartialRows: false, showMetricsAtAllLevels: false, showTotal: false },
         aggs: [
-          { id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'latencia_ms', customLabel: 'Latencia (ms)' } },
+          { id: '1', enabled: true, type: 'avg', schema: 'metric', params: { field: 'latencia_ms', customLabel: 'Latency (ms)' } },
           { id: '2', enabled: true, type: 'avg', schema: 'metric', params: { field: 'uso_cpu_pct', customLabel: 'CPU (%)' } },
-          { id: '3', enabled: true, type: 'avg', schema: 'metric', params: { field: 'uso_memoria_mb', customLabel: 'Memoria (MB)' } },
-          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'servicio', size: 15, order: 'asc', orderBy: '_key', customLabel: 'Microservicio' } },
-          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'estado_salud', size: 5, order: 'desc', orderBy: '1', customLabel: 'Estado Salud' } },
+          { id: '3', enabled: true, type: 'avg', schema: 'metric', params: { field: 'uso_memoria_mb', customLabel: 'Memory (MB)' } },
+          { id: '4', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'servicio', size: 15, order: 'asc', orderBy: '_key', customLabel: 'Microservice' } },
+          { id: '5', enabled: true, type: 'terms', schema: 'bucket', params: { field: 'estado_salud', size: 5, order: 'desc', orderBy: '1', customLabel: 'Health Status' } },
         ],
       }),
       kibanaSavedObjectMeta: { searchSourceJSON: JSON.stringify({ query: { query: '', language: 'kuery' }, filter: [], indexRefName: 'kibanaSavedObjectMeta.searchSourceJSON.index' }) },
@@ -1286,12 +1286,12 @@ async function main() {
   };
   await fetch(`${KBN_URL}/api/saved_objects/visualization/vis-table-sre-services?overwrite=true`, { method: 'POST', headers: KBN_HEADERS, body: JSON.stringify(visTableSreServices) });
 
-  console.log('  ✓ 25 visualizaciones oficiales creadas exitosamente para los 3 Pilares.');
+  console.log('  ✓ 25 official visualizations created successfully for the 3 Pillars.');
 
-  // 10. Limpiar dashboards obsoletos y Registrar EXACTAMENTE los 2 Dashboards solicitados
-  console.log('\n📊 Registrando exactamente los 2 Dashboards en Kibana...');
+  // 10. Clean up obsolete dashboards and Register EXACTLY the 2 requested Dashboards
+  console.log('\n📊 Registering exactly the 2 Dashboards in Kibana...');
 
-  // Eliminar dashboards anteriores o de prueba para mantener la vista limpia
+  // Delete previous or test dashboards to keep the view clean
   const oldDashboards = [
     'test-dash',
     'test-ref-dash',
@@ -1310,11 +1310,11 @@ async function main() {
     } catch {}
   }
 
-  // --- DASHBOARD 1: NEGOCIO (Camas, Farmacia, Facturación & Telemedicina) ---
+  // --- DASHBOARD 1: BUSINESS (Beds, Pharmacy, Billing & Telemedicine) ---
   const panelsOps = [
     { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-header' }, panelIndex: 'p-header', panelRefName: 'ref_header', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 0, y: 4, w: 48, h: 6, i: 'p-controls' }, panelIndex: 'p-controls', panelRefName: 'ref_controls', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Fila Scorecard de 7 KPIs Ejecutivos (Negocio Hospitalario)
+    // Executive 7-KPI Scorecard Row (Hospital Business)
     { gridData: { x: 0, y: 10, w: 7, h: 7, i: 'p-beds-free' }, panelIndex: 'p-beds-free', panelRefName: 'ref_beds_free', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 7, y: 10, w: 7, h: 7, i: 'p-beds-occ' }, panelIndex: 'p-beds-occ', panelRefName: 'ref_beds_occ', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 14, y: 10, w: 7, h: 7, i: 'p-pharm-crit' }, panelIndex: 'p-pharm-crit', panelRefName: 'ref_pharm-crit', version: '9.5.5', embeddableConfig: { enhancements: {} } },
@@ -1322,14 +1322,14 @@ async function main() {
     { gridData: { x: 28, y: 10, w: 7, h: 7, i: 'p-revenue' }, panelIndex: 'p-revenue', panelRefName: 'ref_revenue', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 35, y: 10, w: 7, h: 7, i: 'p-doc-payout' }, panelIndex: 'p-doc-payout', panelRefName: 'ref_doc_payout', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 42, y: 10, w: 6, h: 7, i: 'p-clinic-margin' }, panelIndex: 'p-clinic-margin', panelRefName: 'ref_clinic_margin', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Gráficas fila 2 (Comparativa de Stock y Camas por Piso)
+    // Charts Row 2 (Stock Comparison & Beds by Floor)
     { gridData: { x: 0, y: 17, w: 24, h: 14, i: 'p-bar-stock' }, panelIndex: 'p-bar-stock', panelRefName: 'ref_bar_stock', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 24, y: 17, w: 24, h: 14, i: 'p-bar-beds' }, panelIndex: 'p-bar-beds', panelRefName: 'ref_bar_beds', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Gráficas fila 3 (Donuts de Negocio, Farmacia y Modalidad Telemedicina)
+    // Charts Row 3 (Business, Pharmacy & Telemedicine Modality Donuts)
     { gridData: { x: 0, y: 31, w: 16, h: 12, i: 'p-beds-donut' }, panelIndex: 'p-beds-donut', panelRefName: 'ref_beds_donut', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 16, y: 31, w: 16, h: 12, i: 'p-pharm-pie' }, panelIndex: 'p-pharm-pie', panelRefName: 'ref_pharm_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 32, y: 31, w: 16, h: 12, i: 'p-modality-pie' }, panelIndex: 'p-modality-pie', panelRefName: 'ref_modality_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Tablas fila 4 (Farmacia y Censo Dinámico de Camas)
+    // Tables Row 4 (Pharmacy & Dynamic Bed Census)
     { gridData: { x: 0, y: 43, w: 24, h: 16, i: 'p-table-pharm' }, panelIndex: 'p-table-pharm', panelRefName: 'ref_table_pharm', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 24, y: 43, w: 24, h: 16, i: 'p-table-beds' }, panelIndex: 'p-table-beds', panelRefName: 'ref_table_beds', version: '9.5.5', embeddableConfig: { enhancements: {} } },
   ];
@@ -1339,8 +1339,8 @@ async function main() {
     headers: KBN_HEADERS,
     body: JSON.stringify({
       attributes: {
-        title: '1. Dashboard Negocio: Camas, Farmacia & Facturación',
-        description: 'Dashboard de Negocio Hospitalario: Censo y ocupación de camas, control de inventario de medicamentos, facturación en MXN, liquidación de honorarios médicos y telemedicina.',
+        title: '1. Business Dashboard: Beds, Pharmacy & Billing',
+        description: 'Hospital Business Dashboard: Bed census and occupancy, medication inventory control, billing in MXN, physician fee settlement, and telemedicine.',
         timeRestore: true,
         timeFrom: 'now-24h',
         timeTo: 'now',
@@ -1366,13 +1366,13 @@ async function main() {
       ],
     }),
   });
-  console.log('  ✓ Dashboard 1: "1. Dashboard Negocio: Camas, Farmacia & Facturación" registrado.');
+  console.log('  ✓ Dashboard 1: "1. Business Dashboard: Beds, Pharmacy & Billing" registered.');
 
-  // --- DASHBOARD 2: TECH (Salud del Sistema, SRE / APM, 7 Microservicios, Seguridad & Auditoría HIPAA) ---
+  // --- DASHBOARD 2: TECH (System Health, SRE / APM, 7 Microservices, Security & HIPAA Audit) ---
   const panelsTech = [
     { gridData: { x: 0, y: 0, w: 48, h: 4, i: 'p-tech-hdr' }, panelIndex: 'p-tech-hdr', panelRefName: 'ref_tech_hdr', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 0, y: 4, w: 48, h: 6, i: 'p-tech-ctrl' }, panelIndex: 'p-tech-ctrl', panelRefName: 'ref_tech_ctrl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Fila unificada de 9 KPIs SRE, Interoperabilidad FHIR & Seguridad HIPAA
+    // Unified Row of 9 SRE, FHIR Interoperability & HIPAA Security KPIs
     { gridData: { x: 0, y: 10, w: 6, h: 7, i: 'p-sre-upt' }, panelIndex: 'p-sre-upt', panelRefName: 'ref_sre_upt', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 6, y: 10, w: 5, h: 7, i: 'p-sre-lat' }, panelIndex: 'p-sre-lat', panelRefName: 'ref_sre_lat', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 11, y: 10, w: 5, h: 7, i: 'p-sre-rpm' }, panelIndex: 'p-sre-rpm', panelRefName: 'ref_sre_rpm', version: '9.5.5', embeddableConfig: { enhancements: {} } },
@@ -1382,15 +1382,15 @@ async function main() {
     { gridData: { x: 33, y: 10, w: 5, h: 7, i: 'p-hipaa-phi' }, panelIndex: 'p-hipaa-phi', panelRefName: 'ref_hipaa_phi', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 38, y: 10, w: 5, h: 7, i: 'p-hipaa-fail' }, panelIndex: 'p-hipaa-fail', panelRefName: 'ref_hipaa_fail', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 43, y: 10, w: 5, h: 7, i: 'p-hipaa-log' }, panelIndex: 'p-hipaa-log', panelRefName: 'ref_hipaa_log', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Visualizaciones SRE / APM
+    // SRE / APM Visualizations
     { gridData: { x: 0, y: 17, w: 28, h: 14, i: 'p-sre-bar' }, panelIndex: 'p-sre-bar', panelRefName: 'ref_sre_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 28, y: 17, w: 20, h: 14, i: 'p-sre-pie' }, panelIndex: 'p-sre-pie', panelRefName: 'ref_sre_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Tabla Matriz de Salud de los 7 Microservicios e Infraestructura
+    // Health Matrix Table for the 7 Microservices and Infrastructure
     { gridData: { x: 0, y: 31, w: 48, h: 14, i: 'p-sre-tbl' }, panelIndex: 'p-sre-tbl', panelRefName: 'ref_sre_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Visualizaciones Seguridad & HIPAA
+    // Security & HIPAA Visualizations
     { gridData: { x: 0, y: 45, w: 26, h: 14, i: 'p-hipaa-bar' }, panelIndex: 'p-hipaa-bar', panelRefName: 'ref_hipaa_bar', version: '9.5.5', embeddableConfig: { enhancements: {} } },
     { gridData: { x: 26, y: 45, w: 22, h: 14, i: 'p-hipaa-pie' }, panelIndex: 'p-hipaa-pie', panelRefName: 'ref_hipaa_pie', version: '9.5.5', embeddableConfig: { enhancements: {} } },
-    // Tabla Forense Inmutable de Seguridad HIPAA
+    // Immutable HIPAA Security Forensic Table
     { gridData: { x: 0, y: 59, w: 48, h: 16, i: 'p-hipaa-tbl' }, panelIndex: 'p-hipaa-tbl', panelRefName: 'ref_hipaa_tbl', version: '9.5.5', embeddableConfig: { enhancements: {} } },
   ];
 
@@ -1399,8 +1399,8 @@ async function main() {
     headers: KBN_HEADERS,
     body: JSON.stringify({
       attributes: {
-        title: '2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA',
-        description: 'Dashboard Técnico Unificado: Telemetría de los 7 microservicios autónomos (uptime 99.98%, latencias p95, RPM, códigos HTTP), interoperabilidad HL7 FHIR R4, seguridad perimetral Kong Gateway y registro forense inmutable HIPAA (NOM-024).',
+        title: '2. Tech Dashboard: SRE / APM, System Health, Security & HIPAA Audit',
+        description: 'Unified Technical Dashboard: Telemetry for the 7 autonomous microservices (99.98% uptime, p95 latencies, RPM, HTTP codes), HL7 FHIR R4 interoperability, Kong Gateway perimeter security, and immutable HIPAA forensic log (NOM-024).',
         timeRestore: true,
         timeFrom: 'now-24h',
         timeTo: 'now',
@@ -1427,11 +1427,10 @@ async function main() {
       ],
     }),
   });
-  console.log('  ✓ Dashboard 2: "2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA" registrado.');
-  console.log('  ✓ Dashboard 2: "2. Dashboard Tech: SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA" registrado.');
+  console.log('  ✓ Dashboard 2: "2. Tech Dashboard: SRE / APM, System Health, Security & HIPAA Audit" registered.');
 
-  // 11. Exportar la suite de los 2 Dashboards a ./observability/
-  console.log('\n💾 Exportando los 2 Dashboards a JSON y NDJSON...');
+  // 11. Export the 2-Dashboard suite to ./observability/
+  console.log('\n💾 Exporting the 2 Dashboards to JSON and NDJSON...');
   const exportRes = await fetch(`${KBN_URL}/api/saved_objects/_export`, {
     method: 'POST',
     headers: KBN_HEADERS,
@@ -1461,20 +1460,20 @@ async function main() {
   const jsonPath = path.join(rootDir, 'observability', 'kibana-centro-medico-dashboard.json');
   fs.writeFileSync(jsonPath, JSON.stringify(jsonLines, null, 2), 'utf-8');
 
-  console.log(`  ✓ Archivo NDJSON actualizado: ${ndjsonPath}`);
-  console.log(`  ✓ Archivo JSON formateado actualizado: ${jsonPath}`);
+  console.log(`  ✓ NDJSON file updated: ${ndjsonPath}`);
+  console.log(`  ✓ Formatted JSON file updated: ${jsonPath}`);
 
   console.log('\n============================================================');
-  console.log('🎉 LOS 2 DASHBOARDS HAN SIDO APROVISIONADOS EXITOSAMENTE');
+  console.log('🎉 BOTH DASHBOARDS HAVE BEEN PROVISIONED SUCCESSFULLY');
   console.log('============================================================');
-  console.log('🔗 Enlaces directos a los 2 Dashboards en Kibana:');
-  console.log('   1. Dashboard Negocio (Camas, Farmacia & Facturación):');
+  console.log('🔗 Direct links to the 2 Dashboards in Kibana:');
+  console.log('   1. Business Dashboard (Beds, Pharmacy & Billing):');
   console.log('      http://localhost:5601/app/dashboards#/view/business-operations-dashboard');
-  console.log('   2. Dashboard Tech (SRE / APM, Salud del Sistema, Seguridad & Auditoría HIPAA):');
+  console.log('   2. Tech Dashboard (SRE / APM, System Health, Security & HIPAA Audit):');
   console.log('      http://localhost:5601/app/dashboards#/view/tech-sre-security-dashboard');
 }
 
 main().catch((err) => {
-  console.error('❌ Error general durante el aprovisionamiento:', err);
+  console.error('❌ General error during provisioning:', err);
   process.exit(1);
 });

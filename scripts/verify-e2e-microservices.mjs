@@ -1,6 +1,6 @@
 /**
- * Script de Verificación End-to-End (E2E) de Microservicios, Sagas y Event-Driven Architecture
- * Centro Médico Nacional - HealthTech Platform
+ * End-to-End (E2E) Verification Script for Microservices, Sagas, and Event-Driven Architecture
+ * National Medical Center - HealthTech Platform
  */
 
 const BASE_URL = process.env.API_GATEWAY_URL || 'http://localhost:8000/api';
@@ -14,11 +14,11 @@ async function logStep(title, fn) {
     console.log(`✅ OK (${elapsed}ms)`);
     if (result && typeof result === 'object') {
       const summary = JSON.stringify(result).slice(0, 140);
-      console.log(`   └─ Respuesta: ${summary}...`);
+      console.log(`   └─ Response: ${summary}...`);
     }
     return { ok: true, result };
   } catch (err) {
-    console.log(`❌ FALLÓ`);
+    console.log(`❌ FAILED`);
     console.error(`   └─ Error: ${err.message}`);
     return { ok: false, error: err.message };
   }
@@ -26,78 +26,78 @@ async function logStep(title, fn) {
 
 async function runVerification() {
   console.log('======================================================================');
-  console.log('🏥 HealthTech Platform - Verificación E2E de Arquitectura');
+  console.log('🏥 HealthTech Platform - E2E Architecture Verification');
   console.log(`   Gateway Target: ${BASE_URL}`);
-  console.log('   Tecnologías: NestJS 12, Kafka 8.3.2, Redis 8.8.1, Kong 3.9, Postgres 18');
+  console.log('   Stack: NestJS 12, Kafka 8.3.2, Redis 8.8.1, Kong 3.9, Postgres 18');
   console.log('======================================================================');
 
   let passed = 0;
   let total = 0;
 
-  // 1. Health Check de Microservicio de Notificaciones
+  // 1. Notification Microservice Health Check
   total++;
-  const r1 = await logStep('Health Check de notification-service (:3005)', async () => {
+  const r1 = await logStep('Health Check for notification-service (:3005)', async () => {
     const res = await fetch(`${BASE_URL}/notifications/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (r1.ok) passed++;
 
-  // 2. Health Check de Microservicio de Citas
+  // 2. Appointment Microservice Health Check
   total++;
-  const r2 = await logStep('Health Check de appointment-service (:3001)', async () => {
+  const r2 = await logStep('Health Check for appointment-service (:3001)', async () => {
     const res = await fetch(`${BASE_URL}/appointments/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (r2.ok) passed++;
 
-  // 3. Health Check de Microservicio de Pacientes
+  // 3. Patient Microservice Health Check
   total++;
-  const r3 = await logStep('Health Check de patient-service (:3002)', async () => {
+  const r3 = await logStep('Health Check for patient-service (:3002)', async () => {
     const res = await fetch(`${BASE_URL}/patients/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (r3.ok) passed++;
 
-  // 4. Health Check de Microservicio de Facturación
+  // 4. Billing Microservice Health Check
   total++;
-  const rBilling = await logStep('Health Check de billing-service (:3003)', async () => {
+  const rBilling = await logStep('Health Check for billing-service (:3003)', async () => {
     const res = await fetch(`${BASE_URL}/billing/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (rBilling.ok) passed++;
 
-  // 5. Health Check de Microservicio de Farmacia
+  // 5. Pharmacy Microservice Health Check
   total++;
-  const rPharmacy = await logStep('Health Check de pharmacy-service (:3004)', async () => {
+  const rPharmacy = await logStep('Health Check for pharmacy-service (:3004)', async () => {
     const res = await fetch(`${BASE_URL}/pharmacy/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (rPharmacy.ok) passed++;
 
-  // 6. Health Check de Microservicio de Personal Médico
+  // 6. Staff Microservice Health Check
   total++;
-  const rStaff = await logStep('Health Check de staff-service (:3007)', async () => {
+  const rStaff = await logStep('Health Check for staff-service (:3007)', async () => {
     const res = await fetch(`${BASE_URL}/doctors/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (rStaff.ok) passed++;
 
-  // 7. Health Check de Microservicio de Historias Clínicas y Censo
+  // 7. Clinical Records & Census Microservice Health Check
   total++;
-  const rClinical = await logStep('Health Check de clinical-records-service (:3006)', async () => {
+  const rClinical = await logStep('Health Check for clinical-records-service (:3006)', async () => {
     const res = await fetch(`${BASE_URL}/clinical-records/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (rClinical.ok) passed++;
 
-  // Obtener JWT OIDC real de Keycloak para rutas protegidas + verificar rechazo 401 sin token
+  // Obtain real Keycloak OIDC JWT for protected routes + verify 401 rejection without token
   let keycloakToken = null;
   const authHeaders = (extra = {}) => ({
     ...extra,
@@ -105,10 +105,10 @@ async function runVerification() {
   });
 
   total++;
-  const rAuth = await logStep('Seguridad OIDC: Token Keycloak & KeycloakAuthGuard (401 vs 200)', async () => {
+  const rAuth = await logStep('OIDC Security: Keycloak Token & KeycloakAuthGuard (401 vs 200)', async () => {
     const unauthRes = await fetch(`${BASE_URL}/patients`);
     if (unauthRes.status !== 401) {
-      throw new Error(`Se esperaba HTTP 401 sin JWT, se recibió ${unauthRes.status}`);
+      throw new Error(`Expected HTTP 401 without JWT, received ${unauthRes.status}`);
     }
 
     const tokenUrl = BASE_URL.replace(/\/api$/, '') + '/realms/healthtech-realm/protocol/openid-connect/token';
@@ -128,21 +128,21 @@ async function runVerification() {
     }
     const tokenJson = await tokenRes.json();
     keycloakToken = tokenJson.access_token;
-    if (!keycloakToken) throw new Error('Keycloak no retornó access_token');
+    if (!keycloakToken) throw new Error('Keycloak did not return access_token');
 
     const authRes = await fetch(`${BASE_URL}/patients?limit=1`, {
       headers: authHeaders(),
     });
     if (!authRes.ok) {
-      throw new Error(`Endpoint protegido con JWT retornó HTTP ${authRes.status}`);
+      throw new Error(`JWT-protected endpoint returned HTTP ${authRes.status}`);
     }
     return { unauthStatus: unauthRes.status, authStatus: authRes.status, jwtVerified: true };
   });
   if (rAuth.ok) passed++;
 
-  // 4. Verificación de Idempotencia en Notificaciones (Redis 8.8.1)
+  // 4. Notification Idempotency Check (Redis 8.8.1)
   total++;
-  const r4 = await logStep('Prueba de Idempotencia con Redis 8.8.1 (Doble Despacho)', async () => {
+  const r4 = await logStep('Idempotency Test with Redis 8.8.1 (Double Dispatch)', async () => {
     const testEventId = `e2e-idemp-${Date.now()}`;
     const payload = {
       tipo: 'appointment.created',
@@ -153,22 +153,22 @@ async function runVerification() {
       idTurno: 888,
     };
 
-    // Primer despacho
+    // First dispatch
     const res1 = await fetch(`${BASE_URL}/notifications/test-dispatch`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ ...payload }),
     });
-    if (!res1.ok) throw new Error(`Primer despacho HTTP ${res1.status}`);
+    if (!res1.ok) throw new Error(`First dispatch HTTP ${res1.status}`);
     const d1 = await res1.json();
 
-    // Segundo despacho con mismo payload (verifica idempotencia o despacho controlado)
+    // Second dispatch with same payload (verifies idempotency or controlled dispatch)
     const res2 = await fetch(`${BASE_URL}/notifications/test-dispatch`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ ...payload }),
     });
-    if (!res2.ok) throw new Error(`Segundo despacho HTTP ${res2.status}`);
+    if (!res2.ok) throw new Error(`Second dispatch HTTP ${res2.status}`);
     const d2 = await res2.json();
 
     return {
@@ -179,43 +179,43 @@ async function runVerification() {
   });
   if (r4.ok) passed++;
 
-  // 5. Estadísticas de Transactional Outbox (CDC)
+  // 5. Transactional Outbox (CDC) Stats
   total++;
-  const r5 = await logStep('Métricas de Transactional Outbox (CDC)', async () => {
+  const r5 = await logStep('Transactional Outbox (CDC) Metrics', async () => {
     const res = await fetch(`${BASE_URL}/admin/outbox/stats`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (r5.ok) passed++;
 
-  // 6. Monitoreo de Sagas Orquestadas (SEC)
+  // 6. Orchestrated Sagas Monitoring (SEC)
   total++;
-  const r6 = await logStep('Consulta de Bitácora de Sagas Orquestadas', async () => {
+  const r6 = await logStep('Orchestrated Sagas Log Query', async () => {
     const res = await fetch(`${BASE_URL}/admin/sagas`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (r6.ok) passed++;
 
-  // 7. Resumen de Farmacia & Stock Hospitalario
+  // 7. Pharmacy & Hospital Stock Summary
   total++;
-  const r7 = await logStep('Resumen Ejecutivo de Farmacia & Existencias', async () => {
+  const r7 = await logStep('Executive Pharmacy & Stock Summary', async () => {
     const res = await fetch(`${BASE_URL}/pharmacy/summary`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (r7.ok) passed++;
 
-  // 8. Consulta de Dead-Letter Queue (DLQ)
+  // 8. Dead-Letter Queue (DLQ) Query
   total++;
-  const r8 = await logStep('Verificación de Dead-Letter Queue (DLQ)', async () => {
+  const r8 = await logStep('Dead-Letter Queue (DLQ) Verification', async () => {
     const res = await fetch(`${BASE_URL}/notifications/dlq`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (r8.ok) passed++;
 
-  // 9. Kong Gateway Hardening: Correlation ID & Security Headers (Pilar 3)
+  // 9. Kong Gateway Hardening: Correlation ID & Security Headers (Pillar 3)
   total++;
   const rKong = await logStep('Kong Gateway Hardening: Correlation ID & Security Headers', async () => {
     const res = await fetch(`${BASE_URL}/appointments/health`);
@@ -223,7 +223,7 @@ async function runVerification() {
     const xContentType = res.headers.get('x-content-type-options');
     const xFrame = res.headers.get('x-frame-options');
     if (!correlationId || !xContentType) {
-      throw new Error('Cabeceras de endurecimiento faltantes en Kong Gateway');
+      throw new Error('Missing hardening headers in Kong Gateway');
     }
     return {
       correlationId,
@@ -233,14 +233,14 @@ async function runVerification() {
   });
   if (rKong.ok) passed++;
 
-  // 10. HL7 FHIR R4: Recurso Patient (Pilar 2)
+  // 10. HL7 FHIR R4: Patient Resource (Pillar 2)
   total++;
-  const rFhirPatient = await logStep('HL7 FHIR R4: Mapeo de Recurso Patient', async () => {
+  const rFhirPatient = await logStep('HL7 FHIR R4: Patient Resource Mapping', async () => {
     const res = await fetch(`${BASE_URL}/patients/1/fhir`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data.resourceType !== 'Patient' || !data.identifier?.length) {
-      throw new Error('Estructura FHIR Patient no conforme a HL7 R4');
+      throw new Error('FHIR Patient structure does not conform to HL7 R4');
     }
     return {
       resourceType: data.resourceType,
@@ -251,14 +251,14 @@ async function runVerification() {
   });
   if (rFhirPatient.ok) passed++;
 
-  // 11. HL7 FHIR R4: Recurso Encounter & Diagnóstico CIE-10 (Pilar 2)
+  // 11. HL7 FHIR R4: Encounter Resource & ICD-10 Diagnosis (Pillar 2)
   total++;
-  const rFhirEncounter = await logStep('HL7 FHIR R4: Mapeo de Recurso Encounter & Diagnóstico CIE-10', async () => {
+  const rFhirEncounter = await logStep('HL7 FHIR R4: Encounter Resource & ICD-10 Diagnosis Mapping', async () => {
     const res = await fetch(`${BASE_URL}/medical-records/1/fhir`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data.resourceType !== 'Encounter') {
-      throw new Error('Estructura FHIR Encounter no conforme a HL7 R4');
+      throw new Error('FHIR Encounter structure does not conform to HL7 R4');
     }
     return {
       resourceType: data.resourceType,
@@ -270,9 +270,9 @@ async function runVerification() {
   });
   if (rFhirEncounter.ok) passed++;
 
-  // 12. Receta Médica Digital: Firma Criptográfica HMAC-SHA256 y Verificación QR (Pilar 2)
+  // 12. Digital Medical Prescription: HMAC-SHA256 Cryptographic Signature & QR Verification (Pillar 2)
   total++;
-  const rPrescription = await logStep('Receta Médica Digital: Firma Criptográfica HMAC-SHA256 y QR', async () => {
+  const rPrescription = await logStep('Digital Medical Prescription: HMAC-SHA256 Signature & QR Verification', async () => {
     const createRes = await fetch(`${BASE_URL}/medical-records/prescriptions`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -285,15 +285,15 @@ async function runVerification() {
         ],
       }),
     });
-    if (!createRes.ok) throw new Error(`Creación HTTP ${createRes.status}`);
+    if (!createRes.ok) throw new Error(`Creation HTTP ${createRes.status}`);
     const rx = await createRes.json();
 
     const verifyRes = await fetch(`${BASE_URL}/medical-records/prescriptions/${rx.codigoVerif}/verify`);
-    if (!verifyRes.ok) throw new Error(`Verificación HTTP ${verifyRes.status}`);
+    if (!verifyRes.ok) throw new Error(`Verification HTTP ${verifyRes.status}`);
     const verif = await verifyRes.json();
 
     if (!verif.firmaValida) {
-      throw new Error('Firma criptográfica inválida en verificación QR');
+      throw new Error('Invalid cryptographic signature in QR verification');
     }
 
     return {
@@ -305,9 +305,9 @@ async function runVerification() {
   });
   if (rPrescription.ok) passed++;
 
-  // 13. Telemedicina WebRTC: Sala Virtual y Configuración ICE/STUN (Pilar 4)
+  // 13. WebRTC Telemedicine: Virtual Room & ICE/STUN Configuration (Pillar 4)
   total++;
-  const rTelemed = await logStep('Telemedicina WebRTC: Sala Virtual y Configuración ICE/STUN', async () => {
+  const rTelemed = await logStep('WebRTC Telemedicine: Virtual Room & ICE/STUN Configuration', async () => {
     const res = await fetch(`${BASE_URL}/appointments/1/virtual-room`, {
       method: 'POST',
       headers: authHeaders(),
@@ -315,7 +315,7 @@ async function runVerification() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const room = await res.json();
     if (!room.idSala || !room.tokenMedico || !room.iceServers?.length) {
-      throw new Error('Estructura de sala virtual incompleta');
+      throw new Error('Incomplete virtual room structure');
     }
     return {
       idSala: room.idSala,
@@ -325,9 +325,9 @@ async function runVerification() {
   });
   if (rTelemed.ok) passed++;
 
-  // 14. Finanzas Médicas: Liquidación de Honorarios y Deducción de Comisión (Pilar 4)
+  // 14. Medical Finance: Fee Settlement & Commission Deduction (Pillar 4)
   total++;
-  const rSettlement = await logStep('Finanzas Médicas: Liquidación de Honorarios y Deducción de Comisión', async () => {
+  const rSettlement = await logStep('Medical Finance: Fee Settlement & Commission Deduction', async () => {
     const res = await fetch(`${BASE_URL}/billing/doctors/2/settlement?periodo=2024-02`, {
       headers: authHeaders(),
     });
@@ -344,9 +344,9 @@ async function runVerification() {
   });
   if (rSettlement.ok) passed++;
 
-  // 15. Notificaciones: Motor de Recordatorios Automáticos Multicanal (Pilar 4)
+  // 15. Notifications: Multi-Channel Automated Reminder Engine (Pillar 4)
   total++;
-  const rReminders = await logStep('Notificaciones: Motor de Recordatorios Automáticos Multicanal', async () => {
+  const rReminders = await logStep('Notifications: Multi-Channel Automated Reminder Engine', async () => {
     const res = await fetch(`${BASE_URL}/notifications/reminders/trigger`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
@@ -366,9 +366,9 @@ async function runVerification() {
   });
   if (rReminders.ok) passed++;
 
-  // 16. Health Probes: Readiness en Microservicios
+  // 16. Health Probes: Microservice Readiness
   total++;
-  const rReadiness = await logStep('Health Probes: Readiness en Microservicios', async () => {
+  const rReadiness = await logStep('Health Probes: Microservice Readiness', async () => {
     const res1 = await fetch(`http://localhost:3001/api/appointments/health/readiness`);
     const res2 = await fetch(`http://localhost:3002/api/patients/health/readiness`);
     const res3 = await fetch(`http://localhost:3003/api/billing/health/readiness`);
@@ -384,7 +384,7 @@ async function runVerification() {
     const ok6 = (await res6.json()).status === 'UP';
 
     if (!ok1 || !ok2 || !ok3 || !ok4 || !ok5 || !ok6) {
-      throw new Error('Al menos un microservicio no está en estado Ready');
+      throw new Error('At least one microservice is not in Ready state');
     }
 
     return {
@@ -398,9 +398,9 @@ async function runVerification() {
   });
   if (rReadiness.ok) passed++;
 
-  // 18. Full-Text Search seguro con plainto_tsquery (caracteres especiales)
+  // 18. Safe Full-Text Search with plainto_tsquery (special characters)
   total++;
-  const rFts = await logStep('Búsqueda Clínica segura (plainto_tsquery con operadores especiales)', async () => {
+  const rFts = await logStep('Safe Clinical Search (plainto_tsquery with special operators)', async () => {
     const headers = keycloakToken ? { Authorization: `Bearer ${keycloakToken}` } : {};
     const res = await fetch(`${BASE_URL}/medical-records/search?q=${encodeURIComponent('I10 & ! | ()')}`, { headers });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -411,7 +411,7 @@ async function runVerification() {
 
   // 19. Outbox CDC Relay-Now (admin_user)
   total++;
-  const rRelay = await logStep('Outbox CDC Worker: Trigger manual POST /admin/outbox/relay-now', async () => {
+  const rRelay = await logStep('Outbox CDC Worker: Manual Trigger POST /admin/outbox/relay-now', async () => {
     const headers = keycloakToken ? { Authorization: `Bearer ${keycloakToken}` } : {};
     const res = await fetch(`${BASE_URL}/admin/outbox/relay-now`, { method: 'POST', headers });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -419,14 +419,14 @@ async function runVerification() {
   });
   if (rRelay.ok) passed++;
 
-  // 20. Round-trip PHI AES-256-GCM en Expediente Clínico Electrónico
+  // 20. AES-256-GCM PHI Round-Trip in Electronic Health Record
   total++;
-  const rPhi = await logStep('Cifrado PHI AES-256-GCM: Round-trip Historia Clínica', async () => {
+  const rPhi = await logStep('PHI AES-256-GCM Encryption: Clinical Record Round-Trip', async () => {
     const headers = {
       'Content-Type': 'application/json',
       ...(keycloakToken ? { Authorization: `Bearer ${keycloakToken}` } : {}),
     };
-    const diagText = `Control E2E cifrado AES-256-GCM ${Date.now()}`;
+    const diagText = `E2E control encrypted AES-256-GCM ${Date.now()}`;
     const createRes = await fetch(`${BASE_URL}/medical-records`, {
       method: 'POST',
       headers,
@@ -434,7 +434,7 @@ async function runVerification() {
         idPaciente: 1,
         idMedico: 1,
         diagnosticoDescripcion: diagText,
-        tratamiento: 'Seguimiento ambulatorio estándar',
+        tratamiento: 'Standard outpatient follow-up',
       }),
     });
     if (!createRes.ok) throw new Error(`Create EHR HTTP ${createRes.status}: ${await createRes.text()}`);
@@ -443,7 +443,7 @@ async function runVerification() {
     if (!getRes.ok) throw new Error(`Get EHR HTTP ${getRes.status}`);
     const fetched = await getRes.json();
     if (fetched.diagnosticoDescripcion !== diagText) {
-      throw new Error('El diagnóstico descifrado no coincide con el original');
+      throw new Error('Decrypted diagnosis does not match original');
     }
     return { idHistoria: created.idHistoria, roundTripDecrypted: true };
   });
@@ -456,29 +456,29 @@ async function runVerification() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data?.kpis || typeof data.kpis.totalPatients !== 'number') {
-      throw new Error('Estructura inválida en /dashboard/metrics');
+      throw new Error('Invalid structure in /dashboard/metrics');
     }
     return data.kpis;
   });
   if (rDash.ok) passed++;
 
-  // 22. Catálogo de Aseguradoras alineado con Frontend (patient-service)
+  // 22. Insurers Catalog aligned with Frontend (patient-service)
   total++;
-  const rCatalogs = await logStep('Catálogo de Aseguradoras: GET /patients/catalogs/insurances', async () => {
+  const rCatalogs = await logStep('Insurers Catalog: GET /patients/catalogs/insurances', async () => {
     const res = await fetch(`${BASE_URL}/patients/catalogs/insurances`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    if (!Array.isArray(data)) throw new Error('Se esperaba un arreglo de aseguradoras');
+    if (!Array.isArray(data)) throw new Error('Expected an array of insurers');
     return { count: data.length };
   });
   if (rCatalogs.ok) passed++;
 
   console.log('\n======================================================================');
-  console.log(`🏁 Resumen de Verificación E2E: ${passed}/${total} pasos exitosos.`);
+  console.log(`🏁 E2E Verification Summary: ${passed}/${total} steps passed.`);
   if (passed === total) {
-    console.log('🎉 Todos los microservicios, contratos de eventos y componentes responden correctamente.');
+    console.log('🎉 All microservices, event contracts, and components are responding properly.');
   } else {
-    console.log('⚠️ Algunos pasos no pudieron completarse. Asegúrate de que los contenedores de Docker estén corriendo.');
+    console.log('⚠️ Some steps could not be completed. Make sure the Docker containers are running.');
   }
   console.log('======================================================================\n');
 }

@@ -1,7 +1,7 @@
 {
   "name": "pharmacy-service",
   "version": "1.0.0",
-  "description": "Microservicio Autónomo de Farmacia, Existencias y Almacén Hospitalario (NestJS 12 + PostgreSQL 18 + Kafka 8.3.2)",
+  "description": "Autonomous Pharmacy, Inventory, and Hospital Warehouse Microservice (NestJS 12 + PostgreSQL 18 + Kafka 8.3.2)",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

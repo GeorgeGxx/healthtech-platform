@@ -177,10 +177,10 @@ export class HospitalizationsService implements OnModuleInit {
       const now = new Date().toISOString();
 
       const tipoLabels: Record<string, string> = {
-        general: 'Habitación General',
-        individual: 'Habitación Individual',
-        terapia_intensiva: 'Terapia Intensiva (UTI)',
-        observacion: 'Observación / Urgencias',
+        general: 'General Ward',
+        individual: 'Private Room',
+        terapia_intensiva: 'Intensive Care Unit (ICU)',
+        observacion: 'Observation / Emergency',
       };
 
       let bulk = '';
@@ -205,12 +205,12 @@ export class HospitalizationsService implements OnModuleInit {
           numero: b.numero,
           piso: b.piso,
           tipo: tipoLabels[b.tipo] || b.tipo,
-          estado: b.ocupada ? 'Ocupada' : 'Disponible',
+          estado: b.ocupada ? 'Occupied' : 'Available',
           tarifa_noche_mxn: Number(b.costoDia),
           paciente_nombre: b.pacienteActual ? maskName(b.pacienteActual.nombreCompleto) : null,
           paciente_dni: b.pacienteActual ? maskDni(b.pacienteActual.dni) : null,
           medico_responsable: b.pacienteActual ? b.pacienteActual.medicoResponsable : null,
-          diagnostico_ingreso: b.pacienteActual ? 'CONFIDENCIAL (Ver ECE)' : null,
+          diagnostico_ingreso: b.pacienteActual ? 'CONFIDENTIAL (See EHR)' : null,
           dias_estancia: days,
           costo_acumulado_mxn: Math.round(Number(b.costoDia) * Math.max(1, days) * 100) / 100,
           '@timestamp': now,

@@ -1,28 +1,28 @@
 -- ============================================================================
--- CENTRO MÉDICO - ESQUEMA DDL OPTIMIZADO PARA POSTGRESQL 18
--- Archivo: 01_schema_centromedico.sql
--- Descripción:
---   - Idempotente (DROP IF EXISTS en cascada).
---   - Sintaxis e identificadores idiomáticos en PostgreSQL (snake_case).
---   - Tipos modernos: GENERATED ALWAYS AS IDENTITY, TIMESTAMPTZ, NUMERIC, JSONB, TSTZRANGE.
---   - Extensiones: btree_gist (para rangos y exclusiones) y unaccent (búsqueda de texto).
---   - Constraint de exclusión GIST: impide turnos simultáneos con el mismo médico.
---   - Índices B-Tree, GIST y GIN (para JSONB y Full Text Search en español).
+-- MEDICAL CENTER - DDL SCHEMA OPTIMIZED FOR POSTGRESQL 18
+-- File: 01_schema_centromedico.sql
+-- Description:
+--   - Idempotent (cascading DROP IF EXISTS).
+--   - Idiomatic PostgreSQL syntax and identifiers (snake_case).
+--   - Modern types: GENERATED ALWAYS AS IDENTITY, TIMESTAMPTZ, NUMERIC, JSONB, TSTZRANGE.
+--   - Extensions: btree_gist (for ranges and exclusions) and unaccent (text search).
+--   - GIST exclusion constraint: prevents overlapping appointments for the same physician.
+--   - B-Tree, GIST, and GIN indexes (for JSONB and Spanish Full Text Search).
 -- ============================================================================
 
--- Forzar codificación UTF8 para evitar errores con tildes en Windows/PowerShell
+-- Force UTF8 encoding to avoid accent issues on Windows/PowerShell
 SET client_encoding = 'UTF8';
--- Suprimir los avisos informativos (NOTICE) de DROP IF EXISTS
+-- Suppress informational notices (NOTICE) from DROP IF EXISTS
 SET client_min_messages = warning;
 
 -- ----------------------------------------------------------------------------
--- 1. Extensiones requeridas
+-- 1. Required Extensions
 -- ----------------------------------------------------------------------------
 CREATE EXTENSION IF NOT EXISTS btree_gist;
 CREATE EXTENSION IF NOT EXISTS unaccent;
 
 -- ----------------------------------------------------------------------------
--- 2. Limpieza de tablas y tipos previos (Ejecución idempotente)
+-- 2. Cleanup of Previous Tables and Types (Idempotent Execution)
 -- ----------------------------------------------------------------------------
 DROP TABLE IF EXISTS pago CASCADE;
 DROP TABLE IF EXISTS concepto_pago CASCADE;
@@ -46,7 +46,7 @@ DROP TYPE IF EXISTS estado_turno_enum CASCADE;
 DROP TYPE IF EXISTS genero_enum CASCADE;
 
 -- ----------------------------------------------------------------------------
--- 3. Tipos Enumerados (ENUMs nativos de PostgreSQL)
+-- 3. Enumerated Types (Native PostgreSQL ENUMs)
 -- ----------------------------------------------------------------------------
 CREATE TYPE genero_enum AS ENUM ('M', 'F', 'Otro');
 
@@ -82,17 +82,17 @@ CREATE TYPE tipo_habitacion_enum AS ENUM (
 );
 
 -- ----------------------------------------------------------------------------
--- 4. Tablas de Catálogo y Entidades Base
+-- 4. Catalog and Base Entity Tables
 -- ----------------------------------------------------------------------------
 
--- Países
+-- Countries
 CREATE TABLE pais (
     id_pais       CHAR(3)      NOT NULL PRIMARY KEY,
     nombre        VARCHAR(60)  NOT NULL,
     nacionalidad  VARCHAR(60)  NULL
 );
 
--- Obras Sociales / Seguros Médicos
+-- Health Insurance Plans / Medical Insurers
 CREATE TABLE obra_social (
     id_obra_social       INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre               VARCHAR(100) NOT NULL UNIQUE,
@@ -104,7 +104,7 @@ CREATE TABLE obra_social (
         CHECK (porcentaje_cobertura BETWEEN 0.00 AND 100.00)
 );
 
--- Especialidades Médicas
+-- Medical Specialties
 CREATE TABLE especialidad (
     id_especialidad      INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre               VARCHAR(80)   NOT NULL UNIQUE,
@@ -114,15 +114,15 @@ CREATE TABLE especialidad (
         CHECK (precio_consulta_base >= 0.00)
 );
 
--- Consultorios Físicos
+-- Physical Consulting Rooms
 CREATE TABLE consultorio (
     id_consultorio INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    codigo         VARCHAR(15)  NOT NULL UNIQUE, -- Ej: 'P1-C101'
+    codigo         VARCHAR(15)  NOT NULL UNIQUE, -- E.g.: 'P1-C101'
     piso           SMALLINT     NOT NULL,
     descripcion    VARCHAR(100) NULL
 );
 
--- Médicos (incluye auto-referencia jerárquica para WITH RECURSIVE)
+-- Physicians (includes hierarchical self-reference for WITH RECURSIVE)
 CREATE TABLE medico (
     id_medico        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_jefe_directo  INT          NULL,
@@ -139,7 +139,7 @@ CREATE TABLE medico (
 );
 CREATE INDEX ix_medico_jefe ON medico(id_jefe_directo);
 
--- Relación N:M Médicos - Especialidades
+-- N:M Relationship Physicians - Specialties
 CREATE TABLE medico_especialidad (
     id_medico        INT     NOT NULL,
     id_especialidad  INT     NOT NULL,
@@ -155,7 +155,7 @@ CREATE TABLE medico_especialidad (
 );
 CREATE INDEX ix_medico_especialidad_esp ON medico_especialidad(id_especialidad);
 
--- Pacientes
+-- Patients
 CREATE TABLE paciente (
     id_paciente      INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     dni              VARCHAR(20)  NOT NULL UNIQUE,
@@ -183,7 +183,7 @@ CREATE INDEX ix_paciente_obra_social ON paciente(id_obra_social);
 CREATE INDEX ix_paciente_apellido_nombre ON paciente(apellido, nombre);
 
 -- ----------------------------------------------------------------------------
--- 5. Turnos Médicos (Citas) con Constraint de Exclusión GIST
+-- 5. Medical Appointments with GIST Exclusion Constraint
 -- ----------------------------------------------------------------------------
 CREATE TABLE turno (
     id_turno         INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -191,7 +191,7 @@ CREATE TABLE turno (
     id_medico        INT                NOT NULL,
     id_especialidad  INT                NOT NULL,
     id_consultorio   INT                NULL,
-    horario_rango    TSTZRANGE          NOT NULL, -- Rango [inicio, fin)
+    horario_rango    TSTZRANGE          NOT NULL, -- Range [start, end)
     estado           estado_turno_enum  NOT NULL DEFAULT 'pendiente',
     motivo_consulta  VARCHAR(250)       NULL,
     observaciones    TEXT               NULL,
@@ -208,8 +208,8 @@ CREATE TABLE turno (
     CONSTRAINT fk_turno_consultorio 
         FOREIGN KEY (id_consultorio) REFERENCES consultorio(id_consultorio) 
         ON DELETE SET NULL,
-    -- PostgreSQL Exclusión: Impide que el mismo médico tenga 2 turnos solapados
-    -- excepto cuando el turno esté cancelado o reprogramado
+    -- PostgreSQL Exclusion: Prevents the same physician from having 2 overlapping appointments
+    -- except when the appointment is canceled or rescheduled
     CONSTRAINT uq_medico_no_solapamiento 
         EXCLUDE USING gist (
             id_medico WITH =, 
@@ -222,7 +222,7 @@ CREATE INDEX ix_turno_horario ON turno USING gist(horario_rango);
 CREATE INDEX ix_turno_estado ON turno(estado);
 
 -- ----------------------------------------------------------------------------
--- 6. Historias Clínicas (con JSONB y Full Text Search)
+-- 6. Clinical Records (with JSONB and Full Text Search)
 -- ----------------------------------------------------------------------------
 CREATE TABLE historia_clinica (
     id_historia             INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -230,16 +230,16 @@ CREATE TABLE historia_clinica (
     id_medico               INT          NOT NULL,
     id_turno                INT          NULL UNIQUE,
     fecha_atencion          TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    diagnostico_codigo_cie  VARCHAR(10)  NULL, -- Ej: 'I10', 'E11.9', 'J00'
+    diagnostico_codigo_cie  VARCHAR(10)  NULL, -- E.g.: 'I10', 'E11.9', 'J00'
     diagnostico_descripcion TEXT         NOT NULL,
     tratamiento             TEXT         NULL,
-    -- JSONB: Almacena signos vitales con estructura flexible
-    -- Ejemplo: {"presion": "120/80", "pulso_lpm": 72, "temperatura_c": 36.5, "peso_kg": 74.2}
+    -- JSONB: Stores vital signs with a flexible structure
+    -- Example: {"presion": "120/80", "pulso_lpm": 72, "temperatura_c": 36.5, "peso_kg": 74.2}
     signos_vitales          JSONB        NOT NULL DEFAULT '{}'::jsonb,
-    -- JSONB: Lista de medicamentos prescritos
-    -- Ejemplo: [{"medicamento": "Losartan", "dosis": "50mg", "frecuencia": "cada 24 horas", "dias": 30}]
+    -- JSONB: List of prescribed medications
+    -- Example: [{"medicamento": "Losartan", "dosis": "50mg", "frecuencia": "cada 24 horas", "dias": 30}]
     receta_medicamentos     JSONB        NOT NULL DEFAULT '[]'::jsonb,
-    -- Columna generada para búsqueda de texto completo en español
+    -- Generated column for Spanish full-text search
     documento_busqueda      TSVECTOR GENERATED ALWAYS AS (
         to_tsvector('spanish', 
             coalesce(diagnostico_descripcion, '') || ' ' || 
@@ -264,7 +264,7 @@ CREATE INDEX ix_historia_receta_gin ON historia_clinica USING gin(receta_medicam
 CREATE INDEX ix_historia_fts_gin ON historia_clinica USING gin(documento_busqueda);
 
 -- ----------------------------------------------------------------------------
--- 7. Habitaciones e Internaciones Hospitalarias
+-- 7. Hospital Rooms and Admissions
 -- ----------------------------------------------------------------------------
 CREATE TABLE habitacion (
     id_habitacion INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -305,7 +305,7 @@ CREATE INDEX ix_internacion_habitacion ON internacion(id_habitacion);
 CREATE INDEX ix_internacion_activa ON internacion(fecha_ingreso) WHERE fecha_alta IS NULL;
 
 -- ----------------------------------------------------------------------------
--- 8. Facturación y Pagos
+-- 8. Billing and Payments
 -- ----------------------------------------------------------------------------
 CREATE TABLE concepto_pago (
     id_concepto INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -322,7 +322,7 @@ CREATE TABLE pago (
     fecha_pago          TIMESTAMPTZ      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     monto_bruto         NUMERIC(10,2)    NOT NULL,
     descuento_cobertura NUMERIC(10,2)    NOT NULL DEFAULT 0.00,
-    -- Columna calculada/almacenada para PostgreSQL 18
+    -- Computed/stored column for PostgreSQL 18
     monto_neto          NUMERIC(10,2)    GENERATED ALWAYS AS (monto_bruto - descuento_cobertura) STORED,
     metodo_pago         metodo_pago_enum NOT NULL,
     estado              estado_pago_enum NOT NULL DEFAULT 'completado',
@@ -352,7 +352,7 @@ CREATE INDEX ix_pago_fecha ON pago(fecha_pago);
 CREATE INDEX ix_pago_estado ON pago(estado);
 
 -- ----------------------------------------------------------------------------
--- 9. Catálogo de Farmacia y Stock de Medicamentos
+-- 9. Pharmacy Catalog and Medication Stock
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS medicamento (
     id_medicamento        VARCHAR(20)    PRIMARY KEY,
@@ -374,7 +374,7 @@ CREATE INDEX ix_medicamento_categoria ON medicamento(categoria_terapeutica);
 CREATE INDEX ix_medicamento_alerta ON medicamento(nivel_alerta);
 
 -- ----------------------------------------------------------------------------
--- 10. Trazabilidad y Auditoría de Acceso a PHI (HIPAA § 164.312 y NOM-024-SSA3-2012)
+-- 10. PHI Access Traceability & Audit (HIPAA § 164.312 & NOM-024-SSA3-2012)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS registro_auditoria (
     id_auditoria   BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -394,5 +394,5 @@ CREATE INDEX ix_auditoria_fecha ON registro_auditoria(fecha_hora);
 CREATE INDEX ix_auditoria_usuario ON registro_auditoria(usuario_id);
 
 -- ============================================================================
--- FIN DEL ESQUEMA DDL
+-- END OF DDL SCHEMA
 -- ============================================================================

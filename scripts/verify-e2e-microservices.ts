@@ -1,7 +1,7 @@
 /**
- * Script de Verificación End-to-End (E2E) de Microservicios, Sagas y Event-Driven Architecture
- * Centro Médico Nacional - HealthTech Platform
- * 100% TypeScript Estricto
+ * End-to-End (E2E) Verification Script for Microservices, Sagas, and Event-Driven Architecture
+ * National Medical Center - HealthTech Platform
+ * 100% Strict TypeScript
  */
 
 declare const process: {
@@ -51,12 +51,12 @@ async function logStep<T>(title: string, fn: () => Promise<T>): Promise<StepResu
     console.log(`✅ OK (${elapsed}ms)`);
     if (result && typeof result === 'object') {
       const summary = JSON.stringify(result).slice(0, 140);
-      console.log(`   └─ Respuesta: ${summary}...`);
+      console.log(`   └─ Response: ${summary}...`);
     }
     return { ok: true, result, elapsedMs: elapsed };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.log(`❌ FALLÓ`);
+    console.log(`❌ FAILED`);
     console.error(`   └─ Error: ${message}`);
     return { ok: false, error: message };
   }
@@ -64,7 +64,7 @@ async function logStep<T>(title: string, fn: () => Promise<T>): Promise<StepResu
 
 export async function runVerification(): Promise<boolean> {
   console.log('======================================================================');
-  console.log('🏥 HealthTech Platform - Verificación E2E de Arquitectura Microservicios');
+  console.log('🏥 HealthTech Platform - E2E Microservices Architecture Verification');
   console.log(`   API Gateway Target: ${BASE_URL}`);
   console.log('   Stack: NestJS 12, Kafka 8.3.2, Redis 8.8.1, Kong 3.9, Postgres 18');
   console.log('======================================================================');
@@ -72,72 +72,72 @@ export async function runVerification(): Promise<boolean> {
   let passed = 0;
   let total = 0;
 
-  // 1. Health Check de notification-service (:3005)
+  // 1. Health Check for notification-service (:3005)
   total++;
-  const r1 = await logStep<HealthCheckResponse>('Health Check de notification-service (:3005)', async () => {
+  const r1 = await logStep<HealthCheckResponse>('Health Check for notification-service (:3005)', async () => {
     const res = await fetch(`${BASE_URL}/notifications/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as HealthCheckResponse;
   });
   if (r1.ok) passed++;
 
-  // 2. Health Check de appointment-service (:3001)
+  // 2. Health Check for appointment-service (:3001)
   total++;
-  const r2 = await logStep<HealthCheckResponse>('Health Check de appointment-service (:3001)', async () => {
+  const r2 = await logStep<HealthCheckResponse>('Health Check for appointment-service (:3001)', async () => {
     const res = await fetch(`${BASE_URL}/appointments/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as HealthCheckResponse;
   });
   if (r2.ok) passed++;
 
-  // 3. Health Check de patient-service (:3002)
+  // 3. Health Check for patient-service (:3002)
   total++;
-  const r3 = await logStep<HealthCheckResponse>('Health Check de patient-service (:3002)', async () => {
+  const r3 = await logStep<HealthCheckResponse>('Health Check for patient-service (:3002)', async () => {
     const res = await fetch(`${BASE_URL}/patients/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as HealthCheckResponse;
   });
   if (r3.ok) passed++;
 
-  // 4. Health Check de billing-service (:3003)
+  // 4. Health Check for billing-service (:3003)
   total++;
-  const rBilling = await logStep<HealthCheckResponse>('Health Check de billing-service (:3003)', async () => {
+  const rBilling = await logStep<HealthCheckResponse>('Health Check for billing-service (:3003)', async () => {
     const res = await fetch(`${BASE_URL}/billing/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as HealthCheckResponse;
   });
   if (rBilling.ok) passed++;
 
-  // 5. Health Check de pharmacy-service (:3004)
+  // 5. Health Check for pharmacy-service (:3004)
   total++;
-  const rPharmacy = await logStep<HealthCheckResponse>('Health Check de pharmacy-service (:3004)', async () => {
+  const rPharmacy = await logStep<HealthCheckResponse>('Health Check for pharmacy-service (:3004)', async () => {
     const res = await fetch(`${BASE_URL}/pharmacy/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as HealthCheckResponse;
   });
   if (rPharmacy.ok) passed++;
 
-  // 6. Health Check de staff-service (:3007)
+  // 6. Health Check for staff-service (:3007)
   total++;
-  const rStaff = await logStep<HealthCheckResponse>('Health Check de staff-service (:3007)', async () => {
+  const rStaff = await logStep<HealthCheckResponse>('Health Check for staff-service (:3007)', async () => {
     const res = await fetch(`${BASE_URL}/doctors/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as HealthCheckResponse;
   });
   if (rStaff.ok) passed++;
 
-  // 7. Health Check de clinical-records-service (:3006)
+  // 7. Health Check for clinical-records-service (:3006)
   total++;
-  const rClinical = await logStep<HealthCheckResponse>('Health Check de clinical-records-service (:3006)', async () => {
+  const rClinical = await logStep<HealthCheckResponse>('Health Check for clinical-records-service (:3006)', async () => {
     const res = await fetch(`${BASE_URL}/clinical-records/health`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as HealthCheckResponse;
   });
   if (rClinical.ok) passed++;
 
-  // 8. Verificación de Idempotencia en Notificaciones (Redis 8.8.1)
+  // 8. Notification Idempotency Check (Redis 8.8.1)
   total++;
-  const rIdemp = await logStep('Prueba de Idempotencia con Redis 8.8.1 (Doble Despacho)', async () => {
+  const rIdemp = await logStep('Idempotency Test with Redis 8.8.1 (Double Dispatch)', async () => {
     const testEventId = `e2e-idemp-${Date.now()}`;
     const payload = {
       tipo: 'appointment.created',
@@ -171,18 +171,18 @@ export async function runVerification(): Promise<boolean> {
   });
   if (rIdemp.ok) passed++;
 
-  // 9. Resumen de Farmacia & Stock Hospitalario
+  // 9. Pharmacy & Hospital Stock Summary
   total++;
-  const rPharmSummary = await logStep('Resumen Ejecutivo de Farmacia & Existencias', async () => {
+  const rPharmSummary = await logStep('Executive Pharmacy & Stock Summary', async () => {
     const res = await fetch(`${BASE_URL}/pharmacy/summary`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   });
   if (rPharmSummary.ok) passed++;
 
-  // 10. Consulta de Dead-Letter Queue (DLQ)
+  // 10. Dead-Letter Queue (DLQ) Query
   total++;
-  const rDlq = await logStep('Verificación de Dead-Letter Queue (DLQ)', async () => {
+  const rDlq = await logStep('Dead-Letter Queue (DLQ) Verification', async () => {
     const res = await fetch(`${BASE_URL}/notifications/dlq`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
@@ -190,18 +190,18 @@ export async function runVerification(): Promise<boolean> {
   if (rDlq.ok) passed++;
 
   console.log('\n======================================================================');
-  console.log(`🏁 Resumen de Verificación E2E: ${passed}/${total} pasos exitosos.`);
+  console.log(`🏁 E2E Verification Summary: ${passed}/${total} steps passed.`);
   if (passed === total) {
-    console.log('🎉 Todos los microservicios, contratos de eventos y componentes responden correctamente.');
+    console.log('🎉 All microservices, event contracts, and components are responding properly.');
   } else {
-    console.log('⚠️ Algunos pasos no pudieron completarse. Asegúrate de que los contenedores de Docker estén corriendo.');
+    console.log('⚠️ Some steps could not be completed. Make sure the Docker containers are running.');
   }
   console.log('======================================================================\n');
 
   return passed === total;
 }
 
-// Ejecutar si se invoca directamente
+// Run if invoked directly
 if (process.argv[1]?.endsWith('verify-e2e-microservices.ts')) {
   runVerification();
 }

@@ -1,5 +1,5 @@
 # ============================================================================
-# Multi-stage Dockerfile de Producción para Pharmacy-Service (NestJS 12)
+# Production Multi-stage Dockerfile for Pharmacy-Service (NestJS 12)
 # ============================================================================
 
 FROM node:24-alpine AS deps

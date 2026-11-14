@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SagaOrchestratorService } from '../../src/kafka/saga-orchestrator.service.js';
 import { SagaStepDefinition } from '../../src/kafka/saga.interfaces.js';
 
-describe('SagaOrchestratorService (Saga Orquestada con Compensación)', () => {
+describe('SagaOrchestratorService (Orchestrated Saga with Compensation)', () => {
   let sagaOrchestrator: SagaOrchestratorService;
   let mockSagaRepo: any;
   let mockKafkaProducer: any;
@@ -27,7 +27,7 @@ describe('SagaOrchestratorService (Saga Orquestada con Compensación)', () => {
     sagaOrchestrator = new SagaOrchestratorService(mockSagaRepo, mockKafkaProducer);
   });
 
-  it('debe ejecutar exitosamente todos los pasos de una saga secuencial', async () => {
+  it('should successfully execute all steps of a sequential saga', async () => {
     const step1Compensar = vi.fn();
     const step2Compensar = vi.fn();
 
@@ -67,9 +67,9 @@ describe('SagaOrchestratorService (Saga Orquestada con Compensación)', () => {
     expect(mockKafkaProducer.emit).toHaveBeenCalledTimes(4); // initiated, step 1, step 2, completed
   });
 
-  it('debe ejecutar la compensación reversa (LIFO) cuando un paso falla', async () => {
+  it('should execute reverse compensation (LIFO) when a step fails', async () => {
     const step1Compensar = vi.fn().mockResolvedValue(undefined);
-    const step2Ejecutar = vi.fn().mockRejectedValue(new Error('Fondos insuficientes en coaseguro'));
+    const step2Ejecutar = vi.fn().mockRejectedValue(new Error('Insufficient coinsurance funds'));
     const step2Compensar = vi.fn();
 
     const pasos: SagaStepDefinition<any>[] = [
@@ -97,7 +97,7 @@ describe('SagaOrchestratorService (Saga Orquestada con Compensación)', () => {
     );
 
     expect(result.estado).toBe('COMPENSADA');
-    expect(result.error).toContain('Fondos insuficientes en coaseguro');
+    expect(result.error).toContain('Insufficient coinsurance funds');
     expect(step1Compensar).toHaveBeenCalledTimes(1);
     expect(step2Compensar).not.toHaveBeenCalled();
   });

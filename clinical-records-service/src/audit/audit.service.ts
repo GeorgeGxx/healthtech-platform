@@ -16,7 +16,7 @@ export class AuditService {
   async registrarAcceso(dto: AuditLogDto): Promise<RegistroAuditoria> {
     const registro = this.auditRepo.create({
       usuarioId: dto.usuarioId || 'system-user',
-      nombreUsuario: dto.nombreUsuario || 'Dr. Médico Adscrito',
+      nombreUsuario: dto.nombreUsuario || 'Dr. Attending Physician',
       rol: dto.rol || 'doctor_user',
       accion: dto.accion,
       entidad: dto.entidad,

@@ -1,5 +1,5 @@
 # ============================================================================
-# Multi-stage Dockerfile de Producción para Appointment-Service (NestJS 12)
+# Production multi-stage Dockerfile for Appointment-Service (NestJS 12)
 # ============================================================================
 
 FROM node:24-alpine AS deps

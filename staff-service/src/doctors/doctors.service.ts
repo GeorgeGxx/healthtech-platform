@@ -105,7 +105,7 @@ export class DoctorsService {
       version: '1.0.0',
       timestamp: new Date().toISOString(),
       baseDeDatos: 'PostgreSQL 18 (centromedico.medico, especialidad, consultorio)',
-      cache: 'Redis 8.8.1 (catálogos de especialidades y consultorios)',
+      cache: 'Redis 8.8.1 (specialty and office catalogs)',
     };
   }
 

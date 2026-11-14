@@ -1,21 +1,21 @@
 -- ============================================================================
--- CENTRO MÉDICO - DATOS DE PRUEBA (SEED) PARA POSTGRESQL 18
--- Archivo: 02_seed_centromedico.sql
--- Descripción:
---   - Datos estructurados, coherentes y con suficiente volumen para practicar.
---   - Rangos de horarios (tstzrange) compatibles con la exclusión GIST.
---   - Jerarquía médica multinivel para practicar CTEs recursivas.
---   - Historias clínicas con JSONB (signos vitales y recetas) y texto para FTS.
---   - Pacientes con y sin obra social, turnos en diferentes estados y pagos.
+-- MEDICAL CENTER - SEED DATA FOR POSTGRESQL 18
+-- File: 02_seed_centromedico.sql
+-- Description:
+--   - Structured, coherent data with sufficient volume for practice.
+--   - Time ranges (tstzrange) compatible with the GIST exclusion constraint.
+--   - Multi-level medical hierarchy for practicing recursive CTEs.
+--   - Clinical records with JSONB (vital signs and prescriptions) and text for FTS.
+--   - Patients with and without health insurance, appointments in various states, and payments.
 -- ============================================================================
 
--- Forzar codificación UTF8 para evitar errores con tildes en Windows/PowerShell
+-- Force UTF8 encoding to avoid accent issues on Windows/PowerShell
 SET client_encoding = 'UTF8';
--- Suprimir los avisos informativos (NOTICE)
+-- Suppress informational notices (NOTICE)
 SET client_min_messages = warning;
 
 -- ----------------------------------------------------------------------------
--- 1. Países
+-- 1. Countries
 -- ----------------------------------------------------------------------------
 INSERT INTO pais (id_pais, nombre, nacionalidad) VALUES
     ('ARG', 'Argentina',  'Argentina'),
@@ -28,7 +28,7 @@ INSERT INTO pais (id_pais, nombre, nacionalidad) VALUES
     ('URY', 'Uruguay',    'Uruguaya');
 
 -- ----------------------------------------------------------------------------
--- 2. Obras Sociales / Seguros Médicos
+-- 2. Health Insurance Plans / Medical Insurers
 -- ----------------------------------------------------------------------------
 INSERT INTO obra_social (nombre, codigo_seguro, porcentaje_cobertura, telefono_contacto) VALUES
     ('OSDE 310',          'OSDE-310', 80.00, '+54 11 4000-5000'),
@@ -38,7 +38,7 @@ INSERT INTO obra_social (nombre, codigo_seguro, porcentaje_cobertura, telefono_c
     ('Particular/Ninguno','PARTIC',    0.00, NULL);
 
 -- ----------------------------------------------------------------------------
--- 3. Especialidades Médicas
+-- 3. Medical Specialties
 -- ----------------------------------------------------------------------------
 INSERT INTO especialidad (nombre, descripcion, precio_consulta_base) VALUES
     ('Medicina General', 'Atención primaria y medicina preventiva', 15000.00),
@@ -50,7 +50,7 @@ INSERT INTO especialidad (nombre, descripcion, precio_consulta_base) VALUES
     ('Gastroenterología','Aparato digestivo y órganos asociados', 23000.00);
 
 -- ----------------------------------------------------------------------------
--- 4. Consultorios Físicos
+-- 4. Physical Consulting Rooms
 -- ----------------------------------------------------------------------------
 INSERT INTO consultorio (codigo, piso, descripcion) VALUES
     ('C-101', 1, 'Consultorio de Guardia y Medicina General'),
@@ -61,47 +61,47 @@ INSERT INTO consultorio (codigo, piso, descripcion) VALUES
     ('C-302', 3, 'Consultorio Dermatológico');
 
 -- ----------------------------------------------------------------------------
--- 5. Médicos (Estructura Jerárquica para WITH RECURSIVE)
---    Nivel 1: Director Médico (id 1)
---    Nivel 2: Jefes de Departamento (id 2, 3) reportan a 1
---    Nivel 3: Especialistas (id 4, 5, 6) reportan a 2 o 3
---    Nivel 4: Residentes (id 7, 8) reportan a 4 o 6
+-- 5. Physicians (Hierarchical Structure for WITH RECURSIVE)
+--    Level 1: Medical Director (id 1)
+--    Level 2: Department Heads (id 2, 3) report to 1
+--    Level 3: Specialists (id 4, 5, 6) report to 2 or 3
+--    Level 4: Residents (id 7, 8) report to 4 or 6
 -- ----------------------------------------------------------------------------
--- Nivel 1: Dirección
+-- Level 1: Management
 INSERT INTO medico (id_jefe_directo, matricula, nombre, apellido, email, telefono, fecha_ingreso) VALUES
     (NULL, 'MN-10001', 'Rafael', 'Castelo', 'rcastelo@centromedico.com', '+54 11 5555-0101', '2015-03-01');
 
--- Nivel 2: Jefaturas de Departamento
+-- Level 2: Department Heads
 INSERT INTO medico (id_jefe_directo, matricula, nombre, apellido, email, telefono, fecha_ingreso) VALUES
     (1,    'MN-10002', 'Laura',  'Gómez',   'lgomez@centromedico.com',   '+54 11 5555-0102', '2017-06-15'),
     (1,    'MN-10003', 'Alberto','Arévalo', 'aarevalo@centromedico.com', '+54 11 5555-0103', '2016-09-01');
 
--- Nivel 3: Médicos de Planta / Especialistas
+-- Level 3: Staff Physicians / Specialists
 INSERT INTO medico (id_jefe_directo, matricula, nombre, apellido, email, telefono, fecha_ingreso) VALUES
     (2,    'MN-10004', 'Jorge',  'Gallaga', 'jgallaga@centromedico.com', '+54 11 5555-0104', '2019-02-01'),
     (2,    'MN-10005', 'Sofía',  'Navarro', 'snavarro@centromedico.com', '+54 11 5555-0105', '2020-04-10'),
     (3,    'MN-10006', 'Martín', 'Rossi',   'mrossi@centromedico.com',   '+54 11 5555-0106', '2018-11-20');
 
--- Nivel 4: Médicos Residentes
+-- Level 4: Resident Physicians
 INSERT INTO medico (id_jefe_directo, matricula, nombre, apellido, email, telefono, fecha_ingreso) VALUES
     (4,    'MN-10007', 'Valentina', 'Ruiz',    'vruiz@centromedico.com',    '+54 11 5555-0107', '2023-03-01'),
     (6,    'MN-10008', 'Mateo',     'Morales', 'mmorales@centromedico.com', '+54 11 5555-0108', '2023-03-01');
 
--- Relación Médicos - Especialidades (N:M con flag principal)
+-- Physicians - Specialties Relationship (N:M with primary flag)
 INSERT INTO medico_especialidad (id_medico, id_especialidad, es_principal) VALUES
-    (1, 1, TRUE),   -- Castelo: Medicina General (Principal)
-    (1, 2, FALSE),  -- Castelo: Cardiología
-    (2, 2, TRUE),   -- Gómez: Cardiología (Principal)
-    (2, 5, FALSE),  -- Gómez: Neurología
-    (3, 3, TRUE),   -- Arévalo: Traumatología (Principal)
-    (4, 2, TRUE),   -- Gallaga: Cardiología (Principal)
-    (5, 4, TRUE),   -- Navarro: Pediatría (Principal)
-    (6, 3, TRUE),   -- Rossi: Traumatología (Principal)
-    (7, 2, TRUE),   -- Ruiz: Cardiología (Residente)
-    (8, 3, TRUE);   -- Morales: Traumatología (Residente)
+    (1, 1, TRUE),   -- Castelo: General Medicine (Primary)
+    (1, 2, FALSE),  -- Castelo: Cardiology
+    (2, 2, TRUE),   -- Gómez: Cardiology (Primary)
+    (2, 5, FALSE),  -- Gómez: Neurology
+    (3, 3, TRUE),   -- Arévalo: Traumatology (Primary)
+    (4, 2, TRUE),   -- Gallaga: Cardiology (Primary)
+    (5, 4, TRUE),   -- Navarro: Pediatrics (Primary)
+    (6, 3, TRUE),   -- Rossi: Traumatology (Primary)
+    (7, 2, TRUE),   -- Ruiz: Cardiology (Resident)
+    (8, 3, TRUE);   -- Morales: Traumatology (Resident)
 
 -- ----------------------------------------------------------------------------
--- 6. Pacientes (Diversidad de edades, obras sociales y países)
+-- 6. Patients (Diverse ages, health insurance plans, and countries)
 -- ----------------------------------------------------------------------------
 INSERT INTO paciente (dni, nombre, apellido, genero, fecha_nacimiento, id_pais, id_obra_social, numero_afiliado, domicilio, telefono, email) VALUES
     ('28456123',  'Juan',     'Pérez García', 'M', '1985-05-14', 'MEX', 1, 'OSDE-88992',  'Av. Insurgentes Sur 1450, CDMX', '+52 55 1234-5678', 'juan.perez@email.com'),
@@ -120,7 +120,7 @@ INSERT INTO paciente (dni, nombre, apellido, genero, fecha_nacimiento, id_pais, 
     ('29654123',  'Gonzalo',  'Herrera',  'M', '1982-12-01', 'ESP', 5, NULL,           'Gran Vía 45, Madrid', '+34 612 345678',  'gherrera@yahoo.es');
 
 -- ----------------------------------------------------------------------------
--- 7. Habitaciones
+-- 7. Hospital Rooms
 -- ----------------------------------------------------------------------------
 INSERT INTO habitacion (numero, tipo, piso, costo_dia, activa) VALUES
     ('HAB-101', 'general',           1, 45000.00, TRUE),
@@ -131,10 +131,10 @@ INSERT INTO habitacion (numero, tipo, piso, costo_dia, activa) VALUES
     ('OBS-01',  'observacion',       1, 30000.00, TRUE);
 
 -- ----------------------------------------------------------------------------
--- 8. Turnos Médicos (con rangos tstzrange sin solapamiento de médico)
+-- 8. Medical Appointments (with non-overlapping tstzrange per physician)
 -- ----------------------------------------------------------------------------
 INSERT INTO turno (id_paciente, id_medico, id_especialidad, id_consultorio, horario_rango, estado, motivo_consulta, observaciones) VALUES
-    -- Turnos Pasados (Atendidos)
+    -- Past Appointments (Attended)
     (4, 2, 2, 3, tstzrange('2024-02-10 09:00:00-03', '2024-02-10 09:30:00-03', '[)'), 'atendido', 'Control hipertensión arterial', 'Paciente con tratamiento regular'),
     (5, 2, 2, 3, tstzrange('2024-02-10 09:30:00-03', '2024-02-10 10:00:00-03', '[)'), 'atendido', 'Dolor precordial esporádico', 'Se solicitó ECG'),
     (7, 2, 2, 3, tstzrange('2024-02-10 10:00:00-03', '2024-02-10 10:30:00-03', '[)'), 'atendido', 'Control anual PAMI', 'Control de rutina'),
@@ -146,18 +146,18 @@ INSERT INTO turno (id_paciente, id_medico, id_especialidad, id_consultorio, hora
     (4, 2, 2, 3, tstzrange('2024-03-12 09:00:00-03', '2024-03-12 09:30:00-03', '[)'), 'atendido', 'Seguimiento de medicación', 'Ajuste de dosis Losartán'),
     (8, 2, 2, 3, tstzrange('2024-03-12 09:30:00-03', '2024-03-12 10:00:00-03', '[)'), 'atendido', 'Disnea al esfuerzo', 'Estudio ecocardiográfico'),
 
-    -- Turnos Pasados con otros estados (Cancelado, Ausente)
+    -- Past Appointments with other statuses (Canceled, No-show)
     (6, 4, 2, 3, tstzrange('2024-03-15 15:00:00-03', '2024-03-15 15:30:00-03', '[)'), 'cancelado', 'Chequeo anual', 'Cancelado por el paciente 24hs antes'),
     (9, 6, 3, 4, tstzrange('2024-03-15 16:00:00-03', '2024-03-15 16:30:00-03', '[)'), 'ausente',   'Dolor cervical', 'No asistió al turno'),
 
-    -- Turnos Futuros (Confirmados y Pendientes)
+    -- Future Appointments (Confirmed and Pending)
     (10, 5, 4, 2, tstzrange('2026-11-05 10:00:00-03', '2026-11-05 10:30:00-03', '[)'), 'confirmado', 'Fiebre y dolor de oídos', 'Confirmado telefónicamente'),
     (12, 1, 1, 1, tstzrange('2026-11-05 10:30:00-03', '2026-11-05 11:00:00-03', '[)'), 'confirmado', 'Chequeo general de rutina', 'Estudios de sangre en mano'),
     (14, 2, 2, 3, tstzrange('2026-11-06 09:00:00-03', '2026-11-06 09:30:00-03', '[)'), 'pendiente',  'Evaluación cardiológica', 'Espera de autorización obra social'),
     (3,  3, 3, 4, tstzrange('2026-11-06 14:00:00-03', '2026-11-06 14:30:00-03', '[)'), 'confirmado', 'Control postoperatorio rodilla', 'Revisión de puntos');
 
 -- ----------------------------------------------------------------------------
--- 9. Historias Clínicas (con JSONB y diagnósticos CIE-10)
+-- 9. Clinical Records (with JSONB and ICD-10 diagnoses)
 -- ----------------------------------------------------------------------------
 INSERT INTO historia_clinica (id_paciente, id_medico, id_turno, fecha_atencion, diagnostico_codigo_cie, diagnostico_descripcion, tratamiento, signos_vitales, receta_medicamentos) VALUES
 (
@@ -226,19 +226,19 @@ INSERT INTO historia_clinica (id_paciente, id_medico, id_turno, fecha_atencion, 
 );
 
 -- ----------------------------------------------------------------------------
--- 10. Internaciones Hospitalarias
+-- 10. Hospital Admissions
 -- ----------------------------------------------------------------------------
 INSERT INTO internacion (id_paciente, id_medico_responsable, id_habitacion, fecha_ingreso, fecha_alta, diagnostico_ingreso, motivo_alta, costo_total_estimado) VALUES
-    -- Internación ya finalizada con alta médica
+    -- Completed admission with medical discharge
     (8, 2, 5, '2024-01-15 08:30:00-03', '2024-01-22 14:00:00-03', 'Insuficiencia cardíaca congestiva descompensada', 'Compensación hemodinámica completa y buena evolución clínica', 1120000.00),
     (3, 3, 3, '2024-02-20 10:00:00-03', '2024-02-23 11:30:00-03', 'Cirugía de meniscos rodilla izquierda', 'Alta quirúrgica con deambulación asistida', 225000.00),
     (14, 1, 4, '2024-03-01 12:00:00-03', '2024-03-03 16:00:00-03', 'Neumonía bacteriana adquirida en la comunidad', 'Buena respuesta a antibióticos endovenosos', 150000.00),
-    -- Pacientes actualmente internados (fecha_alta IS NULL)
+    -- Currently hospitalized patients (fecha_alta IS NULL)
     (7, 2, 1, '2026-10-14 18:00:00-03', NULL, 'Accidente cerebrovascular isquémico en evolución', NULL, 180000.00),
     (2, 3, 2, '2026-10-16 09:15:00-03', NULL, 'Politraumatismo por accidente en vía pública', NULL, 90000.00);
 
 -- ----------------------------------------------------------------------------
--- 11. Conceptos de Pago
+-- 11. Payment Concepts
 -- ----------------------------------------------------------------------------
 INSERT INTO concepto_pago (nombre, descripcion) VALUES
     ('Consulta Médica Especializada', 'Honorarios de consulta médica ambulatoria'),
@@ -249,30 +249,30 @@ INSERT INTO concepto_pago (nombre, descripcion) VALUES
     ('Procedimiento Quirúrgico Menor','Cirugía ambulatoria o curaciones complejas');
 
 -- ----------------------------------------------------------------------------
--- 12. Pagos Registrados
+-- 12. Recorded Payments
 -- ----------------------------------------------------------------------------
 INSERT INTO pago (id_paciente, id_turno, id_internacion, id_concepto, fecha_pago, monto_bruto, descuento_cobertura, metodo_pago, estado, comprobante_fiscal, detalles_transaccion) VALUES
-    -- Turno 1 (OSDE 80%)
+    -- Appointment 1 (OSDE 80%)
     (4, 1, NULL, 1, '2024-02-10 09:35:00-03', 25000.00, 20000.00, 'obra_social', 'completado', 'FACT-A-0001', '{"autorizacion": "AUTH-9912", "terminal": "POS-01"}'::jsonb),
-    -- Turno 2 (Swiss Medical 75%)
+    -- Appointment 2 (Swiss Medical 75%)
     (5, 2, NULL, 1, '2024-02-10 10:05:00-03', 25000.00, 18750.00, 'tarjeta_debito', 'completado', 'FACT-B-0002', '{"lote": 45, "tarjeta_ultimos4": "4321"}'::jsonb),
-    -- Turno 3 (PAMI 100%)
+    -- Appointment 3 (PAMI 100%)
     (7, 3, NULL, 1, '2024-02-10 10:35:00-03', 25000.00, 25000.00, 'obra_social', 'completado', 'FACT-B-0003', '{"convenio": "PAMI-TOTAL"}'::jsonb),
-    -- Turno 4 (Galeno 65%)
+    -- Appointment 4 (Galeno 65%)
     (3, 4, NULL, 1, '2024-02-11 14:35:00-03', 22000.00, 14300.00, 'efectivo', 'completado', 'FACT-B-0004', '{}'::jsonb),
-    -- Turno 5 (Galeno 65%)
+    -- Appointment 5 (Galeno 65%)
     (11, 5, NULL, 1, '2024-02-11 15:05:00-03', 22000.00, 14300.00, 'transferencia', 'completado', 'FACT-B-0005', '{"comprobante_banco": "TRX-77884"}'::jsonb),
-    -- Turno 6 (Particular 0%)
+    -- Appointment 6 (Private/Self-Pay 0%)
     (1, 6, NULL, 1, '2024-02-12 11:35:00-03', 18000.00, 0.00, 'tarjeta_credito', 'completado', 'FACT-B-0006', '{"cuotas": 1, "tarjeta": "Visa"}'::jsonb),
-    -- Turno 8 (Particular 0%)
+    -- Appointment 8 (Private/Self-Pay 0%)
     (2, 8, NULL, 1, '2024-02-15 16:35:00-03', 25000.00, 0.00, 'efectivo', 'completado', 'FACT-B-0007', '{}'::jsonb),
-    -- Pago de Internación 1 (PAMI con copago particular)
+    -- Admission 1 Payment (PAMI with private copay)
     (8, NULL, 1, 4, '2024-01-23 10:00:00-03', 1120000.00, 950000.00, 'transferencia', 'completado', 'FACT-A-0008', '{"concepto": "Liquidacion internacion UTI"}'::jsonb),
-    -- Pago de Internación 2
+    -- Admission 2 Payment
     (3, NULL, 2, 3, '2024-02-23 12:00:00-03', 225000.00, 146250.00, 'tarjeta_debito', 'completado', 'FACT-B-0009', '{"tarjeta_ultimos4": "8812"}'::jsonb);
 
 -- ----------------------------------------------------------------------------
--- 13. Medicamentos e Inventario de Farmacia Hospitalaria
+-- 13. Medications & Hospital Pharmacy Inventory
 -- ----------------------------------------------------------------------------
 INSERT INTO medicamento (id_medicamento, nombre_comercial, principio_activo, categoria_terapeutica, presentacion, lote, caducidad, stock_actual, stock_minimo, stock_maximo, nivel_alerta, ubicacion_almacen, precio_unitario_mxn) VALUES
     ('MED-001', 'Tempra Forte', 'Paracetamol', 'Analgésicos y Antipiréticos', 'Tabletas 500mg (Caja c/20)', 'L-2026A-01', '2027-08-30', 850, 200, 1000, 'Normal', 'Farmacia Central', 85.00),
@@ -311,5 +311,5 @@ ON CONFLICT (id_medicamento) DO UPDATE SET
     activo = EXCLUDED.activo;
 
 -- ============================================================================
--- FIN DE LA CARGA DE DATOS (SEED)
+-- END OF DATA SEEDING
 -- ============================================================================

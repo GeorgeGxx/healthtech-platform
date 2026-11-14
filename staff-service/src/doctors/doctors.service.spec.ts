@@ -3,8 +3,8 @@ import { NotFoundException } from '@nestjs/common';
 import { DoctorsService } from './doctors.service.js';
 
 describe('DoctorsService', () => {
-  it('retorna especialidades desde caché Redis cuando existe hit', async () => {
-    const cached = [{ idEspecialidad: 1, nombre: 'Cardiología' }];
+  it('returns specialties from Redis cache when a hit exists', async () => {
+    const cached = [{ idEspecialidad: 1, nombre: 'Cardiology' }];
     const mockRedis = { get: vi.fn().mockResolvedValue(cached), set: vi.fn() } as any;
     const mockSpecRepo = { find: vi.fn() } as any;
 
@@ -15,7 +15,7 @@ describe('DoctorsService', () => {
     expect(mockSpecRepo.find).not.toHaveBeenCalled();
   });
 
-  it('lanza NotFoundException si el médico solicitado no existe', async () => {
+  it('throws NotFoundException if the requested physician does not exist', async () => {
     const mockDoctorRepo = { findOne: vi.fn().mockResolvedValue(null) } as any;
     const service = new DoctorsService(mockDoctorRepo, {} as any, {} as any, {} as any);
 

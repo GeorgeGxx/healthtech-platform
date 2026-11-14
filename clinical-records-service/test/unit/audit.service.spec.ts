@@ -15,7 +15,7 @@ describe('AuditService (HIPAA & NOM-024 Audit Trail)', () => {
     auditService = new AuditService(mockRepo);
   });
 
-  it('debe registrar exitosamente un acceso a expediente clínico (PHI)', async () => {
+  it('should successfully log access to a clinical record (PHI)', async () => {
     const registro = await auditService.registrarAcceso({
       usuarioId: 'usr-medico-99',
       nombreUsuario: 'Dra. Carmen Salinas',
@@ -25,7 +25,7 @@ describe('AuditService (HIPAA & NOM-024 Audit Trail)', () => {
       idEntidad: 14,
       ipCliente: '192.168.1.50',
       userAgent: 'Mozilla/5.0 MedicalBrowser',
-      metadatos: { motivo: 'Consulta subsecuente de cardiología' },
+      metadatos: { motivo: 'Follow-up cardiology consultation' },
     });
 
     expect(mockRepo.create).toHaveBeenCalled();
@@ -34,7 +34,7 @@ describe('AuditService (HIPAA & NOM-024 Audit Trail)', () => {
     expect(registro.idEntidad).toBe('14');
   });
 
-  it('debe usar valores por defecto seguros si se omiten usuario o rol', async () => {
+  it('should use safe default values when user or role are omitted', async () => {
     const registro = await auditService.registrarAcceso({
       accion: 'DESCARGA_ESTUDIO',
       entidad: 'estudios_clinicos',

@@ -52,8 +52,8 @@ export class NotificationsService {
           eventId,
           canal: 'EMAIL',
           destinatario: payload.pacienteEmail || 'n/a',
-          asunto: 'Duplicado ignorado',
-          contenido: 'Evento ya procesado previamente',
+          asunto: 'Duplicate ignored',
+          contenido: 'Event already processed previously',
           estado: 'DUPLICADO_IGNORADO',
           fechaEnvio: new Date().toISOString(),
         },
@@ -66,10 +66,10 @@ export class NotificationsService {
 
     if (eventType === 'appointment.created' || eventType === 'appointment.confirmed') {
       const template = NOTIFICATION_TEMPLATES.appointmentCreated({
-        pacienteNombre: payload.pacienteNombre || 'Paciente',
-        medicoNombre: payload.medicoNombre || 'Médico General',
-        especialidad: payload.especialidad || 'Consulta Externa',
-        consultorio: payload.consultorio || 'Consultorio 1',
+        pacienteNombre: payload.pacienteNombre || 'Patient',
+        medicoNombre: payload.medicoNombre || 'General Practitioner',
+        especialidad: payload.especialidad || 'Outpatient Consultation',
+        consultorio: payload.consultorio || 'Office 1',
         fechaInicio: payload.fechaInicio || new Date().toISOString(),
         idTurno: payload.idTurno || '0',
       });
@@ -94,7 +94,7 @@ export class NotificationsService {
         eventId,
         canal: 'SMS',
         destinatario: destinatarioTel,
-        asunto: 'SMS Recordatorio de Cita',
+        asunto: 'SMS Appointment Reminder',
         contenido: template.sms,
         estado: 'ENVIADO',
         fechaEnvio: new Date().toISOString(),
@@ -103,7 +103,7 @@ export class NotificationsService {
       notifications.push(smsNotif);
     } else if (eventType === 'appointment.cancelled') {
       const template = NOTIFICATION_TEMPLATES.appointmentCancelled({
-        pacienteNombre: payload.pacienteNombre || 'Paciente',
+        pacienteNombre: payload.pacienteNombre || 'Patient',
         idTurno: payload.idTurno || '0',
         motivo: payload.motivo,
       });
@@ -147,11 +147,11 @@ export class NotificationsService {
 
     const payload = event.payload || {};
     const template = NOTIFICATION_TEMPLATES.stockAlert({
-      medicamento: payload.nombreComercial || payload.medicamento || 'Medicamento Hospitalario',
+      medicamento: payload.nombreComercial || payload.medicamento || 'Hospital Medication',
       lote: payload.lote || 'L-GENERAL',
       stockActual: payload.stockActual ?? 0,
       stockMinimo: payload.stockMinimo ?? 10,
-      ubicacion: payload.ubicacionAlmacen || 'Almacén Central',
+      ubicacion: payload.ubicacionAlmacen || 'Central Warehouse',
     });
 
     const notif: DispatchedNotification = {
@@ -182,12 +182,12 @@ export class NotificationsService {
 
     const payload = event.payload || {};
     const template = NOTIFICATION_TEMPLATES.paymentReceipt({
-      pacienteNombre: payload.pacienteNombre || 'Paciente',
+      pacienteNombre: payload.pacienteNombre || 'Patient',
       idPago: payload.idPago || event.aggregateId || 'REC-001',
       montoNeto: payload.montoNeto ?? payload.montoBruto ?? 0,
-      metodoPago: payload.metodoPago || 'Tarjeta',
+      metodoPago: payload.metodoPago || 'Card',
       comprobanteFiscal: payload.comprobanteFiscal || 'FAC-000',
-      concepto: payload.concepto || 'Atención Médica Integral',
+      concepto: payload.concepto || 'Comprehensive Medical Care',
     });
 
     const notif: DispatchedNotification = {
@@ -286,7 +286,7 @@ export class NotificationsService {
       canal: (entry.canal as any) || 'EMAIL',
       destinatario: entry.destinatario,
       asunto: entry.tipoEvento,
-      contenido: `Reintento exitoso tras error: ${entry.errorCausa}`,
+      contenido: `Successful retry after error: ${entry.errorCausa}`,
       estado: 'ENVIADO',
       fechaEnvio: new Date().toISOString(),
     };
@@ -322,8 +322,8 @@ export class NotificationsService {
     const pEmail = params?.pacienteEmail || 'juan.perez@centromedico.mx';
     const pTel = params?.pacienteTelefono || '+52 55 1234-5678';
     const mNombre = params?.medicoNombre || 'Dra. Laura Gómez';
-    const esp = params?.especialidad || 'Cardiología';
-    const fecha = params?.fechaInicio || new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('es-MX');
+    const esp = params?.especialidad || 'Cardiology';
+    const fecha = params?.fechaInicio || new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleString('en-US');
     const idTurno = params?.idTurno || 1;
 
     const eventId = `reminder-${idTurno}-${Date.now()}`;
@@ -334,8 +334,8 @@ export class NotificationsService {
       eventId,
       canal: 'WHATSAPP',
       destinatario: pTel,
-      asunto: 'Recordatorio de Consulta Médica (24h previas)',
-      contenido: `Hola ${pNombre}. Te recordamos tu cita médica para mañana ${fecha} con ${mNombre} (${esp}) en el Centro Médico Nacional.\n\n👉 Para confirmar o reprogramar en línea: http://localhost:8000/api/appointments`,
+      asunto: 'Medical Appointment Reminder (24h prior)',
+      contenido: `Hello ${pNombre}. We remind you of your medical appointment tomorrow ${fecha} with ${mNombre} (${esp}) at the National Medical Center.\n\n👉 To confirm or reschedule online: http://localhost:8000/api/appointments`,
       estado: 'ENVIADO',
       fechaEnvio: new Date().toISOString(),
       metadatos: { idTurno, tipo: 'RECORDATORIO_24H' },
@@ -347,8 +347,8 @@ export class NotificationsService {
       eventId,
       canal: 'EMAIL',
       destinatario: pEmail,
-      asunto: `Recordatorio de Cita Médica - ${mNombre}`,
-      contenido: `<div style="font-family:sans-serif;padding:20px;"><h2>Recordatorio Asistencial de Turno</h2><p>Estimado(a) <strong>${escapeHtml(pNombre)}</strong>,</p><p>Le recordamos su consulta programada con <strong>${escapeHtml(mNombre)}</strong> en la especialidad de <strong>${escapeHtml(esp)}</strong>.</p><p><strong>Fecha y Hora:</strong> ${escapeHtml(fecha)}</p><p>Por favor preséntese 15 minutos antes con su identificación oficial.</p></div>`,
+      asunto: `Medical Appointment Reminder - ${mNombre}`,
+      contenido: `<div style="font-family:sans-serif;padding:20px;"><h2>Appointment Care Reminder</h2><p>Dear <strong>${escapeHtml(pNombre)}</strong>,</p><p>We remind you of your scheduled consultation with <strong>${escapeHtml(mNombre)}</strong> in the specialty of <strong>${escapeHtml(esp)}</strong>.</p><p><strong>Date and Time:</strong> ${escapeHtml(fecha)}</p><p>Please arrive 15 minutes early with your official ID.</p></div>`,
       estado: 'ENVIADO',
       fechaEnvio: new Date().toISOString(),
       metadatos: { idTurno, tipo: 'RECORDATORIO_24H' },

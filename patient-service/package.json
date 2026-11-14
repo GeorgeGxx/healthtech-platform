@@ -1,7 +1,7 @@
 {
   "name": "patient-service",
   "version": "1.0.0",
-  "description": "Microservicio Autónomo de Padrón y Expediente Base de Pacientes (NestJS 12 + PostgreSQL 18 + Kafka)",
+  "description": "Autonomous Patient Registry and Base Medical Record Microservice (NestJS 12 + PostgreSQL 18 + Kafka)",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

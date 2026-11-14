@@ -1,6 +1,6 @@
 services:
   # ============================================================================
-  # 1. Base de Datos Relacional: PostgreSQL 18
+  # 1. Relational Database: PostgreSQL 18
   # ============================================================================
   postgres:
     image: postgres:18-alpine
@@ -23,7 +23,7 @@ services:
       retries: 5
 
   # ============================================================================
-  # 2. Caché Distribuido y Sesiones: Redis 8.8.1-alpine
+  # 2. Distributed Cache & Sessions: Redis 8.8.1-alpine
   # ============================================================================
   redis:
     image: redis:8.8.1-alpine
@@ -41,7 +41,7 @@ services:
       retries: 5
 
   # ============================================================================
-  # 3. Observabilidad: Elasticsearch 9.5.5 (Single-Node)
+  # 3. Observability: Elasticsearch 9.5.5 (Single-Node)
   # ============================================================================
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
@@ -67,7 +67,7 @@ services:
       retries: 10
 
   # ============================================================================
-  # 4. Observabilidad: Kibana 9.5.5
+  # 4. Observability: Kibana 9.5.5
   # ============================================================================
   kibana:
     image: docker.elastic.co/kibana/kibana:9.5.5
@@ -85,7 +85,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 5. Observabilidad: Elastic Agent 9.5.5 (APM & OTLP Collector)
+  # 5. Observability: Elastic Agent 9.5.5 (APM & OTLP Collector)
   # ============================================================================
   elastic-agent:
     image: docker.elastic.co/elastic-agent/elastic-agent:9.5.5
@@ -105,7 +105,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 6. IAM y Autenticación RBAC: Keycloak 26.8.1 conectado a PostgreSQL 18
+  # 6. IAM & RBAC Authentication: Keycloak 26.8.1 connected to PostgreSQL 18
   # ============================================================================
   keycloak:
     image: quay.io/keycloak/keycloak:26.8.1
@@ -146,8 +146,8 @@ services:
       - KONG_ADMIN_LISTEN=0.0.0.0:8001
       - KONG_PROXY_LISTEN=0.0.0.0:8000, 0.0.0.0:8443 ssl
     ports:
-      - "8000:8000" # Proxy HTTP principal
-      - "8443:8443" # Proxy HTTPS
+      - "8000:8000" # Main HTTP Proxy
+      - "8443:8443" # HTTPS Proxy
       - "8001:8001" # Admin API
     volumes:
       - ./kong/kong.yml:/etc/kong/kong.yml:ro
@@ -163,7 +163,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 9. Servidor Web & Reverse Proxy: Nginx + Angular 21 (Multi-stage)
+  # 9. Web Server & Reverse Proxy: Nginx + Angular 21 (Multi-stage)
   # ============================================================================
   frontend:
     build:
@@ -184,7 +184,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 10. Event Backbone: Apache Kafka 8.x / Confluent (Modo KRaft Autónomo)
+  # 10. Event Backbone: Apache Kafka 8.x / Confluent (Standalone KRaft Mode)
   # ============================================================================
   kafka:
     image: confluentinc/cp-kafka:8.3.2
@@ -216,7 +216,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 11. Monitoreo y Administración de Eventos: Kafka UI
+  # 11. Event Monitoring & Administration: Kafka UI
   # ============================================================================
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
@@ -232,7 +232,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 12. Worker de Eventos Asíncronos: Notification-Service (NestJS 12 + Kafka)
+  # 12. Async Event Worker: Notification-Service (NestJS 12 + Kafka)
   # ============================================================================
   notification-service:
     build:
@@ -273,7 +273,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 13. Microservicio Autónomo: Appointment-Service (NestJS 12 + Sagas + Kafka)
+  # 13. Autonomous Microservice: Appointment-Service (NestJS 12 + Sagas + Kafka)
   # ============================================================================
   appointment-service:
     build:
@@ -311,7 +311,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 14. Microservicio Autónomo: Patient-Service (NestJS 12 + PostgreSQL 18 + Kafka)
+  # 14. Autonomous Microservice: Patient-Service (NestJS 12 + PostgreSQL 18 + Kafka)
   # ============================================================================
   patient-service:
     build:
@@ -348,7 +348,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 15. Microservicio Autónomo: Billing-Service (NestJS 12 + PostgreSQL 18 + Kafka)
+  # 15. Autonomous Microservice: Billing-Service (NestJS 12 + PostgreSQL 18 + Kafka)
   # ============================================================================
   billing-service:
     build:
@@ -385,7 +385,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 16. Microservicio Autónomo: Pharmacy-Service (NestJS 12 + PostgreSQL 18 + Kafka)
+  # 16. Autonomous Microservice: Pharmacy-Service (NestJS 12 + PostgreSQL 18 + Kafka)
   # ============================================================================
   pharmacy-service:
     build:
@@ -422,7 +422,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 17. Microservicio Autónomo: Staff-Service (NestJS 12 + PostgreSQL 18 + Redis)
+  # 17. Autonomous Microservice: Staff-Service (NestJS 12 + PostgreSQL 18 + Redis)
   # ============================================================================
   staff-service:
     build:
@@ -459,7 +459,7 @@ services:
     restart: unless-stopped
 
   # ============================================================================
-  # 18. Microservicio Autónomo: Clinical-Records-Service (NestJS 12 + ECE + HIPAA)
+  # 18. Autonomous Microservice: Clinical-Records-Service (NestJS 12 + EHR + HIPAA)
   # ============================================================================
   clinical-records-service:
     build:

@@ -1,6 +1,6 @@
 -- ============================================================================
--- CENTRO MÉDICO - EVENTOS DE AUDITORÍA DE SEGURIDAD HIPAA (NOM-024)
--- Archivo: 03_seed_hipaa_audit.sql
+-- MEDICAL CENTER - HIPAA SECURITY AUDIT EVENTS (NOM-024)
+-- File: 03_seed_hipaa_audit.sql
 -- ============================================================================
 
 INSERT INTO registro_auditoria (usuario_id, nombre_usuario, rol, accion, entidad, id_entidad, ip_cliente, user_agent, metadatos, fecha_hora) VALUES

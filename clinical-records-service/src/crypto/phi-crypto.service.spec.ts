@@ -3,27 +3,27 @@ import { InternalServerErrorException } from '@nestjs/common';
 import { PhiCryptoService } from './phi-crypto.service.js';
 
 describe('PhiCryptoService', () => {
-  it('cifra y descifra texto clínico usando AES-256-GCM con prefijo gcm:', () => {
+  it('encrypts and decrypts clinical text using AES-256-GCM with gcm: prefix', () => {
     const cryptoSvc = new PhiCryptoService();
-    const plaintext = 'Hipertensión arterial estadio 2 - Plan Losartán 50mg';
+    const plaintext = 'Stage 2 arterial hypertension - Losartan 50mg plan';
 
     const encrypted = cryptoSvc.encryptPhi(plaintext);
     expect(encrypted.startsWith('gcm:')).toBe(true);
-    expect(encrypted).not.toContain('Hipertensión');
+    expect(encrypted).not.toContain('hypertension');
 
     const decrypted = cryptoSvc.decryptPhi(encrypted);
     expect(decrypted).toBe(plaintext);
   });
 
-  it('detecta manipulación del ciphertext o AuthTag GCM', () => {
+  it('detects tampering of ciphertext or GCM AuthTag', () => {
     const cryptoSvc = new PhiCryptoService();
-    const encrypted = cryptoSvc.encryptPhi('Diagnóstico confidencial');
+    const encrypted = cryptoSvc.encryptPhi('Confidential diagnosis');
     const tampered = encrypted.slice(0, -2) + 'aa';
 
     expect(() => cryptoSvc.decryptPhi(tampered)).toThrow(InternalServerErrorException);
   });
 
-  it('firma y verifica recetas médicas digitales con HMAC-SHA256', () => {
+  it('signs and verifies digital medical prescriptions with HMAC-SHA256', () => {
     const cryptoSvc = new PhiCryptoService();
     const payload = cryptoSvc.canonicalJson({
       idPaciente: 1,

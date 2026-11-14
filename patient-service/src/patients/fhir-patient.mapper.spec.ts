@@ -3,7 +3,7 @@ import { FhirPatientMapper } from './fhir-patient.mapper.js';
 import type { Paciente } from '../entities/paciente.entity.js';
 
 describe('FhirPatientMapper', () => {
-  it('mapea un Paciente a un recurso HL7 FHIR R4 Patient válido', () => {
+  it('maps a Patient entity to a valid HL7 FHIR R4 Patient resource', () => {
     const paciente = {
       idPaciente: 42,
       dni: '40111222',

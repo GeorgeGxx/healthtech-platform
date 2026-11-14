@@ -1,14 +1,14 @@
 -- ============================================================================
--- CENTRO MÉDICO NACIONAL - SCHEMA-PER-SERVICE ISOLATION & ROLES (FASE 3)
--- Archivo: 05_schema_service_isolation.sql
--- Optimizado para PostgreSQL 18: Aislamiento Lógico por Bounded Context
+-- NATIONAL MEDICAL CENTER - SCHEMA-PER-SERVICE ISOLATION & ROLES (PHASE 3)
+-- File: 05_schema_service_isolation.sql
+-- Optimized for PostgreSQL 18: Logical Isolation by Bounded Context
 -- ============================================================================
 
 SET client_encoding = 'UTF8';
 SET client_min_messages = warning;
 
 -- ----------------------------------------------------------------------------
--- 1. Creación de Esquemas Lógicos por Microservicio
+-- 1. Logical Schema Creation per Microservice
 -- ----------------------------------------------------------------------------
 CREATE SCHEMA IF NOT EXISTS appointments;
 CREATE SCHEMA IF NOT EXISTS patients;
@@ -20,10 +20,10 @@ CREATE SCHEMA IF NOT EXISTS telemedicine;
 CREATE SCHEMA IF NOT EXISTS core;
 
 -- ----------------------------------------------------------------------------
--- 2. Vistas Desacopladas de Lectura por Microservicio (Read Projections)
+-- 2. Decoupled Read Views per Microservice (Read Projections)
 -- ----------------------------------------------------------------------------
 
--- Vista para appointment-service: sólo lee datos esenciales de médicos y consultorios
+-- View for appointment-service: reads only essential physician and room data
 CREATE OR REPLACE VIEW appointments.v_medicos_activos AS
 SELECT 
     m.id_medico,
@@ -37,7 +37,7 @@ JOIN public.medico_especialidad me ON m.id_medico = me.id_medico
 JOIN public.especialidad e ON me.id_especialidad = e.id_especialidad
 WHERE m.activo = TRUE;
 
--- Vista para patient-service: catálogos públicos de cobertura médica
+-- View for patient-service: public health insurance coverage catalogs
 CREATE OR REPLACE VIEW patients.v_coberturas_vigentes AS
 SELECT 
     id_obra_social,
@@ -48,7 +48,7 @@ FROM public.obra_social
 WHERE activo = TRUE;
 
 -- ----------------------------------------------------------------------------
--- 3. Bitácora de Transacciones de Sagas y Dead-Letter Queue (Auditoría Forense)
+-- 3. Saga Transaction Log & Dead-Letter Queue (Forensic Audit)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS notifications.bitacora_dlq (
     id_dlq         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -67,7 +67,7 @@ CREATE INDEX IF NOT EXISTS ix_dlq_evento ON notifications.bitacora_dlq(id_evento
 CREATE INDEX IF NOT EXISTS ix_dlq_resuelto ON notifications.bitacora_dlq(resuelto);
 
 -- ----------------------------------------------------------------------------
--- 4. Telemedicina: Salas Virtuales y Sesiones WebRTC (Pilar 4)
+-- 4. Telemedicine: Virtual Rooms & WebRTC Sessions (Pillar 4)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS telemedicine.sala_virtual (
     id_sala         VARCHAR(64) PRIMARY KEY,
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS telemedicine.sala_virtual (
 CREATE INDEX IF NOT EXISTS ix_telemedicina_turno ON telemedicine.sala_virtual(id_turno);
 
 -- ----------------------------------------------------------------------------
--- 5. Expediente Clínico: Recetas Digitales Criptográficas con QR (Pilar 2)
+-- 5. Electronic Health Record: Cryptographic Digital Prescriptions with QR (Pillar 2)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS clinical.receta_digital (
     id_receta       BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -104,7 +104,7 @@ CREATE INDEX IF NOT EXISTS ix_receta_codigo ON clinical.receta_digital(codigo_ve
 CREATE INDEX IF NOT EXISTS ix_receta_paciente ON clinical.receta_digital(id_paciente);
 
 -- ----------------------------------------------------------------------------
--- 6. Caja y Facturación: Liquidación y Honorarios Médicos (Pilar 4)
+-- 6. Cashier & Billing: Physician Fee Settlements (Pillar 4)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS billing.liquidacion_medico (
     id_liquidacion     BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
