@@ -59,3 +59,27 @@ variable "api_server_authorized_ip_ranges" {
   type        = list(string)
   default     = ["10.0.0.0/8"]
 }
+
+variable "log_analytics_workspace_id" {
+  description = "Log Analytics Workspace ID for AKS Container Insights (OMS Agent)."
+  type        = string
+  default     = null
+}
+
+variable "azure_policy_enabled" {
+  description = "Enable Azure Policy add-on for AKS governance."
+  type        = bool
+  default     = true
+}
+
+variable "private_cluster_enabled" {
+  description = "Enable private AKS API server endpoint (requires VNet-integrated runner)."
+  type        = bool
+  default     = false
+}
+
+variable "key_vault_secrets_provider_enabled" {
+  description = "Enable Azure Key Vault Provider for Secrets Store CSI Driver."
+  type        = bool
+  default     = true
+}

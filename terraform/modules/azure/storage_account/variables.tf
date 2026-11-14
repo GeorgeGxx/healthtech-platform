@@ -27,7 +27,16 @@ variable "account_tier" {
 variable "account_replication_type" {
   description = "Replication type (LRS, GRS, RAGRS, ZRS)"
   type        = string
-  default     = "LRS"
+  default     = "GRS"
+}
+
+variable "customer_managed_key" {
+  description = "Optional Customer-Managed Key configuration for Storage Account encryption."
+  type = object({
+    key_vault_key_id          = string
+    user_assigned_identity_id = string
+  })
+  default = null
 }
 
 variable "containers" {

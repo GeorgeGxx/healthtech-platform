@@ -27,10 +27,11 @@ module "aks" {
   subnet_id           = module.vnet.aks_subnet_id
   node_vm_size        = local.cfg.node_vm_size
   node_count          = local.cfg.node_count
-  min_count           = local.cfg.min_count
-  max_count           = local.cfg.max_count
-  enable_auto_scaling = true
-  tags                = local.tags
+  min_count                  = local.cfg.min_count
+  max_count                  = local.cfg.max_count
+  enable_auto_scaling        = true
+  log_analytics_workspace_id = module.monitor.workspace_id
+  tags                       = local.tags
 }
 
 # Separate prod subnet and AKS control plane for the second production data
@@ -56,10 +57,11 @@ module "aks_dp2" {
   subnet_id           = azurerm_subnet.aks_dataplane_2[0].id
   node_vm_size        = local.cfg.node_vm_size
   node_count          = local.cfg.node_count
-  min_count           = local.cfg.min_count
-  max_count           = local.cfg.max_count
-  enable_auto_scaling = true
-  tags                = merge(local.tags, { DataPlane = "2" })
+  min_count                  = local.cfg.min_count
+  max_count                  = local.cfg.max_count
+  enable_auto_scaling        = true
+  log_analytics_workspace_id = module.monitor.workspace_id
+  tags                       = merge(local.tags, { DataPlane = "2" })
 }
 
 module "acr" {

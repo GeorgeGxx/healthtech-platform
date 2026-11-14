@@ -14,12 +14,21 @@ resource "azurerm_storage_account" "this" {
   name                     = local.storage_account_name
   resource_group_name      = var.resource_group_name
   location                 = var.location
-  account_tier             = var.account_tier
-  account_replication_type = var.account_replication_type
-  min_tls_version          = "TLS1_2"
+  account_tier                      = var.account_tier
+  account_replication_type          = var.account_replication_type
+  min_tls_version                   = "TLS1_2"
+  infrastructure_encryption_enabled = true
 
   identity {
     type = "SystemAssigned"
+  }
+
+  dynamic "customer_managed_key" {
+    for_each = var.customer_managed_key != null ? [var.customer_managed_key] : []
+    content {
+      key_vault_key_id          = customer_managed_key.value.key_vault_key_id
+      user_assigned_identity_id = customer_managed_key.value.user_assigned_identity_id
+    }
   }
 
   blob_properties {
