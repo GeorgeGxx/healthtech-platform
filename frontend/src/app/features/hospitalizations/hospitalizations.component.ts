@@ -63,7 +63,7 @@ export class HospitalizationsComponent implements OnInit {
 
   openDischargeModal(stayId: number): void {
     this.selectedStayId = stayId;
-    this.dischargeReason = 'Alta médica por resolución clínica satisfactoria';
+    this.dischargeReason = 'Medical discharge due to satisfactory clinical resolution';
     this.showDischargeModal.set(true);
   }
 
@@ -79,10 +79,10 @@ export class HospitalizationsComponent implements OnInit {
       next: () => {
         this.closeDischargeModal();
         this.loadCensus();
-        this.toast.success('Alta médica procesada correctamente. Cama liberada para nuevo ingreso.');
+        this.toast.success('Medical discharge processed successfully. Bed released for new admission.');
       },
       error: (err) => {
-        this.toast.error(err.error?.message || 'Error al conceder alta médica.');
+        this.toast.error(err.error?.message || 'Error granting medical discharge.');
       },
     });
   }
@@ -106,10 +106,10 @@ export class HospitalizationsComponent implements OnInit {
       next: () => {
         this.closeAdmitModal();
         this.loadCensus();
-        this.toast.success('Ingreso hospitalario confirmado y cama asignada.');
+        this.toast.success('Hospital admission confirmed and bed assigned.');
       },
       error: (err) => {
-        this.toast.error(err.error?.message || 'Error al admitir paciente.');
+        this.toast.error(err.error?.message || 'Error admitting patient.');
       },
     });
   }

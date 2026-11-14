@@ -1,5 +1,6 @@
-import { Injectable, signal, inject } from '@angular/core';
+import { Injectable, signal, inject, effect } from '@angular/core';
 import { ToastService } from './toast.service.js';
+import { AuthStateService } from './auth-state.service.js';
 
 export interface SseNotificationItem {
   id: string;
@@ -18,6 +19,7 @@ export interface SseNotificationItem {
 })
 export class SseNotificationService {
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthStateService);
   private eventSource: EventSource | null = null;
 
   readonly notifications = signal<SseNotificationItem[]>([]);
@@ -25,10 +27,18 @@ export class SseNotificationService {
   readonly isConnected = signal<boolean>(false);
 
   constructor() {
-    this.connect();
+    effect(() => {
+      const isAuth = this.auth.isAuthenticated();
+      const token = this.auth.accessToken();
+      if (isAuth) {
+        this.connect(token);
+      } else {
+        this.disconnect();
+      }
+    });
   }
 
-  connect(): void {
+  connect(token?: string | null): void {
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
       return;
     }
@@ -38,7 +48,11 @@ export class SseNotificationService {
     }
 
     try {
-      this.eventSource = new EventSource('/api/notifications/stream');
+      const effectiveToken = token ?? this.auth.accessToken();
+      const url = effectiveToken
+        ? `/api/notifications/stream?token=${encodeURIComponent(effectiveToken)}`
+        : '/api/notifications/stream';
+      this.eventSource = new EventSource(url);
 
       this.eventSource.onopen = () => {
         this.isConnected.set(true);
@@ -49,7 +63,7 @@ export class SseNotificationService {
           const notif: SseNotificationItem = JSON.parse(event.data);
           this.handleIncomingNotification(notif);
         } catch (e) {
-          console.warn('Error al parsear mensaje SSE de notificación:', e);
+          console.warn('Error parsing SSE notification message:', e);
         }
       };
 
@@ -57,7 +71,7 @@ export class SseNotificationService {
         this.isConnected.set(false);
       };
     } catch (err) {
-      console.warn('No fue posible abrir la conexión SSE:', err);
+      console.warn('Unable to open SSE connection:', err);
       this.isConnected.set(false);
     }
   }
@@ -67,11 +81,26 @@ export class SseNotificationService {
     this.notifications.update((list) => [notif, ...list.slice(0, 49)]);
     this.unreadCount.update((c) => c + 1);
 
-    if (notif.asunto.includes('ALERTA DE STOCK') || notif.asunto.includes('CRÍTICO')) {
+    if (
+      notif.asunto.includes('ALERTA DE STOCK') ||
+      notif.asunto.includes('CRÍTICO') ||
+      notif.asunto.includes('STOCK ALERT') ||
+      notif.asunto.includes('CRITICAL')
+    ) {
       this.toast.warning(notif.contenido, notif.asunto);
-    } else if (notif.asunto.includes('Cancelación') || notif.asunto.includes('COMPENSADA')) {
+    } else if (
+      notif.asunto.includes('Cancelación') ||
+      notif.asunto.includes('COMPENSADA') ||
+      notif.asunto.includes('Cancellation') ||
+      notif.asunto.includes('COMPENSATED')
+    ) {
       this.toast.error(notif.contenido, notif.asunto);
-    } else if (notif.asunto.includes('Pago') || notif.asunto.includes('Comprobante')) {
+    } else if (
+      notif.asunto.includes('Pago') ||
+      notif.asunto.includes('Comprobante') ||
+      notif.asunto.includes('Payment') ||
+      notif.asunto.includes('Receipt')
+    ) {
       this.toast.success(notif.contenido, notif.asunto);
     } else {
       this.toast.info(notif.contenido, notif.asunto);

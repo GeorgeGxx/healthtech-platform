@@ -1,4 +1,5 @@
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
+import { AuthStateService } from './auth-state.service';
 
 /**
  * Servicio de control de inactividad conforme a la normativa HIPAA (§ 164.312(a)(2)(iii))
@@ -11,15 +12,16 @@ import { Injectable, signal, effect } from '@angular/core';
   providedIn: 'root',
 })
 export class HipaaSessionService {
-  // Configuración de tiempos (en segundos)
-  // En producción hospitalaria suele fijarse entre 10 y 15 minutos (600 a 900 s)
+  private readonly authState = inject(AuthStateService);
+
   private readonly TIMEOUT_SECONDS = 900; // 15 minutos de inactividad
   private readonly WARNING_SECONDS = 60;  // Advertencia 60 segundos antes del cierre
 
-  // Signals reactivos para el estado de la sesión
   readonly secondsLeft = signal<number>(this.TIMEOUT_SECONDS);
   readonly isWarningVisible = signal<boolean>(false);
   readonly isLoggedOut = signal<boolean>(false);
+  readonly lockedUsername = signal<string>('');
+  readonly reloginError = signal<string | null>(null);
 
   private timerInterval: any = null;
   private lastActivityTimestamp: number = Date.now();
@@ -62,6 +64,7 @@ export class HipaaSessionService {
   private startInactivityTimer(): void {
     this.timerInterval = setInterval(() => {
       if (this.isLoggedOut()) return;
+      if (!this.authState.isAuthenticated()) return;
 
       const elapsedSeconds = Math.floor(
         (Date.now() - this.lastActivityTimestamp) / 1000,
@@ -70,7 +73,6 @@ export class HipaaSessionService {
 
       this.secondsLeft.set(remaining);
 
-      // Si quedan 60 segundos o menos, mostrar advertencia modal
       if (remaining <= this.WARNING_SECONDS && remaining > 0) {
         this.isWarningVisible.set(true);
       } else if (remaining === 0) {
@@ -84,17 +86,43 @@ export class HipaaSessionService {
   }
 
   forceLogoutDueToInactivity(): void {
+    const current = this.authState.currentUser();
+    this.lockedUsername.set(current?.username && current.username !== 'guest' ? current.username : '');
+    this.reloginError.set(null);
     this.isWarningVisible.set(false);
     this.isLoggedOut.set(true);
-    // Limpieza de datos confidenciales en memoria / storage
-    sessionStorage.clear();
+    try {
+      sessionStorage.clear();
+      localStorage.removeItem('healthtech_user_role');
+    } catch {}
+    this.authState.logout('/login');
     console.warn(
-      '🔒 Sesión finalizada automáticamente por inactividad (Cumplimiento HIPAA / NOM-024-SSA3-2012).',
+      '🔒 Session automatically terminated due to inactivity (HIPAA / NOM-024-SSA3-2012 compliance).',
     );
   }
 
-  relogin(): void {
+  async relogin(password: string): Promise<boolean> {
+    this.reloginError.set(null);
+    const username = this.lockedUsername();
+    if (!username || !password.trim()) {
+      this.reloginError.set('Enter your password to verify your identity.');
+      return false;
+    }
+
+    const res = await this.authState.loginWithKeycloak(username, password);
+    if (!res.success) {
+      this.reloginError.set(res.message || 'Invalid credentials.');
+      return false;
+    }
+
     this.isLoggedOut.set(false);
     this.recordActivity();
+    return true;
+  }
+
+  dismissToLogin(): void {
+    this.isLoggedOut.set(false);
+    this.reloginError.set(null);
+    this.authState.logout('/login');
   }
 }

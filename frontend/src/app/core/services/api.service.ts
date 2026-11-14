@@ -1,7 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+import { ToastService } from './toast.service';
 
 export interface DashboardMetrics {
   kpis: {
@@ -82,66 +83,66 @@ const FALLBACK_METRICS: DashboardMetrics = {
       id_internacion: 1,
       paciente: 'Carlos Mendoza',
       dni: '28456123',
-      habitacion: 'Habitación 101-A (Piso 1)',
+      habitacion: 'Room 101-A (Floor 1)',
       tipo_habitacion: 'individual',
       fecha_ingreso: '2026-03-01T08:30:00Z',
-      diagnostico_ingreso: 'Síndrome coronario agudo en observación hemodinámica',
+      diagnostico_ingreso: 'Acute coronary syndrome under hemodynamic observation',
     },
     {
       id_internacion: 2,
-      paciente: 'Mariana Gómez',
+      paciente: 'Mariana Gomez',
       dni: '32198745',
-      habitacion: 'Habitación 201-B (Piso 2)',
-      tipo_habitacion: 'compartida',
+      habitacion: 'Room 201-B (Floor 2)',
+      tipo_habitacion: 'shared',
       fecha_ingreso: '2026-03-02T14:15:00Z',
-      diagnostico_ingreso: 'Postoperatorio inmediato apendicectomía laparoscópica',
+      diagnostico_ingreso: 'Immediate postoperative laparoscopic appendectomy',
     },
     {
       id_internacion: 3,
       paciente: 'Roberto Castro',
       dni: '25632147',
-      habitacion: 'Habitación 301-A (Piso 3)',
+      habitacion: 'Room 301-A (Floor 3)',
       tipo_habitacion: 'individual',
       fecha_ingreso: '2026-03-03T11:00:00Z',
-      diagnostico_ingreso: 'Neumonía adquirida en la comunidad con O2 terapia',
+      diagnostico_ingreso: 'Community-acquired pneumonia with O2 therapy',
     },
   ],
   upcomingAppointments: [
     {
       id_turno: 101,
       fecha_hora: new Date(Date.now() + 3600000).toISOString(),
-      paciente: 'Lucía Fernández',
-      medico: 'Dr/a. Gómez',
-      especialidad: 'Dermatología',
+      paciente: 'Lucia Fernandez',
+      medico: 'Dr. Gomez',
+      especialidad: 'Dermatology',
       estado: 'confirmado',
-      motivo_consulta: 'Revisión y dermatoscopía de lesión cutánea atípica',
+      motivo_consulta: 'Review and dermoscopy of atypical skin lesion',
     },
     {
       id_turno: 102,
       fecha_hora: new Date(Date.now() + 7200000).toISOString(),
       paciente: 'Ana Torres',
-      medico: 'Dr/a. Arévalo',
-      especialidad: 'Traumatología',
+      medico: 'Dr. Arevalo',
+      especialidad: 'Orthopedics',
       estado: 'pendiente',
-      motivo_consulta: 'Control radiológico post-inmovilización articular',
+      motivo_consulta: 'Post-immobilization joint radiological follow-up',
     },
     {
       id_turno: 103,
       fecha_hora: new Date(Date.now() + 10800000).toISOString(),
-      paciente: 'Sofía Herrera',
-      medico: 'Dr/a. Castelo',
-      especialidad: 'Medicina General',
+      paciente: 'Sofia Herrera',
+      medico: 'Dr. Castelo',
+      especialidad: 'General Medicine',
       estado: 'confirmado',
-      motivo_consulta: 'Examen preventivo anual y control de factores de riesgo',
+      motivo_consulta: 'Annual preventive exam and risk factor control',
     },
     {
       id_turno: 104,
       fecha_hora: new Date(Date.now() + 14400000).toISOString(),
       paciente: 'Javier Morales',
-      medico: 'Dr/a. Castelo',
-      especialidad: 'Cardiología',
+      medico: 'Dr. Castelo',
+      especialidad: 'Cardiology',
       estado: 'pendiente',
-      motivo_consulta: 'Evaluación prequirúrgica cardiológica integral',
+      motivo_consulta: 'Comprehensive preoperative cardiology evaluation',
     },
   ],
 };
@@ -151,6 +152,7 @@ const FALLBACK_METRICS: DashboardMetrics = {
 })
 export class ApiService {
   private readonly http = inject(HttpClient);
+  private readonly toast = inject(ToastService);
   // URL base dinámica (soporta desarrollo local en puerto 3000 o Reverse Proxy Nginx en /api)
   private readonly baseUrl =
     typeof window !== 'undefined' && window.location.port === '4200'
@@ -161,19 +163,30 @@ export class ApiService {
   readonly isConnected = signal<boolean>(true);
   readonly activeSection = signal<string>('dashboard');
 
+  private handleOperationalError(context: string) {
+    return (err: any) => {
+      this.isConnected.set(false);
+      this.toast.error(
+        err?.error?.message || `Could not query ${context}. Please check connection or permissions.`,
+        'Service Error',
+      );
+      return throwError(() => err);
+    };
+  }
+
   // --- Dashboard ---
   getDashboardMetrics(): Observable<DashboardMetrics> {
     return this.http.get<DashboardMetrics>(`${this.baseUrl}/dashboard/metrics`).pipe(
       tap(() => this.isConnected.set(true)),
       catchError((err) => {
-        console.warn('API /dashboard/metrics no disponible. Cargando réplica clínica PostgreSQL 18:', err.message);
+        console.warn('API /dashboard/metrics unavailable. Loading PostgreSQL 18 clinical replica:', err.message);
         this.isConnected.set(false);
         return of(FALLBACK_METRICS);
       })
     );
   }
 
-  // --- Pacientes ---
+  // --- Patients ---
   getPatients(search?: string, page?: number, limit?: number): Observable<any> {
     const params: Record<string, string> = {};
     if (search) params['search'] = search;
@@ -181,13 +194,7 @@ export class ApiService {
     if (limit) params['limit'] = limit.toString();
     return this.http.get<any>(`${this.baseUrl}/patients`, { params }).pipe(
       tap(() => this.isConnected.set(true)),
-      catchError(() => of([
-        { idPaciente: 1, dni: '28456123', nombre: 'Juan', apellido: 'Pérez García', email: 'juan.perez@email.com', telefono: '+52 55 1234-5678', sexo: 'M', idObraSocial: 1, obraSocial: 'GNP Seguros (Póliza 88992)', numeroAfiliado: '88992' },
-        { idPaciente: 2, dni: '32198745', nombre: 'Mariana', apellido: 'Gómez', email: 'mgomez@email.com', telefono: '+52 55 2345-6789', sexo: 'F', idObraSocial: 2, obraSocial: 'MetLife México' },
-        { idPaciente: 3, dni: '25632147', nombre: 'Roberto', apellido: 'Castro', email: 'rcastro@email.com', telefono: '+52 55 3456-7890', sexo: 'M', idObraSocial: 3, obraSocial: 'AXA Seguros' },
-        { idPaciente: 4, dni: '34852963', nombre: 'Lucía', apellido: 'Fernández', email: 'lfernandez@email.com', telefono: '+52 55 4567-8901', sexo: 'F', idObraSocial: 4, obraSocial: 'Seguros Monterrey NYL' },
-        { idPaciente: 5, dni: '39147258', nombre: 'Ana', apellido: 'Torres', email: 'atorres@email.com', telefono: '+52 55 5678-9012', sexo: 'F', idObraSocial: 5, obraSocial: 'Particular / Sin Póliza' }
-      ]))
+      catchError(this.handleOperationalError('the patient registry')),
     );
   }
 
@@ -214,11 +221,11 @@ export class ApiService {
   getInsurances(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/patients/insurances`).pipe(
       catchError(() => of([
-        { idObraSocial: 1, nombre: 'GNP Seguros', codigoSeguro: 'GNP-MED', porcentajeCobertura: 80 },
-        { idObraSocial: 2, nombre: 'MetLife México', codigoSeguro: 'METLIFE-PLUS', porcentajeCobertura: 75 },
-        { idObraSocial: 3, nombre: 'AXA Seguros', codigoSeguro: 'AXA-SALUD', porcentajeCobertura: 70 },
-        { idObraSocial: 4, nombre: 'Seguros Monterrey NYL', codigoSeguro: 'SMNYL-VIP', porcentajeCobertura: 85 },
-        { idObraSocial: 5, nombre: 'Particular / Sin Póliza', codigoSeguro: 'PARTIC', porcentajeCobertura: 0 }
+        { idObraSocial: 1, nombre: 'GNP Insurance', codigoSeguro: 'GNP-MED', porcentajeCobertura: 80 },
+        { idObraSocial: 2, nombre: 'MetLife', codigoSeguro: 'METLIFE-PLUS', porcentajeCobertura: 75 },
+        { idObraSocial: 3, nombre: 'AXA Health', codigoSeguro: 'AXA-SALUD', porcentajeCobertura: 70 },
+        { idObraSocial: 4, nombre: 'Monterrey NYL Insurance', codigoSeguro: 'SMNYL-VIP', porcentajeCobertura: 85 },
+        { idObraSocial: 5, nombre: 'Self-Pay / Uninsured', codigoSeguro: 'PARTIC', porcentajeCobertura: 0 }
       ]))
     );
   }
@@ -226,15 +233,15 @@ export class ApiService {
   getCountries(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/patients/countries`).pipe(
       catchError(() => of([
-        { idPais: 'MEX', nombre: 'México', nacionalidad: 'Mexicana' },
-        { idPais: 'ARG', nombre: 'Argentina', nacionalidad: 'Argentina' },
-        { idPais: 'COL', nombre: 'Colombia', nacionalidad: 'Colombiana' },
-        { idPais: 'ESP', nombre: 'España', nacionalidad: 'Española' }
+        { idPais: 'MEX', nombre: 'Mexico', nacionalidad: 'Mexican' },
+        { idPais: 'ARG', nombre: 'Argentina', nacionalidad: 'Argentine' },
+        { idPais: 'COL', nombre: 'Colombia', nacionalidad: 'Colombian' },
+        { idPais: 'ESP', nombre: 'Spain', nacionalidad: 'Spanish' }
       ]))
     );
   }
 
-  // --- Turnos y Agenda ---
+  // --- Appointments & Schedule ---
   getAppointments(doctorId?: number, date?: string, page?: number, limit?: number): Observable<any> {
     const params: Record<string, string> = {};
     if (doctorId) params['doctorId'] = doctorId.toString();
@@ -242,11 +249,8 @@ export class ApiService {
     if (page) params['page'] = page.toString();
     if (limit) params['limit'] = limit.toString();
     return this.http.get<any>(`${this.baseUrl}/appointments`, { params }).pipe(
-      catchError(() => of([
-        { idTurno: 101, fechaHora: new Date(Date.now() + 3600000).toISOString(), paciente: 'Carlos Mendoza', medico: 'Dr/a. Gómez', especialidad: 'Dermatología', consultorio: 'C-302', estado: 'confirmado', motivoConsulta: 'Control de lunares' },
-        { idTurno: 102, fechaHora: new Date(Date.now() + 7200000).toISOString(), paciente: 'Ana Torres', medico: 'Dr/a. Arévalo', especialidad: 'Traumatología', consultorio: 'C-202', estado: 'pendiente', motivoConsulta: 'Evaluación dolor rodilla' },
-        { idTurno: 103, fechaHora: new Date(Date.now() + 10800000).toISOString(), paciente: 'Sofía Herrera', medico: 'Dr/a. Castelo', especialidad: 'Cardiología', consultorio: 'C-201', estado: 'atendido', motivoConsulta: 'Electrocardiograma' }
-      ]))
+      tap(() => this.isConnected.set(true)),
+      catchError(this.handleOperationalError('the appointment schedule')),
     );
   }
 
@@ -267,13 +271,13 @@ export class ApiService {
     return this.http.delete<any>(`${this.baseUrl}/appointments/${id}`);
   }
 
-  // --- Médicos y Staff ---
+  // --- Physicians & Staff ---
   getDoctors(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/doctors`).pipe(
       catchError(() => of([
-        { idMedico: 1, nombre: 'Rafael', apellido: 'Castelo', matricula: 'MN-10001', especialidad: 'Dirección Médica' },
-        { idMedico: 2, nombre: 'Laura', apellido: 'Gómez', matricula: 'MN-10002', especialidad: 'Dermatología' },
-        { idMedico: 3, nombre: 'Alberto', apellido: 'Arévalo', matricula: 'MN-10003', especialidad: 'Traumatología' }
+        { idMedico: 1, nombre: 'Rafael', apellido: 'Castelo', matricula: 'MN-10001', especialidad: 'Medical Direction' },
+        { idMedico: 2, nombre: 'Laura', apellido: 'Gomez', matricula: 'MN-10002', especialidad: 'Dermatology' },
+        { idMedico: 3, nombre: 'Alberto', apellido: 'Arevalo', matricula: 'MN-10003', especialidad: 'Orthopedics' }
       ]))
     );
   }
@@ -281,13 +285,13 @@ export class ApiService {
   getSpecialties(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/doctors/specialties`).pipe(
       catchError(() => of([
-        { idEspecialidad: 1, nombre: 'Medicina General', precioConsultaBase: 950 },
-        { idEspecialidad: 2, nombre: 'Cardiología', precioConsultaBase: 1600 },
-        { idEspecialidad: 3, nombre: 'Traumatología', precioConsultaBase: 1400 },
-        { idEspecialidad: 4, nombre: 'Dermatología', precioConsultaBase: 1300 },
-        { idEspecialidad: 5, nombre: 'Pediatría', precioConsultaBase: 1100 },
-        { idEspecialidad: 6, nombre: 'Neurología', precioConsultaBase: 1800 },
-        { idEspecialidad: 7, nombre: 'Gastroenterología', precioConsultaBase: 1500 }
+        { idEspecialidad: 1, nombre: 'General Medicine', precioConsultaBase: 950 },
+        { idEspecialidad: 2, nombre: 'Cardiology', precioConsultaBase: 1600 },
+        { idEspecialidad: 3, nombre: 'Orthopedics', precioConsultaBase: 1400 },
+        { idEspecialidad: 4, nombre: 'Dermatology', precioConsultaBase: 1300 },
+        { idEspecialidad: 5, nombre: 'Pediatrics', precioConsultaBase: 1100 },
+        { idEspecialidad: 6, nombre: 'Neurology', precioConsultaBase: 1800 },
+        { idEspecialidad: 7, nombre: 'Gastroenterology', precioConsultaBase: 1500 }
       ]))
     );
   }
@@ -298,12 +302,12 @@ export class ApiService {
       {
         id: 'srv-cg-01',
         categoria: 'consulta',
-        categoriaNombre: 'Consulta Médica',
-        nombre: 'Consulta de Medicina General',
-        descripcion: 'Atención médica primaria preventiva, control clínico general y diagnóstico integral.',
+        categoriaNombre: 'Medical Consultation',
+        nombre: 'General Medicine Consultation',
+        descripcion: 'Preventive primary medical care, general clinical checkup, and comprehensive diagnosis.',
         precioBase: 950,
-        modalidad: 'Consulta ambulatoria presencial',
-        incluye: ['Valoración somatométrica', 'Revisión clínica completa', 'Emisión de recetas y órdenes médicas'],
+        modalidad: 'In-person outpatient consultation',
+        incluye: ['Anthropometric assessment', 'Complete clinical review', 'Prescriptions and medical orders'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/consultation.jpg',
@@ -311,12 +315,12 @@ export class ApiService {
       {
         id: 'srv-card-02',
         categoria: 'consulta',
-        categoriaNombre: 'Consulta Médica',
-        nombre: 'Consulta Especializada en Cardiología',
-        descripcion: 'Evaluación cardiovascular integral, prevención de riesgo isquémico y ajuste terapéutico.',
+        categoriaNombre: 'Medical Consultation',
+        nombre: 'Cardiology Specialist Consultation',
+        descripcion: 'Comprehensive cardiovascular evaluation, ischemic risk prevention, and therapeutic adjustment.',
         precioBase: 1600,
-        modalidad: 'Consulta ambulatoria con especialista',
-        incluye: ['Auscultación y valoración hemodinámica', 'Revisión de estudios previos', 'Plan de seguimiento cardíaco'],
+        modalidad: 'Outpatient specialist consultation',
+        incluye: ['Auscultation and hemodynamic assessment', 'Review of prior studies', 'Cardiac follow-up plan'],
         tiempoEstimado: '30 - 45 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/cardiology.jpg',
@@ -324,12 +328,12 @@ export class ApiService {
       {
         id: 'srv-trauma-03',
         categoria: 'consulta',
-        categoriaNombre: 'Consulta Médica',
-        nombre: 'Consulta de Traumatología y Ortopedia',
-        descripcion: 'Diagnóstico y tratamiento del sistema musculoesquelético, articulaciones y lesiones deportivas.',
+        categoriaNombre: 'Medical Consultation',
+        nombre: 'Orthopedics & Traumatology Consultation',
+        descripcion: 'Diagnosis and treatment of the musculoskeletal system, joints, and sports injuries.',
         precioBase: 1400,
-        modalidad: 'Consulta ambulatoria con especialista',
-        incluye: ['Maniobras ortopédicas de valoración', 'Indicación de inmovilización o kinesiología', 'Revisión de placas'],
+        modalidad: 'Outpatient specialist consultation',
+        incluye: ['Orthopedic assessment maneuvers', 'Immobilization or physical therapy indication', 'Imaging review'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/consultation.jpg',
@@ -337,12 +341,12 @@ export class ApiService {
       {
         id: 'srv-pedia-04',
         categoria: 'consulta',
-        categoriaNombre: 'Consulta Médica',
-        nombre: 'Consulta de Pediatría y Control del Niño Sano',
-        descripcion: 'Monitoreo del desarrollo psicomotriz, esquema de vacunación y nutrición en niños y adolescentes.',
+        categoriaNombre: 'Medical Consultation',
+        nombre: 'Pediatrics & Well-Child Checkup',
+        descripcion: 'Psychomotor development monitoring, vaccination schedule, and nutrition for children and adolescents.',
         precioBase: 1100,
-        modalidad: 'Consulta ambulatoria pediátrica',
-        incluye: ['Control pondoestatural (peso y talla)', 'Revisión de cartilla de vacunación', 'Orientación a tutores'],
+        modalidad: 'Outpatient pediatric consultation',
+        incluye: ['Growth check (height & weight)', 'Vaccination record review', 'Guidance for guardians'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/pediatrics.jpg',
@@ -350,12 +354,12 @@ export class ApiService {
       {
         id: 'srv-derm-05',
         categoria: 'consulta',
-        categoriaNombre: 'Consulta Médica',
-        nombre: 'Consulta de Dermatología Clínica',
-        descripcion: 'Valoración dermatoscópica de lesiones cutáneas, lunares, dermatitis y patologías dérmicas.',
+        categoriaNombre: 'Medical Consultation',
+        nombre: 'Clinical Dermatology Consultation',
+        descripcion: 'Dermoscopic evaluation of skin lesions, moles, dermatitis, and skin conditions.',
         precioBase: 1300,
-        modalidad: 'Consulta ambulatoria con especialista',
-        incluye: ['Dermatoscopía digital', 'Recomendación de tratamiento tópico/sistémico', 'Plan de cuidado dérmico'],
+        modalidad: 'Outpatient specialist consultation',
+        incluye: ['Digital dermoscopy', 'Topical/systemic treatment plan', 'Skincare routine guidance'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/consultation.jpg',
@@ -363,12 +367,12 @@ export class ApiService {
       {
         id: 'srv-neuro-06',
         categoria: 'consulta',
-        categoriaNombre: 'Consulta Médica',
-        nombre: 'Consulta de Neurología Clínica',
-        descripcion: 'Evaluación del sistema nervioso central y periférico, cefaleas, neuropatías y trastornos motores.',
+        categoriaNombre: 'Medical Consultation',
+        nombre: 'Clinical Neurology Consultation',
+        descripcion: 'Evaluation of the central and peripheral nervous system, headaches, neuropathies, and motor disorders.',
         precioBase: 1800,
-        modalidad: 'Consulta de alta especialidad',
-        incluye: ['Examen neurológico completo de pares craneales', 'Evaluación de reflejos y marcha', 'Prescripción especializada'],
+        modalidad: 'High-specialty consultation',
+        incluye: ['Complete cranial nerve neurological exam', 'Reflex and gait evaluation', 'Specialized prescription'],
         tiempoEstimado: '45 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/consultation.jpg',
@@ -376,51 +380,51 @@ export class ApiService {
       {
         id: 'srv-hab-gen',
         categoria: 'internacion',
-        categoriaNombre: 'Hospitalización',
-        nombre: 'Cama General en Habitación Compartida',
-        descripcion: 'Alojamiento en piso asistencial con supervisión médica y cuidados continuos de enfermería.',
+        categoriaNombre: 'Hospitalization',
+        nombre: 'General Bed in Shared Room',
+        descripcion: 'Care floor accommodation with medical supervision and continuous nursing care.',
         precioBase: 3800,
-        modalidad: 'Por día de estancia hospitalaria',
-        incluye: ['Cama hospitalaria eléctrica articulada', 'Cuidados de enfermería comodín continua', 'Servicio de nutrición clínica', 'Monitoreo de constantes vitales'],
-        tiempoEstimado: '24 horas',
+        modalidad: 'Per day of hospital stay',
+        incluye: ['Electric articulated hospital bed', 'Continuous nursing care', 'Clinical nutrition service', 'Vital signs monitoring'],
+        tiempoEstimado: '24 hours',
         coberturaAplica: true,
         imagenUrl: '/images/services/hospital_room.jpg',
       },
       {
         id: 'srv-hab-ind',
         categoria: 'internacion',
-        categoriaNombre: 'Hospitalización',
-        nombre: 'Habitación Individual de Recuperación',
-        descripcion: 'Alojamiento individual privado con cama para acompañante, baño privado y máxima tranquilidad.',
+        categoriaNombre: 'Hospitalization',
+        nombre: 'Private Recovery Room',
+        descripcion: 'Private suite with companion bed, private bathroom, and maximum comfort.',
         precioBase: 6500,
-        modalidad: 'Por día de estancia hospitalaria',
-        incluye: ['Privacidad total y suite individual', 'Atención directa de enfermería', 'Régimen de visitas extendido', 'Monitoreo multiparamétrico'],
-        tiempoEstimado: '24 horas',
+        modalidad: 'Per day of hospital stay',
+        incluye: ['Full privacy and individual suite', 'Direct nursing care', 'Extended visiting hours', 'Multiparameter monitoring'],
+        tiempoEstimado: '24 hours',
         coberturaAplica: true,
         imagenUrl: '/images/services/hospital_room.jpg',
       },
       {
         id: 'srv-hab-uti',
         categoria: 'internacion',
-        categoriaNombre: 'Hospitalización',
-        nombre: 'Unidad de Terapia Intensiva (UTI)',
-        descripcion: 'Cuidado crítico de alta complejidad con soporte vital avanzado, respirador y vigilancia médica permanente.',
+        categoriaNombre: 'Hospitalization',
+        nombre: 'Intensive Care Unit (ICU)',
+        descripcion: 'High-complexity critical care with advanced life support, ventilator, and permanent medical surveillance.',
         precioBase: 18500,
-        modalidad: 'Por día de terapia intensiva',
-        incluye: ['Monitoreo hemodinámico invasivo 24/7', 'Médico intensivista de guardia exclusiva', 'Enfermería intensiva 1 a 1', 'Gases medicinales y soporte vital'],
-        tiempoEstimado: '24 horas',
+        modalidad: 'Per day in intensive care',
+        incluye: ['24/7 invasive hemodynamic monitoring', 'Dedicated intensivist physician on duty', '1-to-1 ICU nursing', 'Medical gases and life support'],
+        tiempoEstimado: '24 hours',
         coberturaAplica: true,
         imagenUrl: '/images/services/hospital_room.jpg',
       },
       {
         id: 'srv-est-ecg',
         categoria: 'estudio',
-        categoriaNombre: 'Estudio Diagnóstico',
-        nombre: 'Electrocardiograma (ECG) de 12 Derivaciones',
-        descripcion: 'Registro de la actividad eléctrica cardíaca con informe e interpretación cardiológica inmediata.',
+        categoriaNombre: 'Diagnostic Study',
+        nombre: '12-Lead Electrocardiogram (ECG)',
+        descripcion: 'Recording of cardiac electrical activity with immediate cardiology report and interpretation.',
         precioBase: 850,
-        modalidad: 'Estudio ambulatorio no invasivo',
-        incluye: ['Trazado electrocardiográfico en papel milimetrado', 'Informe firmado por cardiólogo', 'Entrega digital en expediente'],
+        modalidad: 'Non-invasive outpatient study',
+        incluye: ['Millimeter-paper ECG tracing', 'Report signed by cardiologist', 'Digital delivery to record'],
         tiempoEstimado: '15 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/cardiology.jpg',
@@ -428,12 +432,12 @@ export class ApiService {
       {
         id: 'srv-est-eco',
         categoria: 'estudio',
-        categoriaNombre: 'Estudio Diagnóstico',
-        nombre: 'Ecografía Doppler Diagnóstica',
-        descripcion: 'Ultrasonido diagnóstico en tiempo real para valorar flujo vascular y morfología de órganos.',
+        categoriaNombre: 'Diagnostic Study',
+        nombre: 'Diagnostic Doppler Ultrasound',
+        descripcion: 'Real-time diagnostic ultrasound to assess vascular flow and organ morphology.',
         precioBase: 1950,
-        modalidad: 'Gabinete de diagnóstico por imágenes',
-        incluye: ['Exploración ecográfica con transductor de alta resolución', 'Registro de video e imágenes', 'Dictamen radiológico especializado'],
+        modalidad: 'Diagnostic imaging suite',
+        incluye: ['High-resolution transducer ultrasound scan', 'Video and image recording', 'Specialized radiology report'],
         tiempoEstimado: '30 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/cardiology.jpg',
@@ -441,12 +445,12 @@ export class ApiService {
       {
         id: 'srv-est-lab',
         categoria: 'estudio',
-        categoriaNombre: 'Estudio Diagnóstico',
-        nombre: 'Perfil Bioquímico & Laboratorio Clínico',
-        descripcion: 'Análisis de sangre completo: hemograma, glucemia, función renal (creatinina/urea) y perfil lipídico.',
+        categoriaNombre: 'Diagnostic Study',
+        nombre: 'Biochemical Profile & Clinical Lab',
+        descripcion: 'Complete blood panel: CBC, blood glucose, renal function (creatinine/urea), and lipid profile.',
         precioBase: 1200,
-        modalidad: 'Toma de muestra en laboratorio',
-        incluye: ['Extracción de muestra con material descartable', 'Procesamiento automatizado', 'Resultados disponibles en 24 hrs en portal'],
+        modalidad: 'Lab sample collection',
+        incluye: ['Sample draw with disposable sterile kit', 'Automated processing', 'Results available in 24 hrs on portal'],
         tiempoEstimado: '10 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/laboratory.jpg',
@@ -454,12 +458,12 @@ export class ApiService {
       {
         id: 'srv-cx-menor',
         categoria: 'cirugia',
-        categoriaNombre: 'Procedimiento Quirúrgico',
-        nombre: 'Procedimiento Quirúrgico Menor Ambulatorio',
-        descripcion: 'Intervenciones bajo anestesia local en quirófano ambulatorio: exéresis de quistes, biopsias y drenajes.',
+        categoriaNombre: 'Surgical Procedure',
+        nombre: 'Minor Outpatient Surgical Procedure',
+        descripcion: 'Procedures under local anesthesia in outpatient OR: cyst excision, biopsies, and drainages.',
         precioBase: 4800,
-        modalidad: 'Quirófano ambulatorio',
-        incluye: ['Derechos de sala quirúrgica', 'Anestesia local y campos estériles', 'Material de curación y sutura', 'Informe de patología'],
+        modalidad: 'Outpatient operating room',
+        incluye: ['Operating room fees', 'Local anesthesia and sterile drapes', 'Dressing and suture supplies', 'Pathology report'],
         tiempoEstimado: '45 - 60 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/surgery.jpg',
@@ -467,12 +471,12 @@ export class ApiService {
       {
         id: 'srv-cx-sutura',
         categoria: 'cirugia',
-        categoriaNombre: 'Procedimiento Quirúrgico',
-        nombre: 'Curación Compleja y Retiro de Puntos',
-        descripcion: 'Curación avanzada de heridas quirúrgicas, asepsia profunda y desbridamiento por enfermería especializada.',
+        categoriaNombre: 'Surgical Procedure',
+        nombre: 'Complex Wound Care & Suture Removal',
+        descripcion: 'Advanced surgical wound care, deep asepsis, and debridement by specialized nursing staff.',
         precioBase: 900,
-        modalidad: 'Gabinete de curaciones',
-        incluye: ['Material antiséptico e apósitos especiales', 'Manejo del dolor local', 'Instrucciones para el hogar'],
+        modalidad: 'Wound care suite',
+        incluye: ['Antiseptic supplies and specialty dressings', 'Local pain management', 'Home care instructions'],
         tiempoEstimado: '20 min',
         coberturaAplica: true,
         imagenUrl: '/images/services/surgery.jpg',
@@ -485,9 +489,9 @@ export class ApiService {
   getOffices(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/doctors/offices`).pipe(
       catchError(() => of([
-        { idConsultorio: 1, codigo: 'C-101', piso: 1, descripcion: 'Consultorio Medicina General' },
-        { idConsultorio: 2, codigo: 'C-201', piso: 2, descripcion: 'Unidad de Cardiología' },
-        { idConsultorio: 3, codigo: 'C-302', piso: 3, descripcion: 'Gabinete Dermatología' }
+        { idConsultorio: 1, codigo: 'C-101', piso: 1, descripcion: 'General Medicine Office' },
+        { idConsultorio: 2, codigo: 'C-201', piso: 2, descripcion: 'Cardiology Unit' },
+        { idConsultorio: 3, codigo: 'C-302', piso: 3, descripcion: 'Dermatology Suite' }
       ]))
     );
   }
@@ -496,15 +500,11 @@ export class ApiService {
     return this.http.get<any[]>(`${this.baseUrl}/doctors/hierarchy-tree`);
   }
 
-  // --- Internaciones y Camas ---
+  // --- Hospitalizations & Beds ---
   getBedCensus(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/hospitalizations/bed-census`).pipe(
-      catchError(() => of([
-        { idHabitacion: 1, numero: '101', piso: 1, tipo: 'individual', activa: true, ocupada: true, paciente: 'Carlos Mendoza' },
-        { idHabitacion: 2, numero: '102', piso: 1, tipo: 'compartida', activa: true, ocupada: false, paciente: null },
-        { idHabitacion: 3, numero: '201', piso: 2, tipo: 'compartida', activa: true, ocupada: true, paciente: 'Mariana Gómez' },
-        { idHabitacion: 4, numero: '301', piso: 3, tipo: 'individual', activa: true, ocupada: true, paciente: 'Roberto Castro' }
-      ]))
+      tap(() => this.isConnected.set(true)),
+      catchError(this.handleOperationalError('the bed census')),
     );
   }
 
@@ -543,17 +543,16 @@ export class ApiService {
 
   getRecordsByDoctor(doctorId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/medical-records/doctor/${doctorId}`).pipe(
-      catchError(() => of([]))
+      tap(() => this.isConnected.set(true)),
+      catchError(this.handleOperationalError('the physician clinical progress notes')),
     );
   }
 
-  // --- Facturación ---
+  // --- Billing ---
   getBillingSummary(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/billing/summary`).pipe(
-      catchError(() => of([
-        { concepto: 'Consultas Médicas', totalRecaudado: 18500, transacciones: 8 },
-        { concepto: 'Internación Hospitalaria', totalRecaudado: 10000, transacciones: 3 }
-      ]))
+      tap(() => this.isConnected.set(true)),
+      catchError(this.handleOperationalError('the billing summary')),
     );
   }
 
@@ -578,7 +577,7 @@ export class ApiService {
 
     return this.http.get<Medicamento[]>(`${this.baseUrl}/pharmacy`, { params }).pipe(
       catchError((err) => {
-        console.warn('API /pharmacy no disponible:', err.message);
+        console.warn('API /pharmacy unavailable:', err.message);
         return of([]);
       })
     );
@@ -587,7 +586,7 @@ export class ApiService {
   getPharmacySummary(): Observable<PharmacySummary> {
     return this.http.get<PharmacySummary>(`${this.baseUrl}/pharmacy/summary`).pipe(
       catchError((err) => {
-        console.warn('API /pharmacy/summary no disponible:', err.message);
+        console.warn('API /pharmacy/summary unavailable:', err.message);
         return of({
           totalMedicamentos: 20,
           totalUnidadesStock: 6379,

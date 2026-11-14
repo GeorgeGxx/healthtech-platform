@@ -37,8 +37,8 @@ export class AppointmentsComponent implements OnInit {
   readonly calendarMonth = signal<number>(10); // 1 = Enero, 10 = Octubre
 
   readonly monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
   selectedDoctorId: number = 0;
@@ -118,14 +118,14 @@ export class AppointmentsComponent implements OnInit {
   }
 
   getDateKey(fecha?: string): string {
-    if (!fecha) return 'Sin fecha';
+    if (!fecha) return 'No date';
     const match = fecha.match(/^(\d{4}-\d{2}-\d{2})/);
     return match ? match[1] : fecha.slice(0, 10);
   }
 
   formatDateLabel(dateKey: string): string {
     const cleanKey = this.getDateKey(dateKey);
-    if (!cleanKey || cleanKey === 'Sin fecha') return 'Sin fecha';
+    if (!cleanKey || cleanKey === 'No date') return 'No date';
     const parts = cleanKey.split('-');
     if (parts.length < 3) return cleanKey;
     const year = Number(parts[0]);
@@ -133,11 +133,11 @@ export class AppointmentsComponent implements OnInit {
     const day = Number(parts[2]);
     const monthName = this.monthNames[(month || 1) - 1];
     if (cleanKey === '2026-10-18') {
-      return `Día 18 de ${monthName} (Hoy)`;
+      return `${monthName} 18 (Today)`;
     } else if (cleanKey === '2026-10-17') {
-      return `Día 17 de ${monthName} (Ayer)`;
+      return `${monthName} 17 (Yesterday)`;
     }
-    return `Día ${day} de ${monthName}, ${year}`;
+    return `${monthName} ${day}, ${year}`;
   }
 
   readonly doctorAppointments = computed(() => {
@@ -157,7 +157,7 @@ export class AppointmentsComponent implements OnInit {
       const dateKey = this.getDateKey(app.fechaInicio);
       if (!map.has(dateKey)) {
         const dayNumber = dateKey.split('-')[2] || '';
-        const dayLabel = dateKey === '2026-10-18' ? 'Hoy (Día 18)' : (dateKey === '2026-10-17' ? 'Ayer (Día 17)' : `Día ${dayNumber}`);
+        const dayLabel = dateKey === '2026-10-18' ? 'Today (Day 18)' : (dateKey === '2026-10-17' ? 'Yesterday (Day 17)' : `Day ${dayNumber}`);
         map.set(dateKey, {
           dateKey,
           dayNumber,
@@ -368,11 +368,11 @@ export class AppointmentsComponent implements OnInit {
       }
     }
 
-    // Modo: Mes Completo
+    // Full Month Mode
     return {
       isSingleDay: false,
       dateKey: 'month',
-      label: `Mes Completo (${monthSum.monthName})`,
+      label: `Full Month (${monthSum.monthName})`,
       dayLabel: monthSum.monthName,
       dayPatients: monthSum.totalPatients,
       dayAttended: monthSum.attendedCount,
@@ -542,26 +542,32 @@ export class AppointmentsComponent implements OnInit {
 
 
   changeStatus(id: number, status: string): void {
+    const statusLabels: Record<string, string> = {
+      atendido: 'ATTENDED',
+      cancelado: 'CANCELLED',
+      confirmado: 'CONFIRMED',
+      pendiente: 'PENDING',
+    };
     this.api.updateAppointmentStatus(id, status).subscribe({
       next: () => {
         this.loadAppointments();
-        this.toast.success(`Cita médica actualizada a: "${status.toUpperCase()}"`);
+        this.toast.success(`Appointment updated to: "${statusLabels[status] || status.toUpperCase()}"`);
       },
       error: (err) => {
-        this.toast.error('Error al actualizar estatus de cita: ' + (err.error?.message || err.message));
+        this.toast.error('Error updating appointment status: ' + (err.error?.message || err.message));
       },
     });
   }
 
   cancelMyAppointment(id: number): void {
-    if (confirm('¿Desea solicitar la cancelación de esta cita médica programada?')) {
+    if (confirm('Would you like to request cancellation for this scheduled appointment?')) {
       this.api.updateAppointmentStatus(id, 'cancelado').subscribe({
         next: () => {
           this.loadAppointments();
-          this.toast.info('La cita médica ha sido cancelada correctamente.');
+          this.toast.info('Your medical appointment has been cancelled successfully.');
         },
         error: (err) => {
-          this.toast.error('No se pudo cancelar la cita: ' + (err.error?.message || err.message));
+          this.toast.error('Could not cancel appointment: ' + (err.error?.message || err.message));
         },
       });
     }
@@ -574,17 +580,17 @@ export class AppointmentsComponent implements OnInit {
       next: (res) => {
         this.virtualRoomData.set({
           ...res,
-          paciente: appointment.paciente?.nombre ? `${appointment.paciente.nombre} ${appointment.paciente.apellido}` : 'Paciente',
-          medico: appointment.medico?.nombre ? `Dr(a). ${appointment.medico.nombre} ${appointment.medico.apellido}` : 'Médico Especialista',
-          especialidad: appointment.especialidad?.nombre || 'Consulta Médica',
+          paciente: appointment.paciente?.nombre ? `${appointment.paciente.nombre} ${appointment.paciente.apellido}` : 'Patient',
+          medico: appointment.medico?.nombre ? `Dr. ${appointment.medico.nombre} ${appointment.medico.apellido}` : 'Specialist Physician',
+          especialidad: appointment.especialidad?.nombre || 'Medical Consultation',
         });
         this.showVirtualRoomModal.set(true);
         this.isGeneratingRoom.set(false);
-        this.toast.success('Sala de Telemedicina WebRTC creada con éxito.');
+        this.toast.success('WebRTC Telemedicine Room created successfully.');
       },
       error: (err) => {
         this.isGeneratingRoom.set(false);
-        this.toast.error('No se pudo generar la sala virtual: ' + (err.error?.message || err.message));
+        this.toast.error('Could not generate virtual room: ' + (err.error?.message || err.message));
       },
     });
   }
@@ -597,7 +603,7 @@ export class AppointmentsComponent implements OnInit {
   copyRoomUrl(url: string): void {
     if (navigator?.clipboard) {
       navigator.clipboard.writeText(url);
-      this.toast.success('Enlace de telemedicina copiado al portapapeles');
+      this.toast.success('Telemedicine link copied to clipboard');
     }
   }
 
@@ -605,11 +611,11 @@ export class AppointmentsComponent implements OnInit {
     const idTurno = appointment.idTurno || appointment.id;
     const pacienteNombre = appointment.paciente?.nombre
       ? `${appointment.paciente.nombre} ${appointment.paciente.apellido}`
-      : 'Paciente';
+      : 'Patient';
     const medicoNombre = appointment.medico?.nombre
-      ? `Dr(a). ${appointment.medico.nombre} ${appointment.medico.apellido}`
-      : 'Médico Tratante';
-    const especialidad = appointment.especialidad?.nombre || 'Medicina General';
+      ? `Dr. ${appointment.medico.nombre} ${appointment.medico.apellido}`
+      : 'Attending Physician';
+    const especialidad = appointment.especialidad?.nombre || 'General Medicine';
 
     this.api.triggerMultichannelReminder({
       idTurno,
@@ -618,10 +624,10 @@ export class AppointmentsComponent implements OnInit {
       especialidad,
     }).subscribe({
       next: (res) => {
-        this.toast.success(`Recordatorios automáticos enviados vía WhatsApp y Correo (${res.totalGenerados} notificaciones encoladas).`);
+        this.toast.success(`Automated reminders sent via WhatsApp and Email (${res.totalGenerados} notifications queued).`);
       },
       error: (err) => {
-        this.toast.error('Error al enviar recordatorio multicanal: ' + (err.error?.message || err.message));
+        this.toast.error('Error sending multichannel reminder: ' + (err.error?.message || err.message));
       },
     });
   }
@@ -678,13 +684,13 @@ export class AppointmentsComponent implements OnInit {
         this.loadAppointments();
         this.toast.success(
           this.auth.isBasicUser()
-            ? 'Tu cita médica fue solicitada exitosamente.'
-            : 'Cita médica registrada en agenda hospitalaria.'
+            ? 'Your medical appointment request was submitted successfully.'
+            : 'Medical appointment registered in the hospital schedule.'
         );
       },
       error: (err) => {
         const msg = err.error?.message ||
-          'Conflicto de horario: El médico ya tiene una consulta agendada en ese rango o consultorio ocupado.';
+          'Schedule conflict: The physician already has an appointment booked in that time slot or the room is occupied.';
         this.errorMessage.set(msg);
         this.toast.error(msg);
       },

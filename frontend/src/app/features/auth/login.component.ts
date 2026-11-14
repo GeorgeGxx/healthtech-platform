@@ -35,19 +35,18 @@ export class LoginComponent implements OnInit {
     }
   }
 
-  submitLogin(event: Event): void {
+  async submitLogin(event: Event): Promise<void> {
     event.preventDefault();
     this.errorMessage.set(null);
     this.isLoading.set(true);
 
-    const res = this.auth.login(this.username, this.password);
+    const res = await this.auth.loginWithKeycloak(this.username, this.password);
 
+    this.isLoading.set(false);
     if (res.success) {
-      this.isLoading.set(false);
       this.router.navigateByUrl(this.returnUrl);
     } else {
-      this.isLoading.set(false);
-      this.errorMessage.set(res.message || 'Error de autenticación');
+      this.errorMessage.set(res.message || 'Authentication error');
     }
   }
 

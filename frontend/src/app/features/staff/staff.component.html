@@ -1,44 +1,44 @@
 <div class="space-y-8 animate-fade-in">
-  <!-- Encabezado Clínico -->
+  <!-- Clinical Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
     <div>
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-        Cuerpo Médico y Estructura Asistencial
+        Medical Staff & Care Structure
       </h1>
       <p class="text-sm text-slate-600 mt-1">
-        Directorio de especialistas, cédulas profesionales, jefaturas de servicio y personal clínico.
+        Directory of specialists, medical licenses, department heads, and clinical personnel.
       </p>
     </div>
   </div>
 
-  <!-- Banner Informativo del Flujo Clínico: Médicos Asignados y Enfermería Comodín -->
+  <!-- Clinical Workflow Info Banner: Assigned Physicians & Float Nursing -->
   <div class="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
     <div class="flex items-start gap-3">
       <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
       </div>
       <div>
-        <h2 class="text-sm font-bold text-slate-900">Estructura Operativa del Personal de Salud</h2>
+        <h2 class="text-sm font-bold text-slate-900">Healthcare Personnel Operating Structure</h2>
         <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">
-          Los <strong>médicos especialistas</strong> cuentan con consultorios asignados y agenda programada para consultas y cirugías. 
-          El <strong>personal de enfermería</strong> actúa como equipo comodín de guardia y rotación asistencial según el censo y demanda de cada piso clínico.
+          <strong>Specialist physicians</strong> have assigned consultation rooms and scheduled calendars for consultations and surgeries. 
+          <strong>Nursing staff</strong> operate as an on-call float team rotating across clinical floors based on patient census and demand.
         </p>
       </div>
     </div>
     <div class="flex items-center gap-2 shrink-0">
       <span class="inline-flex items-center px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-100 text-emerald-800">
-        Enfermería de Guardia Activa
+        Active On-Call Nursing
       </span>
     </div>
   </div>
 
-  <!-- Organigrama de Jefaturas Médicas -->
+  <!-- Medical Leadership Org Chart -->
   <div class="glass-panel p-6 rounded-2xl shadow-sm border border-slate-200">
     <h2 class="text-lg font-bold text-slate-900 mb-1">
-      Organigrama de Jefaturas y Dependencias Médicas
+      Medical Leadership & Reporting Org Chart
     </h2>
     <p class="text-xs text-slate-500 mb-5">
-      Jerarquía asistencial hospitalaria y líneas de reporte clínico institucional.
+      Hospital care hierarchy and institutional clinical reporting lines.
     </p>
 
     <div class="space-y-3 text-xs">
@@ -59,20 +59,20 @@
           </span>
           <div class="flex-1">
             <p class="font-bold text-sm text-slate-900">{{ node.medico }}</p>
-            <p class="text-xs text-slate-500">Cédula Profesional: {{ node.matricula }} • Correo: {{ node.email }}</p>
+            <p class="text-xs text-slate-500">Medical License: {{ node.matricula }} • Email: {{ node.email }}</p>
           </div>
           <span class="text-xs font-medium text-slate-400 italic hidden sm:inline">
-            Línea de reporte: {{ node.camino_reporte }}
+            Reporting line: {{ node.camino_reporte }}
           </span>
         </div>
       }
     </div>
   </div>
 
-  <!-- Plantilla de Médicos Especialistas -->
+  <!-- Active Specialist Physicians Roster -->
   <div>
     <h2 class="text-lg font-bold text-slate-900 mb-4">
-      Directorio de Médicos Especialistas en Servicio
+      Active Specialist Physicians Directory
     </h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -85,15 +85,15 @@
               </div>
               <div>
                 <h3 class="font-bold text-slate-900">
-                  Dr/a. {{ doc.nombre }} {{ doc.apellido }}
+                  Dr. {{ doc.nombre }} {{ doc.apellido }}
                 </h3>
-                <p class="text-xs font-medium text-slate-500">Cédula Profesional: {{ doc.matricula }}</p>
+                <p class="text-xs font-medium text-slate-500">Medical License: {{ doc.matricula }}</p>
               </div>
             </div>
 
-            <!-- Especialidades -->
+            <!-- Specialties -->
             <div class="mt-4">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Especialidades Acreditadas</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Board-Certified Specialties</span>
               <div class="flex flex-wrap gap-1.5">
                 @for (esp of doc.especialidades; track esp.idEspecialidad) {
                   <span class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">
@@ -103,19 +103,19 @@
               </div>
             </div>
 
-            <!-- Jefe Directo -->
+            <!-- Direct Supervisor -->
             <div class="mt-4 text-xs text-slate-500">
-              <span>Coordinación: </span>
+              <span>Coordination: </span>
               <strong class="text-slate-700">
-                {{ doc.jefeDirecto ? ('Dr/a. ' + doc.jefeDirecto.nombre + ' ' + doc.jefeDirecto.apellido) : 'Dirección Médica General' }}
+                {{ doc.jefeDirecto ? ('Dr. ' + doc.jefeDirecto.nombre + ' ' + doc.jefeDirecto.apellido) : 'General Medical Directorate' }}
               </strong>
             </div>
           </div>
 
           <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
-            <span>Adscripción: {{ doc.fechaIngreso || 'Planta Titular' }}</span>
+            <span>Appointment: {{ doc.fechaIngreso || 'Attending Staff' }}</span>
             <span class="text-emerald-700 font-semibold">
-              En Servicio Activo
+              In Active Service
             </span>
           </div>
         </div>

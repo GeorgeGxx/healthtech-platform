@@ -1,36 +1,36 @@
 <div class="space-y-8 animate-fade-in">
-  <!-- Encabezado Clínico y de Cumplimiento -->
+  <!-- Clinical & Compliance Header -->
   <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
     <div>
       <div class="flex items-center gap-2 mb-1.5">
         <span class="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs uppercase tracking-wider">
-          Supervisión Hospitalaria
+          Hospital Supervision
         </span>
         <span class="text-slate-300">•</span>
-        <span class="text-xs font-semibold text-slate-500">Normativa de Privacidad de Datos Clínicos</span>
+        <span class="text-xs font-semibold text-slate-500">Clinical Data Privacy Regulations</span>
       </div>
       <h1 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-        Monitoreo y Seguridad de la Atención Médica
+        Healthcare Monitoring & Security
       </h1>
       <p class="text-sm text-slate-600 mt-1">
-        Trazabilidad de movimientos asistenciales, auditoría de accesos a información de pacientes y operatividad institucional.
+        Traceability of care operations, patient data access auditing, and institutional operability.
       </p>
     </div>
 
     <div class="flex items-center gap-2">
       <span class="inline-flex items-center px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-        Servicios Hospitalarios Operativos
+        Hospital Services Operational
       </span>
     </div>
   </div>
 
-  <!-- Estado de los Módulos Asistenciales -->
+  <!-- Care Modules Status -->
   <div class="space-y-4">
     <div class="flex items-center justify-between">
       <h2 class="text-base font-bold text-slate-900">
-        Módulos Asistenciales en Funcionamiento
+        Active Care Modules
       </h2>
-      <span class="text-xs text-slate-500">Centro Médico Nacional</span>
+      <span class="text-xs text-slate-500">National Medical Center</span>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -40,7 +40,7 @@
             <div class="flex items-center justify-between mb-2">
               <span class="text-xs font-bold uppercase tracking-wider text-slate-400">{{ serv.category }}</span>
               <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold">
-                Operativo
+                Operational
               </span>
             </div>
             <h3 class="text-base font-bold text-slate-900">{{ serv.name }}</h3>
@@ -49,7 +49,7 @@
             </p>
           </div>
           <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Disponibilidad asistencial</span>
+            <span>Care availability</span>
             <span class="text-emerald-700 font-bold">100%</span>
           </div>
         </div>
@@ -57,10 +57,10 @@
     </div>
   </div>
 
-  <!-- Esquema de Perfiles Hospitalarios y Confidencialidad -->
+  <!-- Hospital Profiles & Confidentiality Scheme -->
   <div class="space-y-4">
     <h2 class="text-base font-bold text-slate-900">
-      Perfiles y Políticas de Confidencialidad Médica
+      Profiles & Medical Confidentiality Policies
     </h2>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -71,35 +71,35 @@
               {{ r.scope }}
             </span>
             <h3 class="font-bold text-sm text-slate-900">{{ r.role }}</h3>
-            <p class="text-xs font-semibold text-indigo-700 mt-0.5">Asignado a: {{ r.user }}</p>
+            <p class="text-xs font-semibold text-indigo-700 mt-0.5">Assigned to: {{ r.user }}</p>
             <p class="text-xs text-slate-600 mt-2 leading-relaxed">
               {{ r.description }}
             </p>
           </div>
           <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
-            <span>Nivel de privacidad: </span>
-            <strong class="text-slate-800">Verificado</strong>
+            <span>Privacy level: </span>
+            <strong class="text-slate-800">Verified</strong>
           </div>
         </div>
       }
     </div>
   </div>
 
-  <!-- Bitácora de Auditoría y Trazabilidad de Accesos -->
+  <!-- Audit Log & Access Traceability -->
   <div class="glass-panel rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
     <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <h2 class="text-base font-bold text-slate-900">
-          Bitácora de Seguridad y Acceso a Expedientes Médicos
+          Security & Medical Record Access Log
         </h2>
         <p class="text-xs text-slate-500 mt-0.5">
-          Registro inmutable de actividades para garantizar que cada paciente acceda únicamente a su información.
+          Immutable activity log ensuring each patient accesses only their own information.
         </p>
       </div>
 
       <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl self-start sm:self-auto">
         <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-        Auditoría Activa
+        Auditing Active
       </span>
     </div>
 
@@ -107,19 +107,19 @@
       <table class="w-full text-left text-xs text-slate-600">
         <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
           <tr>
-            <th class="px-5 py-3.5">Fecha y Hora</th>
-            <th class="px-5 py-3.5">Usuario / Responsable</th>
-            <th class="px-5 py-3.5">Rol</th>
-            <th class="px-5 py-3.5">Acción Asistencial</th>
-            <th class="px-5 py-3.5">Entidad o Paciente Afectado</th>
-            <th class="px-5 py-3.5">Punto de Acceso</th>
+            <th class="px-5 py-3.5">Date & Time</th>
+            <th class="px-5 py-3.5">User / Responsible</th>
+            <th class="px-5 py-3.5">Role</th>
+            <th class="px-5 py-3.5">Care Action</th>
+            <th class="px-5 py-3.5">Affected Entity or Patient</th>
+            <th class="px-5 py-3.5">Access Point</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
           @for (item of auditLogs(); track item.idAuditoria) {
             <tr class="hover:bg-slate-50/70 transition-colors">
               <td class="px-5 py-3.5 font-medium text-slate-700">
-                {{ item.fechaHora | date: 'dd/MM/yyyy HH:mm' }} hrs
+                {{ item.fechaHora | date: 'MM/dd/yyyy HH:mm' }}
               </td>
               <td class="px-5 py-3.5 font-semibold text-slate-900">
                 {{ item.nombreUsuario }}
@@ -145,21 +145,21 @@
     </div>
   </div>
 
-  <!-- Panel de Monitoreo de Sagas Distribuidas y Transactional Outbox (CDC) -->
+  <!-- Distributed Sagas & Transactional Outbox (CDC) Monitoring Panel -->
   <div class="space-y-6 pt-4 border-t border-slate-200">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <div class="flex items-center gap-2 mb-1">
           <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold text-xs uppercase tracking-wider">
-            Arquitectura de Eventos EDA & KRaft
+            EDA & KRaft Event Architecture
           </span>
           <span class="text-xs font-semibold text-slate-500">• Kafka 8.3.2 & PostgreSQL 18</span>
         </div>
         <h2 class="text-xl font-black text-slate-900 tracking-tight">
-          Sagas Distribuidas & Transactional Outbox CDC
+          Distributed Sagas & Transactional Outbox CDC
         </h2>
         <p class="text-xs text-slate-600">
-          Supervisión de consistencia eventual, orquestación SEC con compensación reversa LIFO y buffer Outbox.
+          Eventual consistency monitoring, SEC orchestration with LIFO reverse compensation, and Outbox buffer.
         </p>
       </div>
 
@@ -171,7 +171,7 @@
           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all disabled:opacity-50"
         >
           <svg class="w-3.5 h-3.5" [class.animate-spin]="relayingOutbox()" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          {{ relayingOutbox() ? 'Procesando Relay...' : 'Forzar Relay CDC' }}
+          {{ relayingOutbox() ? 'Processing Relay...' : 'Force CDC Relay' }}
         </button>
 
         @if (outboxStats().fallidos > 0) {
@@ -180,43 +180,43 @@
             (click)="reintentarOutboxFallidos()"
             class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition-all"
           >
-            Reintentar Fallidos ({{ outboxStats().fallidos }})
+            Retry Failed ({{ outboxStats().fallidos }})
           </button>
         }
       </div>
     </div>
 
-    <!-- Tarjetas de Métricas Outbox -->
+    <!-- Outbox Metrics Cards -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
       <div class="glass-panel p-4 rounded-xl border border-slate-200">
-        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Eventos</span>
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Events</span>
         <p class="text-2xl font-black text-slate-900 mt-1">{{ outboxStats().total }}</p>
       </div>
 
       <div class="glass-panel p-4 rounded-xl border border-amber-200 bg-amber-50/40">
-        <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">En Cola (Pendientes)</span>
+        <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Queued (Pending)</span>
         <p class="text-2xl font-black text-amber-800 mt-1">{{ outboxStats().pendientes }}</p>
       </div>
 
       <div class="glass-panel p-4 rounded-xl border border-emerald-200 bg-emerald-50/40">
-        <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Publicados a Kafka</span>
+        <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Published to Kafka</span>
         <p class="text-2xl font-black text-emerald-800 mt-1">{{ outboxStats().publicados }}</p>
       </div>
 
       <div class="glass-panel p-4 rounded-xl border border-rose-200 bg-rose-50/40">
-        <span class="text-xs font-bold text-rose-700 uppercase tracking-wider">Fallidos CDC</span>
+        <span class="text-xs font-bold text-rose-700 uppercase tracking-wider">CDC Failed</span>
         <p class="text-2xl font-black text-rose-800 mt-1">{{ outboxStats().fallidos }}</p>
       </div>
     </div>
 
-    <!-- Tabla de Sagas Orquestadas -->
+    <!-- Orchestrated Sagas Table -->
     <div class="glass-panel rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       <div class="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
         <h3 class="text-sm font-bold text-slate-900">
-          Instancias de Sagas Orquestadas (SEC)
+          Orchestrated Saga Instances (SEC)
         </h3>
         <span class="text-xs text-slate-500 font-medium">
-          {{ sagas().length }} registradas
+          {{ sagas().length }} recorded
         </span>
       </div>
 
@@ -224,12 +224,12 @@
         <table class="w-full text-left text-xs text-slate-600">
           <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
             <tr>
-              <th class="px-4 py-3">ID Saga</th>
-              <th class="px-4 py-3">Nombre de Transacción</th>
-              <th class="px-4 py-3">Estado</th>
-              <th class="px-4 py-3">Paso Actual</th>
-              <th class="px-4 py-3">Pasos Completados</th>
-              <th class="px-4 py-3">Fecha de Inicio</th>
+              <th class="px-4 py-3">Saga ID</th>
+              <th class="px-4 py-3">Transaction Name</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3">Current Step</th>
+              <th class="px-4 py-3">Completed Steps</th>
+              <th class="px-4 py-3">Start Date</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -258,16 +258,16 @@
                   {{ s.pasoActual || '-' }}
                 </td>
                 <td class="px-4 py-3 text-slate-600">
-                  {{ s.pasosCompletados?.length || 0 }} pasos
+                  {{ s.pasosCompletados?.length || 0 }} steps
                 </td>
                 <td class="px-4 py-3 text-slate-500">
-                  {{ s.iniciadoEn | date: 'dd/MM/yyyy HH:mm:ss' }}
+                  {{ s.iniciadoEn | date: 'MM/dd/yyyy HH:mm:ss' }}
                 </td>
               </tr>
             } @empty {
               <tr>
                 <td colspan="6" class="px-4 py-6 text-center text-slate-400 italic">
-                  No hay transacciones de sagas ejecutadas aún.
+                  No saga transactions executed yet.
                 </td>
               </tr>
             }
@@ -282,14 +282,14 @@
         <div class="p-4 border-b border-rose-100 flex items-center justify-between">
           <div>
             <h3 class="text-sm font-bold text-rose-900 flex items-center gap-1.5">
-              <span>☠️</span> Dead-Letter Queue (DLQ) - Notificaciones Rezagadas
+              <span>☠️</span> Dead-Letter Queue (DLQ) - Delayed Notifications
             </h3>
             <p class="text-xs text-rose-700 mt-0.5">
-              Mensajes que excedieron el límite de reintentos con Kafka / Redis.
+              Messages that exceeded the retry limit with Kafka / Redis.
             </p>
           </div>
           <span class="text-xs font-bold text-rose-700 bg-rose-100 px-2.5 py-1 rounded-lg">
-            {{ dlqItems().length }} en cola
+            {{ dlqItems().length }} queued
           </span>
         </div>
 
@@ -298,10 +298,10 @@
             <thead class="bg-rose-50/60 text-rose-700 uppercase font-bold border-b border-rose-100">
               <tr>
                 <th class="px-4 py-3">ID</th>
-                <th class="px-4 py-3">Canal</th>
-                <th class="px-4 py-3">Destinatario</th>
-                <th class="px-4 py-3">Asunto</th>
-                <th class="px-4 py-3">Acción</th>
+                <th class="px-4 py-3">Channel</th>
+                <th class="px-4 py-3">Recipient</th>
+                <th class="px-4 py-3">Subject</th>
+                <th class="px-4 py-3">Action</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-rose-100">
@@ -317,7 +317,7 @@
                       (click)="reintentarDlq(item.id)"
                       class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-sm"
                     >
-                      Reintentar
+                      Retry
                     </button>
                   </td>
                 </tr>

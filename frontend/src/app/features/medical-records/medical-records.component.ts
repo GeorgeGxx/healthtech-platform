@@ -231,10 +231,10 @@ export class MedicalRecordsComponent implements OnInit {
         next: () => {
           this.closeModal();
           this.loadPatientRecords();
-          this.toast.success('Nota de evolución clínica actualizada y guardada con éxito.');
+          this.toast.success('Clinical progress note updated and saved successfully.');
         },
         error: (err) => {
-          this.toast.error(err.error?.message || 'Error al actualizar la nota médica.');
+          this.toast.error(err.error?.message || 'Error updating medical note.');
         },
       });
     } else {
@@ -242,24 +242,24 @@ export class MedicalRecordsComponent implements OnInit {
         next: () => {
           this.closeModal();
           this.loadPatientRecords();
-          this.toast.success('Nota clínica y prescripción registradas conforme a NOM-004.');
+          this.toast.success('Clinical note and prescription registered compliant with NOM-004.');
         },
         error: (err) => {
-          this.toast.error(err.error?.message || 'Error al guardar la nota médica en el expediente.');
+          this.toast.error(err.error?.message || 'Error saving medical note to record.');
         },
       });
     }
   }
 
   printPrescription(r: any): void {
-    const docName = r.medico?.nombre ? `Dr/a. ${r.medico.nombre} ${r.medico.apellido}` : (r.medico || 'Cuerpo Médico');
+    const docName = r.medico?.nombre ? `Dr. ${r.medico.nombre} ${r.medico.apellido}` : (r.medico || 'Medical Staff');
     const patName = r.paciente?.nombre ? `${r.paciente.nombre} ${r.paciente.apellido}` : 'Juan Pérez García';
-    const dateStr = new Date(r.fecha_atencion || r.fechaAtencion || Date.now()).toLocaleDateString('es-MX', {
+    const dateStr = new Date(r.fecha_atencion || r.fechaAtencion || Date.now()).toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
     const recetas = r.receta_medicamentos || r.recetaMedicamentos || [];
     const cie = r.diagnostico_codigo_cie || r.diagnosticoCodigoCie || 'N/A';
-    const diag = r.diagnostico_descripcion || r.diagnosticoDescripcion || 'Consulta Médica General';
+    const diag = r.diagnostico_descripcion || r.diagnosticoDescripcion || 'General Medical Consultation';
     const sv = r.signos_vitales || r.signosVitales;
 
     const printWindow = window.open('', '_blank', 'width=800,height=900');
@@ -267,9 +267,9 @@ export class MedicalRecordsComponent implements OnInit {
 
     printWindow.document.write(`
       <!DOCTYPE html>
-      <html lang="es">
+      <html lang="en">
       <head>
-        <title>Receta Médica Oficial - Centro Médico Nacional</title>
+        <title>Official Medical Prescription - National Medical Center</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; color: #1e293b; }
           .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 15px; margin-bottom: 20px; }
@@ -291,40 +291,40 @@ export class MedicalRecordsComponent implements OnInit {
       <body>
         <div class="header">
           <div>
-            <div class="logo">🏥 CENTRO MÉDICO NACIONAL</div>
-            <div class="sub">Clínica de Especialidades y Hospitalización • NOM-004-SSA3-2012</div>
+            <div class="logo">🏥 NATIONAL MEDICAL CENTER</div>
+            <div class="sub">Specialty & Hospitalization Clinic • NOM-004-SSA3-2012</div>
           </div>
           <div style="text-align: right;">
-            <span class="badge">RECETA CLÍNICA ELECTRÓNICA</span>
-            <div class="sub" style="margin-top: 6px;">Folio Expediente: EXP-${r.id_historia || r.idHistoria || '101'}</div>
+            <span class="badge">ELECTRONIC CLINICAL PRESCRIPTION</span>
+            <div class="sub" style="margin-top: 6px;">Record ID: EXP-${r.id_historia || r.idHistoria || '101'}</div>
           </div>
         </div>
 
         <div class="section">
-          <div class="section-title">Datos de la Consulta y Paciente</div>
+          <div class="section-title">Consultation & Patient Details</div>
           <div class="grid">
-            <div><strong>Paciente:</strong> ${patName}</div>
-            <div><strong>Fecha de Atención:</strong> ${dateStr}</div>
-            <div><strong>Médico Tratante:</strong> ${docName}</div>
-            <div><strong>Diagnóstico CIE-10:</strong> [${cie}] ${diag}</div>
+            <div><strong>Patient:</strong> ${patName}</div>
+            <div><strong>Date of Care:</strong> ${dateStr}</div>
+            <div><strong>Attending Physician:</strong> ${docName}</div>
+            <div><strong>ICD-10 Diagnosis:</strong> [${cie}] ${diag}</div>
           </div>
           ${sv ? `
             <div style="margin-top: 10px; font-size: 12px; color: #475569; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
-              <strong>Signos Vitales:</strong> TA: ${sv.presion_arterial || '120/80'} mmHg • FC: ${sv.frecuencia_cardiaca_lpm || 75} lpm • Temp: ${sv.temperatura_c || 36.6}°C • Peso: ${sv.peso_kg || 78} kg • SpO2: ${sv.oxigeno_pct || 99}%
+              <strong>Vital Signs:</strong> BP: ${sv.presion_arterial || '120/80'} mmHg • HR: ${sv.frecuencia_cardiaca_lpm || 75} bpm • Temp: ${sv.temperatura_c || 36.6}°C • Weight: ${sv.peso_kg || 78} kg • SpO2: ${sv.oxigeno_pct || 99}%
             </div>
           ` : ''}
         </div>
 
         <div class="section">
-          <div class="section-title">Prescripción Farmacológica e Indicaciones de Toma</div>
+          <div class="section-title">Pharmacological Prescription & Dosage Instructions</div>
           ${recetas.length > 0 ? `
             <table>
               <thead>
                 <tr>
-                  <th>Fármaco / Principio Activo</th>
-                  <th>Dosis</th>
-                  <th>Frecuencia</th>
-                  <th>Duración</th>
+                  <th>Medication / Active Ingredient</th>
+                  <th>Dosage</th>
+                  <th>Frequency</th>
+                  <th>Duration</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,16 +333,16 @@ export class MedicalRecordsComponent implements OnInit {
                     <td><strong>${m.medicamento}</strong></td>
                     <td>${m.dosis}</td>
                     <td>${m.frecuencia}</td>
-                    <td>${m.dias} días</td>
+                    <td>${m.dias} days</td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
-          ` : '<p style="font-size: 12px; color: #64748b; margin: 5px 0;">No se indicaron fármacos específicos en esta consulta.</p>'}
+          ` : '<p style="font-size: 12px; color: #64748b; margin: 5px 0;">No specific medications were prescribed in this consultation.</p>'}
 
           ${r.tratamiento ? `
             <div style="margin-top: 15px; font-size: 12px;">
-              <strong>Indicaciones Generales de Cuidado:</strong>
+              <strong>General Care Instructions:</strong>
               <p style="margin: 4px 0; color: #334155; line-height: 1.5;">${r.tratamiento}</p>
             </div>
           ` : ''}
@@ -350,19 +350,19 @@ export class MedicalRecordsComponent implements OnInit {
 
         <div class="footer">
           <div style="font-size: 10px; color: #94a3b8; max-width: 320px;">
-            Documento médico legal inmutable generado por Centro Médico Nacional conforme a NOM-024-SSA3-2012 y NOM-004-SSA3-2012.
+            Immutable medico-legal document generated by National Medical Center in compliance with NOM-024-SSA3-2012 and NOM-004-SSA3-2012.
           </div>
           <div class="signature">
             <div class="sig-line">
               ${docName}<br>
-              <span style="font-size: 10px; font-weight: normal; color: #64748b;">Cédula Profesional / Matrícula Médica</span>
+              <span style="font-size: 10px; font-weight: normal; color: #64748b;">Medical License / Registration</span>
             </div>
           </div>
         </div>
 
         <div class="no-print" style="margin-top: 25px; text-align: center;">
           <button onclick="window.print()" style="padding: 10px 24px; font-size: 14px; font-weight: bold; background: #0284c7; color: white; border: none; border-radius: 8px; cursor: pointer;">
-            🖨️ Imprimir / Guardar en PDF
+            🖨️ Print / Save as PDF
           </button>
         </div>
       </body>
@@ -379,7 +379,7 @@ export class MedicalRecordsComponent implements OnInit {
         this.showFhirModal.set(true);
       },
       error: (err) => {
-        this.toast.error('No se pudo cargar el recurso HL7 FHIR: ' + (err.error?.message || err.message));
+        this.toast.error('Could not load HL7 FHIR resource: ' + (err.error?.message || err.message));
       },
     });
   }
@@ -392,26 +392,26 @@ export class MedicalRecordsComponent implements OnInit {
   copyFhirJson(): void {
     if (this.fhirEncounterData() && navigator?.clipboard) {
       navigator.clipboard.writeText(JSON.stringify(this.fhirEncounterData(), null, 2));
-      this.toast.success('Recurso HL7 FHIR R4 Encounter copiado al portapapeles');
+      this.toast.success('HL7 FHIR R4 Encounter resource copied to clipboard');
     }
   }
 
   emitDigitalPrescription(record: any): void {
     const idPaciente = record.idPaciente || record.id_paciente || this.selectedPatientId;
     const idMedico = record.idMedico || record.id_medico || (this.auth.currentUser().doctorId || 2);
-    const diag = record.diagnosticoDescripcion || record.diagnostico_descripcion || 'Consulta Médica General';
+    const diag = record.diagnosticoDescripcion || record.diagnostico_descripcion || 'General Medical Consultation';
     const meds = (record.recetaMedicamentos || []).map((m: any) => ({
-      nombre: m.medicamento || m.nombre || 'Medicamento',
-      dosis: m.dosis || '1 cápsula',
-      frecuencia: m.frecuencia || 'Cada 8 hrs',
+      nombre: m.medicamento || m.nombre || 'Medication',
+      dosis: m.dosis || '1 capsule',
+      frecuencia: m.frecuencia || 'Every 8 hrs',
       duracionDias: m.dias || m.duracionDias || 30,
     }));
 
     if (meds.length === 0) {
       meds.push({
-        nombre: 'Paracetamol',
+        nombre: 'Acetaminophen',
         dosis: '500mg',
-        frecuencia: 'Cada 8 hrs en caso de dolor o fiebre',
+        frecuencia: 'Every 8 hrs for pain or fever',
         duracionDias: 5,
       });
     }
@@ -428,11 +428,11 @@ export class MedicalRecordsComponent implements OnInit {
         this.digitalPrescriptionData.set(res);
         this.showPrescriptionModal.set(true);
         this.isGeneratingPrescription.set(false);
-        this.toast.success('Receta digital firmada criptográficamente (HMAC-SHA256).');
+        this.toast.success('Digital prescription cryptographically signed (HMAC-SHA256).');
       },
       error: (err) => {
         this.isGeneratingPrescription.set(false);
-        this.toast.error('Error al emitir receta digital: ' + (err.error?.message || err.message));
+        this.toast.error('Error issuing digital prescription: ' + (err.error?.message || err.message));
       },
     });
   }
@@ -448,13 +448,13 @@ export class MedicalRecordsComponent implements OnInit {
     this.api.verifyDigitalPrescription(code).subscribe({
       next: (res) => {
         if (res.firmaValida) {
-          this.toast.success(`Firma Criptográfica VÁLIDA: Certificado por ${res.medico?.nombre}`);
+          this.toast.success(`VALID Cryptographic Signature: Certified by ${res.medico?.nombre}`);
         } else {
-          this.toast.error('Alerta: Firma inválida o documento alterado.');
+          this.toast.error('Alert: Invalid signature or tampered document.');
         }
       },
       error: (err) => {
-        this.toast.error('Error en verificación de firma: ' + (err.error?.message || err.message));
+        this.toast.error('Signature verification error: ' + (err.error?.message || err.message));
       },
     });
   }

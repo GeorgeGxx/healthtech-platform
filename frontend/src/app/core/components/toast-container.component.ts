@@ -42,11 +42,11 @@ import { ToastService, ToastMessage } from '../services/toast.service';
             <p class="text-xs font-medium text-slate-700 leading-relaxed">{{ toast.message }}</p>
           </div>
 
-          <!-- Cerrar -->
+          <!-- Close -->
           <button
             (click)="toastService.remove(toast.id)"
             class="text-slate-400 hover:text-slate-700 p-1 rounded-lg transition-colors cursor-pointer shrink-0"
-            aria-label="Cerrar notificación"
+            aria-label="Close notification"
           >
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>

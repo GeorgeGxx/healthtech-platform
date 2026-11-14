@@ -31,7 +31,7 @@ export class DashboardComponent implements OnInit {
         this.lastUpdated.set(new Date());
       },
       error: (err) => {
-        console.error('Error al sincronizar dashboard:', err);
+        console.error('Error syncing dashboard:', err);
         this.isLoading.set(false);
       },
     });

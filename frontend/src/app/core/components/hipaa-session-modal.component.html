@@ -1,4 +1,4 @@
-<!-- Modal de Advertencia de Expiración de Sesión (HIPAA) -->
+<!-- Session Expiration Warning Modal (HIPAA) -->
 @if (sessionService.isWarningVisible()) {
   <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
     <div class="bg-white border border-amber-300 rounded-3xl max-w-md w-full p-7 shadow-2xl text-center">
@@ -6,10 +6,10 @@
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
       </div>
       <h2 class="text-xl sm:text-2xl font-black text-slate-900">
-        Aviso de Inactividad (HIPAA)
+        Inactivity Warning (HIPAA)
       </h2>
       <p class="text-sm text-slate-600 mt-2 leading-relaxed">
-        Por seguridad y resguardo del expediente médico electrónico, su sesión se cerrará en:
+        For security and protection of the electronic health record, your session will close in:
       </p>
 
       <div class="my-6">
@@ -24,21 +24,21 @@
           (click)="sessionService.forceLogoutDueToInactivity()"
           class="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl transition-colors cursor-pointer"
         >
-          Cerrar sesión ahora
+          Sign out now
         </button>
         <button
           type="button"
           (click)="sessionService.extendSession()"
           class="px-6 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-500/20 transition-colors cursor-pointer"
         >
-          Continuar trabajando
+          Continue working
         </button>
       </div>
     </div>
   </div>
 }
 
-<!-- Pantalla de Bloqueo por Cierre Forzoso de Sesión (Auto-Logout) -->
+<!-- Forced Session Lockout Screen (Auto-Logout) -->
 @if (sessionService.isLoggedOut()) {
   <div class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
     <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-8 text-center shadow-2xl">
@@ -46,21 +46,56 @@
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
       </div>
       <h2 class="text-2xl sm:text-3xl font-black text-slate-900">
-        Sesión Bloqueada por Seguridad
+        Session Locked for Security
       </h2>
       <p class="text-sm text-slate-600 mt-2 leading-relaxed">
-        Su sesión fue cerrada automáticamente por inactividad prolongada conforme a las directivas de seguridad clínica <strong>HIPAA Security Rule § 164.312</strong> y la norma mexicana <strong>NOM-024-SSA3-2012</strong>.
+        Your session was automatically closed due to prolonged inactivity in compliance with clinical security directives <strong>HIPAA Security Rule § 164.312</strong> and <strong>NOM-024-SSA3-2012</strong>.
       </p>
 
-      <div class="mt-7">
-        <button
-          type="button"
-          (click)="sessionService.relogin()"
-          class="w-full px-6 py-3.5 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
-        >
-          Reanudar Sesión Clínica
-        </button>
-      </div>
+      @if (sessionService.lockedUsername()) {
+        <form (submit)="submitRelogin($event)" class="mt-6 space-y-3 text-left">
+          <div class="text-xs font-semibold text-slate-500">
+            User: <span class="text-slate-900 font-mono">{{ sessionService.lockedUsername() }}</span>
+          </div>
+          <input
+            type="password"
+            name="hipaaPassword"
+            [(ngModel)]="password"
+            placeholder="Enter your password to unlock"
+            required
+            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none text-sm"
+          />
+          @if (sessionService.reloginError()) {
+            <p class="text-xs font-semibold text-rose-600">{{ sessionService.reloginError() }}</p>
+          }
+          <div class="flex flex-col sm:flex-row gap-3 pt-2">
+            <button
+              type="submit"
+              [disabled]="isSubmitting()"
+              class="flex-1 px-6 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+            >
+              {{ isSubmitting() ? 'Validating...' : 'Unlock Session' }}
+            </button>
+            <button
+              type="button"
+              (click)="sessionService.dismissToLogin()"
+              class="px-5 py-3 text-sm font-semibold text-slate-600 hover:text-slate-900 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+            >
+              Go to Login
+            </button>
+          </div>
+        </form>
+      } @else {
+        <div class="mt-7">
+          <button
+            type="button"
+            (click)="sessionService.dismissToLogin()"
+            class="w-full px-6 py-3.5 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+          >
+            Sign In Again
+          </button>
+        </div>
+      }
     </div>
   </div>
 }

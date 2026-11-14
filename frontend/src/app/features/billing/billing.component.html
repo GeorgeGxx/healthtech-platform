@@ -1,12 +1,12 @@
 <div class="space-y-6 animate-fade-in">
-  <!-- Encabezado -->
+  <!-- Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
     <div>
       <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-        Facturación, Honorarios y Coaseguros
+        Billing, Medical Fees & Co-Insurance
       </h1>
       <p class="text-sm text-slate-500 mt-1">
-        Cálculo automatizado de deducibles de aseguradoras y emisión de recibos
+        Automated calculation of insurance deductibles and receipt issuance
       </p>
     </div>
     <button
@@ -14,20 +14,20 @@
       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-all shadow-md shadow-amber-500/20"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-      Registrar Pago / Cobro
+      Register Payment / Charge
     </button>
   </div>
 
-  <!-- Selector de Pestañas: Balance de Honorarios Médicos vs Recaudación a Pacientes -->
+  <!-- Tab Selector: Physician Fee Balance vs Patient Collections -->
   <div class="flex flex-wrap items-center gap-2 p-1.5 bg-slate-100 rounded-xl w-fit">
     <button
       type="button"
       (click)="activeTab.set('doctorFees')"
       [class]="activeTab() === 'doctorFees' ? 'px-4 py-2 text-xs sm:text-sm font-bold rounded-lg bg-indigo-600 text-white shadow-sm' : 'px-4 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900'"
     >
-      Balance de Honorarios a Doctores
+      Physician Fee Balance
       <span class="ml-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-200 text-indigo-900">
-        ${{ honorariumTotals().totalToPay | number }} MXN
+        ${{ honorariumTotals().totalToPay | number }} USD
       </span>
     </button>
     <button
@@ -35,85 +35,85 @@
       (click)="activeTab.set('collections')"
       [class]="activeTab() === 'collections' ? 'px-4 py-2 text-xs sm:text-sm font-bold rounded-lg bg-white text-slate-900 shadow-sm' : 'px-4 py-2 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-slate-900'"
     >
-      Recaudación y Cobranzas a Pacientes
+      Patient Collections & Billing
     </button>
   </div>
 
   @if (activeTab() === 'doctorFees') {
     <!-- ========================================================================= -->
-    <!-- BALANCE DE HONORARIOS MÉDICOS A ESPECIALISTAS (CUENTAS POR PAGAR) -->
+    <!-- PHYSICIAN FEE BALANCE TO SPECIALISTS (ACCOUNTS PAYABLE) -->
     <!-- ========================================================================= -->
-    <!-- Indicadores Financieros de Honorarios -->
+    <!-- Fee Financial Indicators -->
     @let hTotals = honorariumTotals();
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-emerald-600 shadow-sm bg-gradient-to-br from-emerald-50/50 to-white">
         <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 block mb-1">
-          Total a Liquidar (Consultas Atendidas)
+          Total Payable (Attended Visits)
         </span>
         <p class="text-2xl sm:text-3xl font-black text-emerald-950 font-mono">
-          ${{ hTotals.totalToPay | number }} MXN
+          ${{ hTotals.totalToPay | number }} USD
         </p>
         <span class="text-xs text-emerald-700 font-semibold block mt-1">
-          ✓ {{ hTotals.totalAttendedCount }} consultas asistidas efectivamente
+          ✓ {{ hTotals.totalAttendedCount }} consultations completed
         </span>
       </div>
 
       <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-sky-500 shadow-sm bg-gradient-to-br from-sky-50/50 to-white">
         <span class="text-xs font-bold uppercase tracking-wider text-sky-800 block mb-1">
-          Honorarios Proyectados en Agenda
+          Projected Scheduled Fees
         </span>
         <p class="text-2xl sm:text-3xl font-black text-sky-950 font-mono">
-          ${{ hTotals.totalProjected | number }} MXN
+          ${{ hTotals.totalProjected | number }} USD
         </p>
         <span class="text-xs text-sky-700 font-semibold block mt-1">
-          ⏱ Sujetos a que el paciente asista a consulta
+          ⏱ Subject to patient attendance
         </span>
       </div>
 
       <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-rose-500 shadow-sm bg-gradient-to-br from-rose-50/50 to-white">
         <span class="text-xs font-bold uppercase tracking-wider text-rose-800 block mb-1">
-          Consultas Canceladas ($0 Honorarios)
+          Cancelled Visits ($0 Fees)
         </span>
         <p class="text-2xl sm:text-3xl font-black text-rose-950 font-mono">
-          $0 MXN
+          $0 USD
         </p>
         <span class="text-xs text-rose-700 font-semibold block mt-1">
-          ✕ {{ hTotals.totalCanceledCount }} citas canceladas (sin liquidación)
+          ✕ {{ hTotals.totalCanceledCount }} cancelled appointments (no payout)
         </span>
       </div>
 
       <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-indigo-600 shadow-sm bg-gradient-to-br from-indigo-50/50 to-white">
         <span class="text-xs font-bold uppercase tracking-wider text-indigo-800 block mb-1">
-          Especialistas con Agenda
+          Scheduled Specialists
         </span>
         <p class="text-2xl sm:text-3xl font-black text-indigo-950 font-mono">
-          {{ hTotals.totalDoctors }} Médicos
+          {{ hTotals.totalDoctors }} Physicians
         </p>
         <span class="text-xs text-indigo-700 font-semibold block mt-1">
-          Base: ${{ feePerConsultation | number }} MXN por paciente atendido
+          Base: ${{ feePerConsultation | number }} USD per attended patient
         </span>
       </div>
     </div>
 
-    <!-- Guía y Regla Institucional de Liquidación -->
+    <!-- Institutional Settlement Guide & Policy -->
     <div class="p-3.5 rounded-xl bg-indigo-50/80 border border-indigo-200/80 flex items-start gap-3 text-xs text-indigo-950">
       <span class="text-indigo-600 mt-0.5 shrink-0">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </span>
       <div>
-        <span class="font-bold">Política de Dispersión y Cuentas por Pagar a Médicos:</span> Como personal de recepción y caja, este panel te permite controlar con precisión los importes a liquidar a cada médico tratante. Los honorarios se devengan exclusivamente sobre consultas marcadas como <em>"Atendidas"</em>. Si un paciente cancela, el centro médico no abona honorarios por dicho turno ($0.00 MXN).
+        <span class="font-bold">Disbursement & Physician Accounts Payable Policy:</span> For reception and cashier staff, this panel provides accurate control over amounts payable to each attending physician. Fees are earned exclusively for consultations marked as <em>"Attended"</em>. If a patient cancels, the medical center does not disburse fees for that slot ($0.00 USD).
       </div>
     </div>
 
-    <!-- Tabla Detallada de Balance por Médico Especialista -->
+    <!-- Detailed Balance Table by Specialist Physician -->
     <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
       <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
         <div>
-          <h2 class="font-bold text-slate-900 text-sm">Estado de Cuentas por Pagar a Médicos Especialistas</h2>
-          <p class="text-xs text-slate-500">Corte de honorarios actualizado según consultas asistidas y canceladas</p>
+          <h2 class="font-bold text-slate-900 text-sm">Accounts Payable Statement for Specialist Physicians</h2>
+          <p class="text-xs text-slate-500">Updated fee cutoff based on attended and cancelled consultations</p>
         </div>
         <span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-slate-100 text-slate-700">
-          Honorario Estándar: ${{ feePerConsultation | number }} MXN / consulta
+          Standard Fee: ${{ feePerConsultation | number }} USD / consultation
         </span>
       </div>
 
@@ -121,21 +121,21 @@
         <table class="w-full text-left text-sm text-slate-600">
           <thead class="bg-slate-50/80 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
             <tr>
-              <th class="px-5 py-3.5">Médico Tratante</th>
-              <th class="px-5 py-3.5">Especialidad</th>
-              <th class="px-5 py-3.5 text-center">Atendidos (Asistieron)</th>
-              <th class="px-5 py-3.5 text-center">Pendientes</th>
-              <th class="px-5 py-3.5 text-center">Cancelados</th>
-              <th class="px-5 py-3.5 text-right">Saldo a Liquidar</th>
-              <th class="px-5 py-3.5 text-center">Estatus</th>
-              <th class="px-5 py-3.5 text-center">Acción</th>
+              <th class="px-5 py-3.5">Attending Physician</th>
+              <th class="px-5 py-3.5">Specialty</th>
+              <th class="px-5 py-3.5 text-center">Attended (Completed)</th>
+              <th class="px-5 py-3.5 text-center">Pending</th>
+              <th class="px-5 py-3.5 text-center">Cancelled</th>
+              <th class="px-5 py-3.5 text-right">Balance Payable</th>
+              <th class="px-5 py-3.5 text-center">Status</th>
+              <th class="px-5 py-3.5 text-center">Action</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 bg-white">
             @for (doc of doctorHonorariumBalances(); track doc.idMedico) {
               <tr class="hover:bg-slate-50/70 transition-colors">
                 <td class="px-5 py-4">
-                  <span class="font-bold text-slate-900 block">Dr/a. {{ doc.nombre }} {{ doc.apellido }}</span>
+                  <span class="font-bold text-slate-900 block">Dr. {{ doc.nombre }} {{ doc.apellido }}</span>
                   <span class="text-xs text-slate-500 font-mono">{{ doc.matricula }}</span>
                 </td>
                 <td class="px-5 py-4 text-xs font-semibold text-slate-700">
@@ -158,11 +158,11 @@
                 </td>
                 <td class="px-5 py-4 text-right">
                   <span class="font-mono text-base font-black text-slate-900 block">
-                    ${{ doc.amountToPay | number }} MXN
+                    ${{ doc.amountToPay | number }} USD
                   </span>
                   @if (doc.amountProjected > 0) {
                     <span class="text-[10px] text-sky-600 font-medium block">
-                      +${{ doc.amountProjected | number }} proyectado
+                      +${{ doc.amountProjected | number }} projected
                     </span>
                   }
                 </td>
@@ -173,17 +173,17 @@
                   </span>
                 </td>
                 <td class="px-5 py-4 text-center whitespace-nowrap">
-                  <button type="button" (click)="openDoctorSettlement(doc.idMedico)" class="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition cursor-pointer mr-1 inline-flex items-center gap-1" title="Ver desglose de liquidación 80/20"><span>⚖️</span><span>Liquidación 80/20</span></button>
+                  <button type="button" (click)="openDoctorSettlement(doc.idMedico)" class="px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition cursor-pointer mr-1 inline-flex items-center gap-1" title="View 80/20 settlement breakdown"><span>⚖️</span><span>80/20 Settlement</span></button>
                   @if (doc.amountToPay > 0) {
                     <button
                       type="button"
                       (click)="settleDoctorFee(doc)"
                       class="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 rounded-lg shadow-xs transition cursor-pointer"
                     >
-                      Liquidar
+                      Settle
                     </button>
                   } @else {
-                    <span class="text-xs text-slate-400">Sin saldo</span>
+                    <span class="text-xs text-slate-400">No balance</span>
                   }
                 </td>
               </tr>
@@ -194,9 +194,9 @@
     </div>
   } @else {
     <!-- ========================================================================= -->
-    <!-- RECAUDACIÓN Y FACTURACIÓN A PACIENTES -->
+    <!-- PATIENT COLLECTIONS AND BILLING -->
     <!-- ========================================================================= -->
-    <!-- Resumen por Método de Pago -->
+    <!-- Summary by Payment Method -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
       @for (item of summary(); track item.metodo_pago) {
         <div class="glass-panel p-4 rounded-xl shadow-sm">
@@ -204,40 +204,40 @@
             {{ item.metodo_pago.replace('_', ' ') }}
           </span>
           <p class="text-xl font-extrabold text-slate-900">
-            ${{ item.total_recaudado | number: '1.0-0' }} MXN
+            ${{ item.total_recaudado | number: '1.0-0' }} USD
           </p>
           <span class="text-xs text-slate-500 block mt-1">
-            {{ item.total_transacciones }} operaciones
+            {{ item.total_transacciones }} transactions
           </span>
         </div>
       }
     </div>
 
-    <!-- Tabla de Pagos y Liquidaciones -->
+    <!-- Payments and Settlements Table -->
     <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm text-slate-600">
           <thead class="bg-slate-50/80 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
             <tr>
-              <th class="px-5 py-3">Folio Fiscal</th>
-              <th class="px-5 py-3">Fecha y Hora</th>
-            <th class="px-5 py-3">Paciente</th>
-            <th class="px-5 py-3">Concepto Clínico</th>
+              <th class="px-5 py-3">Invoice ID</th>
+              <th class="px-5 py-3">Date & Time</th>
+            <th class="px-5 py-3">Patient</th>
+            <th class="px-5 py-3">Clinical Service</th>
             <th class="px-5 py-3 text-right">Subtotal</th>
-            <th class="px-5 py-3 text-right">Cobertura Seguro</th>
-            <th class="px-5 py-3 text-right">Monto Neto</th>
-            <th class="px-5 py-3 text-center">Forma de Pago</th>
-            <th class="px-4 py-3 text-center">Acción</th>
+            <th class="px-5 py-3 text-right">Insurance Coverage</th>
+            <th class="px-5 py-3 text-right">Net Amount</th>
+            <th class="px-5 py-3 text-center">Payment Method</th>
+            <th class="px-4 py-3 text-center">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
           @for (p of pagedPayments(); track p.idPago) {
             <tr class="hover:bg-slate-50/50:bg-slate-800/40 transition-colors">
               <td class="px-5 py-3.5 font-mono text-xs font-bold text-slate-900">
-                {{ p.comprobanteFiscal || ('FAC-' + p.idPago) }}
+                {{ p.comprobanteFiscal || ('INV-' + p.idPago) }}
               </td>
               <td class="px-5 py-3.5 text-xs text-slate-500">
-                {{ p.fechaPago | date: 'dd/MM/yyyy HH:mm' }}
+                {{ p.fechaPago | date: 'MM/dd/yyyy HH:mm' }}
               </td>
               <td class="px-5 py-3.5 font-semibold text-slate-900">
                 {{ p.paciente?.nombre }} {{ p.paciente?.apellido }}
@@ -264,17 +264,17 @@
                   type="button"
                   (click)="printReceipt(p)"
                   class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-lg transition-colors cursor-pointer"
-                  title="Imprimir comprobante fiscal"
+                  title="Print tax receipt"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                  Recibo
+                  Receipt
                 </button>
               </td>
             </tr>
           } @empty {
             <tr>
               <td colspan="9" class="px-5 py-8 text-center text-slate-400">
-                No hay comprobantes de pago registrados.
+                No payment receipts registered.
               </td>
             </tr>
           }
@@ -283,15 +283,15 @@
     </div>
   </div>
 
-  <!-- Paginación Reactiva de Facturación -->
+  <!-- Reactive Billing Pagination -->
   @if (payments().length > 0) {
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
       <div class="flex items-center gap-3 text-xs text-slate-500 font-medium">
         <span>
-          Mostrando <span class="font-bold text-slate-800">{{ startIndex() }} - {{ endIndex() }}</span> de <span class="font-bold text-slate-800">{{ payments().length }}</span> comprobantes
+          Showing <span class="font-bold text-slate-800">{{ startIndex() }} - {{ endIndex() }}</span> of <span class="font-bold text-slate-800">{{ payments().length }}</span> receipts
         </span>
         <div class="hidden sm:flex items-center gap-1.5 pl-3 border-l border-slate-200">
-          <span>Por página:</span>
+          <span>Per page:</span>
           <select
             [ngModel]="pageSize()"
             (ngModelChange)="setPageSize($event)"
@@ -310,11 +310,11 @@
           [disabled]="currentPage() === 1"
           class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
         >
-          &larr; Anterior
+          &larr; Previous
         </button>
 
         <span class="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 rounded-xl border border-slate-200">
-          Pág {{ currentPage() }} de {{ totalPages() }}
+          Page {{ currentPage() }} of {{ totalPages() }}
         </span>
 
         <button
@@ -322,19 +322,19 @@
           [disabled]="currentPage() === totalPages()"
           class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
         >
-          Siguiente &rarr;
+          Next &rarr;
         </button>
       </div>
     </div>
   }
 }
 
-  <!-- Modal de Registro de Pago (Centrado Clínico Fiscal) -->
+  <!-- Payment Registration Modal (Centered Clinical Tax) -->
   <app-clinical-modal
     [isOpen]="showModal()"
-    title="Registrar Cobro Hospitalario"
-    subtitle="Emisión de recibo y aplicación de copago de aseguradora en MXN."
-    badgeText="CFDI / Pago"
+    title="Register Hospital Charge"
+    subtitle="Receipt issuance and insurance copay calculation in USD."
+    badgeText="Invoice / Payment"
     badgeColor="amber"
     variant="center"
     maxWidth="max-w-xl"
@@ -343,16 +343,16 @@
     <form (submit)="submitPayment($event)" class="flex-1 flex flex-col min-h-0">
       <div class="clinical-modal-body space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Paciente</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Patient</label>
           <select [(ngModel)]="newPayment.idPaciente" name="idPaciente" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
             @for (p of patients(); track p.idPaciente) {
-              <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (CURP/ID: {{ p.dni }})</option>
+              <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (ID: {{ p.dni }})</option>
             }
           </select>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Concepto de Honorarios / Servicio</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Fee / Service Concept</label>
           <select [(ngModel)]="newPayment.idConcepto" name="idConcepto" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
             @for (c of concepts(); track c.idConcepto) {
               <option [value]="c.idConcepto">{{ c.nombre }}</option>
@@ -362,38 +362,38 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Subtotal ($ MXN)</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Subtotal ($ USD)</label>
             <input type="number" step="0.01" [(ngModel)]="newPayment.montoBruto" name="montoBruto" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Forma de Pago</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>
             <select [(ngModel)]="newPayment.metodoPago" name="metodoPago" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20">
-              <option value="efectivo">Efectivo</option>
-              <option value="tarjeta_debito">Tarjeta de Débito</option>
-              <option value="tarjeta_credito">Tarjeta de Crédito</option>
-              <option value="transferencia">Transferencia SPEI</option>
-              <option value="obra_social">Seguro / GMM (Directo)</option>
+              <option value="efectivo">Cash</option>
+              <option value="tarjeta_debito">Debit Card</option>
+              <option value="tarjeta_credito">Credit Card</option>
+              <option value="transferencia">Bank Transfer</option>
+              <option value="obra_social">Insurance (Direct Billing)</option>
             </select>
           </div>
         </div>
 
         <p class="text-xs font-medium text-amber-900 bg-amber-50/80 p-3 rounded-xl border border-amber-200/80 leading-relaxed">
-          💡 El sistema aplicará automáticamente la regla de dominio de cobertura y deducible según la póliza de la aseguradora del paciente.
+          💡 The system will automatically apply the coverage and deductible domain rule based on the patient's insurance policy.
         </p>
       </div>
 
       <div class="clinical-modal-footer">
         <button type="button" (click)="closeModal()" class="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-xl transition cursor-pointer">
-          Cancelar
+          Cancel
         </button>
         <button type="submit" class="px-5 py-2.5 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 active:scale-95 rounded-xl shadow-md shadow-amber-500/20 transition-all cursor-pointer">
-          Emitir Comprobante
+          Issue Receipt
         </button>
       </div>
     </form>
   </app-clinical-modal>
 
-  <!-- Modal de Liquidación de Honorarios Médicos 80/20 (Pilar 4) -->
+  <!-- 80/20 Physician Fee Settlement Modal (Pillar 4) -->
   @if (showSettlementModal() && selectedSettlement()) {
     <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
@@ -403,8 +403,8 @@
               ⚖️
             </div>
             <div>
-              <h3 class="text-base font-bold text-slate-800">Liquidación de Honorarios Médicos</h3>
-              <p class="text-xs text-slate-500">Motor de Aranceles: 80% Profesional / 20% Clínica</p>
+              <h3 class="text-base font-bold text-slate-800">Medical Fee Settlement</h3>
+              <p class="text-xs text-slate-500">Fee Engine: 80% Physician / 20% Clinic</p>
             </div>
           </div>
           <button (click)="closeSettlementModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
@@ -412,27 +412,27 @@
 
         <div class="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-2.5 text-xs">
           <div class="flex justify-between py-1 border-b border-slate-200/50">
-            <span class="text-slate-500 font-medium">Médico Especialista:</span>
+            <span class="text-slate-500 font-medium">Specialist Physician:</span>
             <span class="font-bold text-slate-800">{{ selectedSettlement()?.medico?.nombre }}</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-200/50">
-            <span class="text-slate-500 font-medium">Matrícula / Cédula:</span>
+            <span class="text-slate-500 font-medium">Medical License:</span>
             <span class="font-mono text-slate-700">{{ selectedSettlement()?.medico?.matricula }}</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-200/50">
-            <span class="text-slate-500 font-medium">Consultas Asistidas:</span>
-            <span class="font-bold text-emerald-700">{{ selectedSettlement()?.consultasAsistidas }} consultas</span>
+            <span class="text-slate-500 font-medium">Attended Consultations:</span>
+            <span class="font-bold text-emerald-700">{{ selectedSettlement()?.consultasAsistidas }} consultations</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-200/50">
-            <span class="text-slate-500 font-medium">Monto Bruto Facturado:</span>
+            <span class="text-slate-500 font-medium">Gross Billed Amount:</span>
             <span class="font-mono font-bold text-slate-800">{{ selectedSettlement()?.montoBruto }}</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-200/50">
-            <span class="text-slate-500 font-medium">Comisión Retención Clínica (20%):</span>
+            <span class="text-slate-500 font-medium">Clinic Retention Commission (20%):</span>
             <span class="font-mono font-bold text-rose-600">-{{ selectedSettlement()?.comisionClinica }}</span>
           </div>
           <div class="flex justify-between py-1.5 bg-emerald-100/70 p-2 rounded-lg border border-emerald-200">
-            <span class="text-emerald-900 font-bold">Honorario Neto a Pagar (80%):</span>
+            <span class="text-emerald-900 font-bold">Net Physician Fee Payable (80%):</span>
             <span class="font-mono font-black text-emerald-900 text-sm">{{ selectedSettlement()?.honorarioNetoMedico }}</span>
           </div>
         </div>
@@ -443,7 +443,7 @@
             (click)="closeSettlementModal()"
             class="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
           >
-            Cerrar Desglose
+            Close Breakdown
           </button>
         </div>
       </div>

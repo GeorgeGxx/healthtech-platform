@@ -80,8 +80,8 @@ export class PatientsComponent implements OnInit {
                 curp: 'PEGA850412HDFRRN09',
                 email: 'juan.perez@email.com',
                 telefono: '+52 55 1234-5678',
-                obraSocial: 'GNP Seguros (Póliza 88992)',
-                nacionalidad: 'Mexicana',
+                obraSocial: 'GNP Insurance (Policy 88992)',
+                nacionalidad: 'Mexican',
                 genero: 'M',
               },
             ]);
@@ -99,8 +99,8 @@ export class PatientsComponent implements OnInit {
               curp: 'PEGA850412HDFRRN09',
               email: 'juan.perez@email.com',
               telefono: '+52 55 1234-5678',
-              obraSocial: 'GNP Seguros (Póliza 88992)',
-              nacionalidad: 'Mexicana',
+              obraSocial: 'GNP Insurance (Policy 88992)',
+              nacionalidad: 'Mexican',
               genero: 'M',
             },
           ]);

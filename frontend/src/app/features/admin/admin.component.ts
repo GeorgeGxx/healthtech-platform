@@ -71,10 +71,10 @@ export class AdminComponent implements OnInit {
   reintentarOutboxFallidos(): void {
     this.api.retryFailedOutbox().subscribe({
       next: (res) => {
-        this.toast.success(res.mensaje || 'Eventos marcados para reintento');
+        this.toast.success(res.mensaje || 'Events marked for retry');
         this.cargarSagasYOutbox();
       },
-      error: (err) => this.toast.error('Error al reintentar outbox: ' + err.message),
+      error: (err) => this.toast.error('Error retrying outbox: ' + err.message),
     });
   }
 
@@ -82,13 +82,13 @@ export class AdminComponent implements OnInit {
     this.relayingOutbox.set(true);
     this.api.relayOutboxNow().subscribe({
       next: (res) => {
-        this.toast.success(res.mensaje || 'Outbox relay ejecutado');
+        this.toast.success(res.mensaje || 'Outbox relay executed');
         this.relayingOutbox.set(false);
         this.cargarSagasYOutbox();
       },
       error: (err) => {
         this.relayingOutbox.set(false);
-        this.toast.error('Error en outbox relay: ' + err.message);
+        this.toast.error('Outbox relay error: ' + err.message);
       },
     });
   }
@@ -96,69 +96,69 @@ export class AdminComponent implements OnInit {
   reintentarDlq(id: string): void {
     this.api.retryDlqNotification(id).subscribe({
       next: (res) => {
-        this.toast.success(`Notificación ${id} re-enviada`);
+        this.toast.success(`Notification ${id} re-sent`);
         this.cargarSagasYOutbox();
       },
-      error: (err) => this.toast.error('Error al reintentar DLQ: ' + err.message),
+      error: (err) => this.toast.error('Error retrying DLQ: ' + err.message),
     });
   }
 
   cargarDatosAuditoria(): void {
     this.loading.set(true);
 
-    // Módulos asistenciales clínicos
+    // Clinical care modules
     this.clinicalServices.set([
       {
-        name: 'Agenda y Asignación de Consultas',
-        category: 'Atención Ambulatoria',
+        name: 'Scheduling & Consultation Assignment',
+        category: 'Outpatient Care',
         status: 'ok',
-        description: 'Coordinación de citas médicas, asignación de especialistas y consultorios físicos.',
+        description: 'Coordination of medical appointments, specialist assignment, and physical examination rooms.',
       },
       {
-        name: 'Expediente Clínico Electrónico',
-        category: 'Atención Médica',
+        name: 'Electronic Health Record (EHR)',
+        category: 'Medical Care',
         status: 'ok',
-        description: 'Notas médicas de evolución, constantes vitales y prescripción de fármacos protegida.',
+        description: 'Protected clinical progress notes, vital signs, and medication prescriptions.',
       },
       {
-        name: 'Censo de Camas y Hospitalización',
-        category: 'Piso Asistencial',
+        name: 'Bed Census & Hospitalization',
+        category: 'Care Floor',
         status: 'ok',
-        description: 'Admisión y egreso de pacientes con apoyo de enfermería rotativa de guardia.',
+        description: 'Patient admission and discharge with rotating on-call nursing support.',
       },
       {
-        name: 'Caja, Coberturas y Liquidación',
-        category: 'Administración',
+        name: 'Cashier, Coverage & Settlement',
+        category: 'Administration',
         status: 'ok',
-        description: 'Facturación de consultas, copagos de obra social y comprobantes de atención.',
+        description: 'Consultation billing, insurance copayments, and care receipts.',
       },
       {
-        name: 'Portal del Paciente',
-        category: 'Servicios al Paciente',
+        name: 'Patient Portal',
+        category: 'Patient Services',
         status: 'ok',
-        description: 'Acceso privado exclusivo para consulta de citas, recetas y resumen de salud.',
+        description: 'Exclusive private access to view appointments, prescriptions, and health summary.',
       },
     ]);
 
-    // Roles hospitalarios
+    // Hospital roles
     this.userRoles.set([
       {
-        role: 'Recepción y Coordinación Médica (admin_user)',
-        user: 'Lic. Sofía Ramos',
-        scope: 'Coordinación global',
-        description: 'Gestión del padrón de pacientes, asignación de médicos especialistas, censo de camas y caja.',
+        role: 'Reception & Medical Coordination (admin_user)',
+        user: 'Sofia Ramos',
+        scope: 'Global coordination',
+        description: 'Patient registry management, specialist physician assignment, bed census, and cashier.',
       },
       {
-        role: 'Portal del Paciente (basic_user)',
-        user: 'Juan Pérez García',
-        scope: 'Acceso estrictamente personal',
-        description: 'Visualización exclusiva de su propio expediente, solicitud de citas y recetas personales.',
+        role: 'Patient Portal (basic_user)',
+        user: 'Juan Perez Garcia',
+        scope: 'Strictly personal access',
+        description: 'Exclusive view of their own medical record, appointment requests, and personal prescriptions.',
       },
       {
-        role: 'Cuerpo de Enfermería de Piso',
-        user: 'Personal de Guardia Rotativo',
-        scope: 'Atención de soporte',
-        description: 'Asistencia comodín y cuidados continuos según el censo y demanda del piso hospitalario.',
+        role: 'Floor Nursing Staff',
+        user: 'Rotating On-Call Staff',
+        scope: 'Support care',
+        description: 'Float assistance and continuous care based on hospital floor census and demand.',
       },
     ]);
 
@@ -185,45 +185,45 @@ export class AdminComponent implements OnInit {
       {
         idAuditoria: 1,
         usuarioId: 'admin_user',
-        nombreUsuario: 'Lic. Sofía Ramos (Recepción)',
-        rol: 'Recepción',
-        accion: 'ASIGNACION_CONSULTA',
-        entidad: 'Cita Médica',
+        nombreUsuario: 'Sofia Ramos (Reception)',
+        rol: 'Reception',
+        accion: 'APPOINTMENT_ASSIGNMENT',
+        entidad: 'Medical Appointment',
         idEntidad: 'Dr. Rafael Castelo / C-201',
-        ipCliente: 'Estación Recepción 01',
+        ipCliente: 'Reception Station 01',
         fechaHora: new Date(now.getTime() - 5 * 60000).toISOString(),
       },
       {
         idAuditoria: 2,
         usuarioId: 'basic_user',
-        nombreUsuario: 'Juan Pérez García',
-        rol: 'Paciente',
-        accion: 'CONSULTA_EXPEDIENTE_PROPIO',
-        entidad: 'Expediente Personal',
-        idEntidad: 'DNI: 28456123',
-        ipCliente: 'Portal Móvil',
+        nombreUsuario: 'Juan Perez Garcia',
+        rol: 'Patient',
+        accion: 'SELF_RECORD_ACCESS',
+        entidad: 'Personal Record',
+        idEntidad: 'ID: 28456123',
+        ipCliente: 'Mobile Portal',
         fechaHora: new Date(now.getTime() - 25 * 60000).toISOString(),
       },
       {
         idAuditoria: 3,
         usuarioId: 'admin_user',
-        nombreUsuario: 'Lic. Sofía Ramos (Recepción)',
-        rol: 'Recepción',
-        accion: 'ALTA_PADRON_PACIENTE',
-        entidad: 'Padrón de Pacientes',
-        idEntidad: 'Expediente Verificado',
-        ipCliente: 'Estación Recepción 01',
+        nombreUsuario: 'Sofia Ramos (Reception)',
+        rol: 'Reception',
+        accion: 'PATIENT_REGISTRY_CREATE',
+        entidad: 'Patient Registry',
+        idEntidad: 'Verified Record',
+        ipCliente: 'Reception Station 01',
         fechaHora: new Date(now.getTime() - 60 * 60000).toISOString(),
       },
       {
         idAuditoria: 4,
         usuarioId: 'admin_user',
-        nombreUsuario: 'Lic. Sofía Ramos (Recepción)',
-        rol: 'Recepción',
-        accion: 'ACTUALIZACION_CENSO_CAMAS',
-        entidad: 'Habitación 101',
-        idEntidad: 'Piso 1 - Asistencial',
-        ipCliente: 'Estación Recepción 01',
+        nombreUsuario: 'Sofia Ramos (Reception)',
+        rol: 'Reception',
+        accion: 'BED_CENSUS_UPDATE',
+        entidad: 'Room 101',
+        idEntidad: 'Floor 1 - Care Unit',
+        ipCliente: 'Reception Station 01',
         fechaHora: new Date(now.getTime() - 120 * 60000).toISOString(),
       },
     ];

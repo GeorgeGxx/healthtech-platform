@@ -1,20 +1,20 @@
 <div class="space-y-6 animate-fade-in">
-  <!-- Encabezado contextual según rol (Recepción vs Paciente) -->
+  <!-- Contextual header by role (Reception vs Patient) -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
     <div>
       @if (auth.isBasicUser()) {
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-          Mis Citas Médicas
+          My Medical Appointments
         </h1>
         <p class="text-sm text-slate-600 mt-1">
-          Consulta tus citas programadas, el médico especialista asignado y solicita nuevas valoraciones.
+          View your scheduled appointments, assigned specialist physician, and request new evaluations.
         </p>
       } @else {
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-          Agenda y Asignación de Consultas Médicas
+          Medical Appointment Schedule & Assignment
         </h1>
         <p class="text-sm text-slate-600 mt-1">
-          Coordinación de citas hospitalarias, asignación de médicos especialistas y consultorios.
+          Coordination of hospital appointments, specialist physician assignment, and examination rooms.
         </p>
       }
     </div>
@@ -26,7 +26,7 @@
           class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Solicitar Nueva Cita
+          Request New Appointment
         </button>
       } @else {
         <button
@@ -34,21 +34,21 @@
           class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-all shadow-md shadow-blue-500/20"
         >
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          Agendar Cita de Paciente
+          Schedule Patient Appointment
         </button>
       }
     </div>
   </div>
 
-  <!-- Tarjeta Ejecutiva de Calendario Minimalista y Honorarios Proporcionales para la Doctora -->
+  <!-- Executive Card: Minimalist Calendar & Proportional Fees for Physician -->
   @if (auth.isDoctor()) {
     @let mSum = monthlySummary();
     @let corr = correlationSummary();
     <div class="glass-panel p-6 rounded-3xl border border-indigo-200/90 bg-gradient-to-br from-indigo-50/70 via-white to-sky-50/40 shadow-sm space-y-6">
       
-      <!-- Encabezado con Perfil, Honorarios Totales del Mes y Navegación Minimalista -->
+      <!-- Header with Profile, Total Monthly Fees, and Minimalist Navigation -->
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-indigo-100/80">
-        <!-- Info Médica -->
+        <!-- Physician Info -->
         <div class="flex items-center gap-3.5">
           <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-indigo-500/25">
             🩺
@@ -56,25 +56,25 @@
           <div>
             <div class="flex items-center gap-2">
               <h2 class="text-lg font-black text-slate-900 tracking-tight">
-                Agenda Mensual y Honorarios Médicos
+                Monthly Schedule & Medical Fees
               </h2>
               <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                ${{ feePerConsultation | number }} MXN por consulta
+                ${{ feePerConsultation | number }} USD per consultation
               </span>
             </div>
             <p class="text-xs text-slate-500 font-medium mt-0.5">
-              Dra. Laura Gómez • Especialidad Cardiología • Control y liquidación proporcional mensual
+              Dr. Laura Gómez • Cardiology Specialty • Monthly proportional control and settlement
             </p>
           </div>
         </div>
 
-        <!-- Navegación Minimalista del Mes + Acciones -->
+        <!-- Minimalist Month Navigation + Actions -->
         <div class="flex flex-wrap items-center gap-2">
           <div class="inline-flex items-center bg-white border border-slate-200/80 rounded-2xl p-1 shadow-2xs">
             <button
               type="button"
               (click)="prevMonth()"
-              title="Mes anterior"
+              title="Previous month"
               class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition cursor-pointer font-bold"
             >
               ‹
@@ -85,7 +85,7 @@
             <button
               type="button"
               (click)="nextMonth()"
-              title="Mes siguiente"
+              title="Next month"
               class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition cursor-pointer font-bold"
             >
               ›
@@ -97,7 +97,7 @@
             (click)="goToToday()"
             class="px-3 py-2 bg-white hover:bg-slate-50 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200/80 shadow-2xs transition cursor-pointer"
           >
-            Hoy (Día 18)
+            Today (Day 18)
           </button>
 
           <button
@@ -108,50 +108,50 @@
               ? 'bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-500/30'
               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'"
           >
-            <span>📋 Todo el Mes</span>
+            <span>📋 Full Month</span>
             <span class="px-1.5 py-0.5 rounded-md text-[10px] font-bold"
               [class]="selectedDoctorDay() === 'month' || selectedDoctorDay() === 'all' ? 'bg-indigo-700/80 text-white' : 'bg-slate-100 text-slate-700'">
-              {{ mSum.totalPatients }} pac.
+              {{ mSum.totalPatients }} pts.
             </span>
           </button>
         </div>
       </div>
 
-      <!-- Cuadrícula Principal: Calendario Minimalista (Izq) + Correlación Proporcional de Honorarios (Der) -->
+      <!-- Main Grid: Minimalist Calendar (Left) + Proportional Fee Correlation (Right) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        <!-- CALENDARIO MENSUAL MINIMALISTA (7 COLS) -->
+        <!-- MINIMALIST MONTHLY CALENDAR (7 COLS) -->
         <div class="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
               <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Calendario de Jornadas Médicas
+                Clinical Shift Calendar
               </span>
               <div class="flex items-center gap-3 text-[11px] text-slate-500">
                 <span class="inline-flex items-center gap-1">
-                  <span class="w-2 h-2 rounded-full bg-indigo-600"></span> Día con pacientes
+                  <span class="w-2 h-2 rounded-full bg-indigo-600"></span> Day with patients
                 </span>
                 <span class="inline-flex items-center gap-1 text-slate-400">
-                  <span class="w-2 h-2 rounded-full bg-slate-300"></span> Sin citas
+                  <span class="w-2 h-2 rounded-full bg-slate-300"></span> No appointments
                 </span>
               </div>
             </div>
 
-            <!-- Nombres de los días de la semana -->
+            <!-- Weekday names -->
             <div class="grid grid-cols-7 gap-1.5 text-center text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-              <div>Lun</div>
-              <div>Mar</div>
-              <div>Mié</div>
-              <div>Jue</div>
-              <div>Vie</div>
-              <div>Sáb</div>
-              <div>Dom</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+              <div>Sun</div>
             </div>
 
-            <!-- Cuadrícula de días -->
+            <!-- Days grid -->
             <div class="grid grid-cols-7 gap-1.5">
               @for (day of calendarDays(); track $index) {
-                <!-- Si es día sin citas o fuera del mes: deshabilitado y minimalista -->
+                <!-- If day has no appointments or is outside current month: disabled and minimalist -->
                 @if (!day.isCurrentMonth || !day.hasPatients) {
                   <div
                     class="h-14 sm:h-16 rounded-xl flex flex-col items-center justify-center p-1 border border-slate-100 bg-slate-50/50 select-none opacity-40 cursor-not-allowed"
@@ -162,7 +162,7 @@
                     <span class="text-[9px] text-slate-300 mt-0.5">—</span>
                   </div>
                 } @else {
-                  <!-- DÍA CON PACIENTES: Habilitado dinámicamente, interactivo y con datos proporcionales -->
+                  <!-- DAY WITH PATIENTS: Dynamically enabled, interactive, with proportional data -->
                   <button
                     type="button"
                     (click)="selectDoctorDay(day.dateKey)"
@@ -171,7 +171,7 @@
                       ? 'bg-gradient-to-b from-indigo-600 to-indigo-700 text-white border-indigo-700 shadow-md ring-2 ring-indigo-500/40 scale-[1.02]'
                       : 'bg-white hover:bg-indigo-50/60 text-slate-800 border-indigo-200/90 hover:border-indigo-400 shadow-2xs hover:scale-[1.01]'"
                   >
-                    <!-- Número de día y badge HOY si aplica -->
+                    <!-- Day number and TODAY badge if applicable -->
                     <div class="w-full flex items-center justify-between">
                       <span class="text-xs font-black" [class]="day.isSelected ? 'text-white' : 'text-slate-900'">
                         {{ day.dayNumber }}
@@ -181,22 +181,22 @@
                           class="px-1 py-0.2 rounded text-[9px] font-extrabold uppercase tracking-tight"
                           [class]="day.isSelected ? 'bg-white/20 text-indigo-100' : 'bg-indigo-100 text-indigo-700'"
                         >
-                          Hoy
+                          Today
                         </span>
                       }
                     </div>
 
-                    <!-- Cantidad de pacientes -->
+                    <!-- Patient count -->
                     <div class="w-full text-center">
                       <span
                         class="px-1.5 py-0.5 rounded text-[10px] font-bold block truncate"
                         [class]="day.isSelected ? 'bg-indigo-800/70 text-indigo-100' : 'bg-slate-100 text-slate-700'"
                       >
-                        {{ day.totalPatients }} pac.
+                        {{ day.totalPatients }} pts.
                       </span>
                     </div>
 
-                    <!-- Honorarios proporcionales del día -->
+                    <!-- Daily proportional fees -->
                     <div class="w-full flex items-center justify-between text-[10px] font-mono font-black">
                       <span [class]="day.isSelected ? 'text-emerald-300' : 'text-emerald-700'">
                         +${{ day.confirmedPayout | number }}
@@ -209,23 +209,23 @@
             </div>
           </div>
 
-          <!-- Pie del calendario minimalista con resumen rápido -->
+          <!-- Minimalist calendar footer with quick summary -->
           <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Días activos con consulta este mes: <strong class="text-slate-800">{{ doctorDaysList().length }} días</strong></span>
+            <span>Active consultation days this month: <strong class="text-slate-800">{{ doctorDaysList().length }} days</strong></span>
             <span class="text-indigo-600 font-semibold cursor-pointer hover:underline" (click)="selectFullMonth()">
-              Ver desglose mensual completo →
+              View full monthly breakdown →
             </span>
           </div>
         </div>
 
-        <!-- CORRELACIÓN: PROPORCIONAL Y TOTAL DE HONORARIOS (5 COLS) -->
+        <!-- CORRELATION: PROPORTIONAL AND TOTAL FEES (5 COLS) -->
         <div class="lg:col-span-5 space-y-4">
           
-          <!-- Tarjeta 1: Honorarios Totales del Mes -->
+          <!-- Card 1: Total Monthly Fees -->
           <div class="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white shadow-lg shadow-indigo-950/15 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between text-slate-400">
-                <span class="text-xs font-bold uppercase tracking-wider">Total Honorarios del Mes</span>
+                <span class="text-xs font-bold uppercase tracking-wider">Total Monthly Fees</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   {{ mSum.monthName }}
                 </span>
@@ -234,34 +234,34 @@
                 <span class="text-3xl sm:text-4xl font-black font-mono tracking-tight text-white">
                   ${{ mSum.totalConfirmedPayout | number }}
                 </span>
-                <span class="text-sm font-semibold text-indigo-200">MXN</span>
+                <span class="text-sm font-semibold text-indigo-200">USD</span>
               </div>
               <p class="text-xs text-indigo-200/90 mt-1">
-                {{ mSum.attendedCount }} de {{ mSum.totalPatients }} consultas realizadas este mes ({{ mSum.attendanceRate }}% asistencia)
+                {{ mSum.attendedCount }} of {{ mSum.totalPatients }} consultations completed this month ({{ mSum.attendanceRate }}% attendance)
               </p>
             </div>
 
-            <!-- Desglose mensual rápido -->
+            <!-- Quick monthly breakdown -->
             <div class="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-[11px]">
               <div class="bg-white/5 rounded-xl p-2 border border-white/10">
-                <span class="text-slate-400 block">Potencial del Mes</span>
-                <span class="text-sm font-mono font-bold text-white">${{ mSum.totalPotential | number }} MXN</span>
+                <span class="text-slate-400 block">Monthly Potential</span>
+                <span class="text-sm font-mono font-bold text-white">${{ mSum.totalPotential | number }} USD</span>
               </div>
               <div class="bg-rose-500/10 rounded-xl p-2 border border-rose-500/20">
-                <span class="text-rose-300 block">No cobrado (Canceladas)</span>
-                <span class="text-sm font-mono font-bold text-rose-300">-${{ mSum.totalLostByCancellation | number }} MXN</span>
+                <span class="text-rose-300 block">Unbilled (Cancelled)</span>
+                <span class="text-sm font-mono font-bold text-rose-300">-${{ mSum.totalLostByCancellation | number }} USD</span>
               </div>
             </div>
           </div>
 
-          <!-- Tarjeta 2: Correlación Proporcional del Día Seleccionado -->
+          <!-- Card 2: Proportional Correlation for Selected Day -->
           <div class="p-5 rounded-2xl bg-white border border-indigo-200 shadow-2xs space-y-3">
             <div class="flex items-center justify-between pb-2 border-b border-slate-100">
               <div class="flex items-center gap-2">
                 <span class="text-base">⚖️</span>
                 <div>
                   <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                    {{ corr.isSingleDay ? 'Honorarios Proporcionales del Día' : 'Proporción del Mes Completo' }}
+                    {{ corr.isSingleDay ? 'Proportional Daily Fees' : 'Full Month Share' }}
                   </h4>
                   <span class="text-[11px] font-medium text-indigo-600 block">
                     {{ corr.label }}
@@ -269,30 +269,30 @@
                 </div>
               </div>
               <span class="px-2.5 py-1 rounded-xl text-xs font-mono font-black bg-indigo-50 text-indigo-700 border border-indigo-200">
-                {{ corr.payoutShareOfTotal }}% del mes
+                {{ corr.payoutShareOfTotal }}% of month
               </span>
             </div>
 
-            <!-- Importe proporcional del día vs total -->
+            <!-- Proportional amount for day vs total -->
             <div class="flex items-baseline justify-between pt-1">
               <div>
                 <span class="text-2xl font-black font-mono text-slate-900 block">
-                  ${{ corr.dayPayout | number }} MXN
+                  ${{ corr.dayPayout | number }} USD
                 </span>
                 <span class="text-xs text-slate-500">
-                  {{ corr.dayAttended }} de {{ corr.dayPatients }} pacientes asistieron
+                  {{ corr.dayAttended }} of {{ corr.dayPatients }} patients attended
                 </span>
               </div>
               <div class="text-right">
-                <span class="text-xs font-semibold text-slate-400 block">Total mensual</span>
-                <span class="text-sm font-mono font-bold text-slate-700">${{ corr.monthlyPayout | number }} MXN</span>
+                <span class="text-xs font-semibold text-slate-400 block">Monthly total</span>
+                <span class="text-sm font-mono font-bold text-slate-700">${{ corr.monthlyPayout | number }} USD</span>
               </div>
             </div>
 
-            <!-- Barra de correlación proporcional visual -->
+            <!-- Visual proportional correlation bar -->
             <div class="space-y-1.5 pt-1">
               <div class="flex justify-between text-[11px] text-slate-500">
-                <span>Participación sobre facturación mensual</span>
+                <span>Share of monthly billing</span>
                 <span class="font-bold text-indigo-700 font-mono">{{ corr.payoutShareOfTotal }}%</span>
               </div>
               <div class="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden border border-slate-200/80">
@@ -303,24 +303,24 @@
               </div>
             </div>
 
-            <!-- Detalle de citas del día -->
+            <!-- Daily appointment details -->
             <div class="grid grid-cols-2 gap-2 pt-2 text-[11px]">
               <div class="p-2 rounded-xl bg-emerald-50 border border-emerald-200/80">
-                <span class="text-emerald-800 font-bold block">✓ {{ corr.dayAttended }} Atendidos</span>
-                <span class="text-emerald-700 font-mono font-semibold">+${{ corr.dayPayout | number }} MXN</span>
+                <span class="text-emerald-800 font-bold block">✓ {{ corr.dayAttended }} Attended</span>
+                <span class="text-emerald-700 font-mono font-semibold">+${{ corr.dayPayout | number }} USD</span>
               </div>
               <div class="p-2 rounded-xl bg-rose-50 border border-rose-200/80">
-                <span class="text-rose-800 font-bold block">✕ {{ corr.dayCanceled }} Cancelados</span>
-                <span class="text-rose-700 font-mono font-semibold">$0 MXN</span>
+                <span class="text-rose-800 font-bold block">✕ {{ corr.dayCanceled }} Cancelled</span>
+                <span class="text-rose-700 font-mono font-semibold">$0 USD</span>
               </div>
             </div>
           </div>
 
-          <!-- Tarjeta 3: Explicación transparente de cálculo -->
+          <!-- Card 3: Transparent calculation explanation -->
           <div class="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/70 flex items-start gap-2.5 text-xs text-slate-600">
             <span class="text-base shrink-0 mt-0.5">💡</span>
             <div>
-              <strong>Liquidación proporcional:</strong> Cada paciente atendido genera <strong>${{ feePerConsultation | number }} MXN</strong> netos. En {{ mSum.monthName }}, este día representa <strong>{{ corr.payoutShareOfTotal }}%</strong> de tus honorarios totales acumulados (<strong>${{ corr.dayPayout | number }} de ${{ mSum.totalConfirmedPayout | number }} MXN</strong>).
+              <strong>Proportional settlement:</strong> Each attended patient generates <strong>${{ feePerConsultation | number }} USD</strong> net. In {{ mSum.monthName }}, this period represents <strong>{{ corr.payoutShareOfTotal }}%</strong> of your accumulated fees (<strong>${{ corr.dayPayout | number }} of ${{ mSum.totalConfirmedPayout | number }} USD</strong>).
             </div>
           </div>
 
@@ -329,37 +329,37 @@
     </div>
   }
 
-  <!-- Nota de flujo clínico para Recepción: enfermeras rotativas/comodín -->
+  <!-- Clinical workflow note for Reception: rotating/float nurses -->
   @if (auth.isAdmin()) {
     <div class="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200/80 flex items-start gap-3 text-xs text-blue-900">
       <span class="text-blue-600 mt-0.5">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       </span>
       <div>
-        <span class="font-bold">Guía de asignación clínica:</span> Como recepcionista, programas la cita vinculando al paciente directamente con el <strong>Médico Especialista</strong> y el <strong>Consultorio</strong>. El cuerpo de enfermería no requiere asignación fija de agenda ya que rota como comodín y brinda soporte según la demanda en el piso hospitalario.
+        <span class="font-bold">Clinical assignment guide:</span> As reception, you schedule appointments by linking the patient directly with the <strong>Specialist Physician</strong> and the <strong>Consultation Room</strong>. Nursing staff do not require fixed schedule assignments as they rotate on a float basis according to floor demand.
       </div>
     </div>
   }
 
-  <!-- Filtros de búsqueda para Recepción -->
+  <!-- Search filters for Reception -->
   @if (auth.isAdmin()) {
     <div class="glass-panel p-4 rounded-xl flex flex-wrap items-center gap-4">
       <div class="flex-1 min-w-[220px]">
-        <label class="block text-xs font-semibold text-slate-500 mb-1">Filtrar por Médico Especialista</label>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Filter by Specialist Physician</label>
         <select
           [(ngModel)]="selectedDoctorId"
           (change)="loadAppointments()"
           class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         >
-          <option [value]="0">Todos los Médicos Especialistas</option>
+          <option [value]="0">All Specialist Physicians</option>
           @for (doc of doctors(); track doc.idMedico) {
-            <option [value]="doc.idMedico">Dr/a. {{ doc.nombre }} {{ doc.apellido }} ({{ doc.especialidad }})</option>
+            <option [value]="doc.idMedico">Dr. {{ doc.nombre }} {{ doc.apellido }} ({{ doc.especialidad }})</option>
           }
         </select>
       </div>
 
       <div class="w-full sm:w-auto">
-        <label class="block text-xs font-semibold text-slate-500 mb-1">Filtrar por Fecha</label>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Filter by Date</label>
         <input
           type="date"
           [(ngModel)]="selectedDate"
@@ -373,13 +373,13 @@
           (click)="resetFilters()"
           class="px-3 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:bg-slate-50 rounded-lg transition cursor-pointer"
         >
-          Limpiar filtros
+          Clear filters
         </button>
       </div>
     </div>
   }
 
-  <!-- Barra de Encabezado y Estado de Filtro de Citas -->
+  <!-- Header Bar and Appointment Filter Status -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
     <div class="flex items-center gap-2.5">
       <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm shadow-2xs">
@@ -387,10 +387,10 @@
       </div>
       <div>
         <h3 class="text-base font-bold text-slate-900">
-          {{ auth.isDoctor() ? ('Pacientes: ' + correlationSummary().label) : 'Listado de Citas Médicas' }}
+          {{ auth.isDoctor() ? ('Patients: ' + correlationSummary().label) : 'Medical Appointments List' }}
         </h3>
         <p class="text-xs text-slate-500">
-          {{ displayedAppointments().length }} {{ displayedAppointments().length === 1 ? 'paciente citado' : 'pacientes citados' }} • {{ auth.isDoctor() ? ('Honorarios: $' + (correlationSummary().dayPayout | number) + ' MXN (' + correlationSummary().payoutShareOfTotal + '% del mes)') : 'Ordenados desde el más reciente' }}
+          {{ displayedAppointments().length }} {{ displayedAppointments().length === 1 ? 'scheduled patient' : 'scheduled patients' }} • {{ auth.isDoctor() ? ('Fees: $' + (correlationSummary().dayPayout | number) + ' USD (' + correlationSummary().payoutShareOfTotal + '% of month)') : 'Sorted from most recent' }}
         </p>
       </div>
     </div>
@@ -400,51 +400,51 @@
         @if (selectedDoctorDay() !== 'all' && selectedDoctorDay() !== 'month') {
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
             <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse"></span>
-            Filtro de Día: {{ correlationSummary().label }}
+            Day Filter: {{ correlationSummary().label }}
           </span>
           <button
             type="button"
             (click)="selectFullMonth()"
             class="text-xs font-bold text-slate-600 hover:text-indigo-600 bg-white hover:bg-slate-50 px-3 py-1 rounded-xl border border-slate-200 shadow-2xs transition cursor-pointer"
           >
-            Ver todo el mes ({{ monthlySummary().totalPatients }} pac.) ✕
+            View full month ({{ monthlySummary().totalPatients }} pts.) ✕
           </button>
         } @else {
           <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
-            📅 Viendo todo el mes de {{ monthlySummary().monthName }}
+            📅 Viewing full month of {{ monthlySummary().monthName }}
           </span>
         }
       </div>
     }
   </div>
 
-  <!-- TABLA SIMPLE Y ESPACIOSA (VISTA ÚNICA Y CLARA) -->
+  <!-- SIMPLE AND SPACIOUS TABLE (SINGLE CLEAR VIEW) -->
   <div class="glass-panel rounded-2xl overflow-hidden shadow-sm">
     <div class="overflow-x-auto">
       <table class="w-full text-left text-sm text-slate-600">
         <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
           <tr>
-            <th class="px-5 py-3.5">Horario & Fecha</th>
-            <th class="px-5 py-3.5">Paciente & Motivo</th>
-            <th class="px-5 py-3.5">{{ auth.isAdmin() ? 'Consultorio & Médico' : 'Consultorio' }}</th>
-            <th class="px-5 py-3.5">{{ auth.isDoctor() ? 'Estado & Cobro' : 'Estado' }}</th>
-            <th class="px-5 py-3.5 text-right">Acción</th>
+            <th class="px-5 py-3.5">Time & Date</th>
+            <th class="px-5 py-3.5">Patient & Reason</th>
+            <th class="px-5 py-3.5">{{ auth.isAdmin() ? 'Room & Physician' : 'Room' }}</th>
+            <th class="px-5 py-3.5">{{ auth.isDoctor() ? 'Status & Fee' : 'Status' }}</th>
+            <th class="px-5 py-3.5 text-right">Action</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
           @for (t of displayedAppointments(); track t.idTurno) {
             <tr class="hover:bg-slate-50/70 transition-colors">
-              <!-- Horario -->
+              <!-- Time -->
               <td class="px-5 py-4 font-medium text-xs text-slate-800">
                 <span class="block font-black text-sm text-slate-900 font-mono">
                   🕒 {{ t.fechaInicio ? (t.fechaInicio | date: 'HH:mm') : '--:--' }} hrs
                 </span>
                 <span class="text-slate-500 text-xs">
-                  {{ t.fechaInicio ? (t.fechaInicio | date: 'dd/MM/yyyy') : 'Por confirmar' }}
+                  {{ t.fechaInicio ? (t.fechaInicio | date: 'MM/dd/yyyy') : 'To be confirmed' }}
                 </span>
               </td>
 
-              <!-- Paciente & Motivo -->
+              <!-- Patient & Reason -->
               <td class="px-5 py-4">
                 <div class="flex items-center gap-2.5">
                   <div
@@ -458,29 +458,29 @@
                       {{ t.paciente?.nombre || t.paciente }} {{ t.paciente?.apellido }}
                     </span>
                     <span class="text-xs text-slate-500 block truncate max-w-xs">
-                      {{ t.motivoConsulta || 'Consulta médica de control' }}
+                      {{ t.motivoConsulta || 'Routine medical consultation' }}
                     </span>
                   </div>
                 </div>
               </td>
 
-              <!-- Consultorio & Especialidad / Médico -->
+              <!-- Room & Specialty / Physician -->
               <td class="px-5 py-4 text-xs">
                 <span class="font-semibold text-slate-800 block">
-                  📍 {{ t.consultorio?.codigo || t.consultorio || 'Consultorio' }}
+                  📍 {{ t.consultorio?.codigo || t.consultorio || 'Consultation Room' }}
                 </span>
                 @if (auth.isAdmin()) {
                   <span class="text-slate-600 font-medium block">
-                    Dr/a. {{ t.medico?.nombre || t.medico }} {{ t.medico?.apellido }}
+                    Dr. {{ t.medico?.nombre || t.medico }} {{ t.medico?.apellido }}
                   </span>
                 } @else {
                   <span class="text-slate-500 block">
-                    {{ t.especialidad?.nombre || t.especialidad || 'Cardiología' }}
+                    {{ t.especialidad?.nombre || t.especialidad || 'Cardiology' }}
                   </span>
                 }
               </td>
 
-              <!-- Estado & Cobro -->
+              <!-- Status & Fee -->
               <td class="px-5 py-4">
                 <div class="space-y-1">
                   <span
@@ -492,70 +492,70 @@
                       'bg-amber-100 text-amber-800': t.estado === 'pendiente'
                     }"
                   >
-                    {{ t.estado === 'atendido' ? '✅ Atendido' : (t.estado === 'cancelado' ? '❌ Cancelado' : t.estado) }}
+                    {{ t.estado === 'atendido' ? '✅ Attended' : (t.estado === 'cancelado' ? '❌ Cancelled' : (t.estado === 'confirmado' ? 'Confirmed' : (t.estado === 'pendiente' ? 'Pending' : t.estado))) }}
                   </span>
                   @if (auth.isDoctor()) {
                     <span class="block text-xs font-mono font-bold" [class.text-emerald-700]="t.estado === 'atendido'" [class.text-slate-400]="t.estado === 'cancelado'" [class.text-sky-700]="t.estado !== 'atendido' && t.estado !== 'cancelado'">
-                      {{ t.estado === 'atendido' ? ('+$' + (feePerConsultation | number) + ' MXN') : (t.estado === 'cancelado' ? '$0 MXN' : ('$' + (feePerConsultation | number) + ' MXN')) }}
+                      {{ t.estado === 'atendido' ? ('+$' + (feePerConsultation | number) + ' USD') : (t.estado === 'cancelado' ? '$0 USD' : ('$' + (feePerConsultation | number) + ' USD')) }}
                     </span>
                   }
                 </div>
               </td>
 
-              <!-- Acciones -->
+              <!-- Actions -->
               <td class="px-5 py-4 text-right space-x-1 whitespace-nowrap">
                 @if (auth.isAdmin() || auth.isDoctor()) {
                   <button
                     (click)="startTelemedicine(t)"
                     class="px-2.5 py-1.5 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition cursor-pointer inline-flex items-center gap-1"
-                    title="Iniciar Sesión de Telemedicina WebRTC Cifrada"
+                    title="Start Encrypted WebRTC Telemedicine Session"
                   >
                     <span>📹</span>
-                    <span>Telemedicina</span>
+                    <span>Telemedicine</span>
                   </button>
                   <button
                     (click)="sendAppointmentReminder(t)"
                     class="px-2.5 py-1.5 text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl transition cursor-pointer inline-flex items-center gap-1"
-                    title="Enviar Recordatorio WhatsApp & Email"
+                    title="Send WhatsApp & Email Reminder"
                   >
                     <span>📲</span>
-                    <span>Avisar</span>
+                    <span>Notify</span>
                   </button>
                   @if (t.estado !== 'atendido' && t.estado !== 'cancelado') {
                     <button
                       (click)="changeStatus(t.idTurno, 'atendido')"
                       class="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs cursor-pointer inline-flex items-center gap-1"
-                      title="Marcar como Atendido en Consulta (Devenga Honorario)"
+                      title="Mark as Attended in Consultation (Earns Fee)"
                     >
                       <span>✔</span>
-                      <span>Atender</span>
+                      <span>Attend</span>
                     </button>
                     <button
                       (click)="changeStatus(t.idTurno, 'cancelado')"
                       class="px-2.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition cursor-pointer"
-                      title="Marcar como Cancelada (No devenga honorario)"
+                      title="Mark as Cancelled (No fee earned)"
                     >
-                      Cancelar
+                      Cancel
                     </button>
                   } @else {
                     <span class="text-xs font-medium text-slate-400">
-                      {{ t.estado === 'atendido' ? '✓ Cobrado' : '✕ Sin cobro' }}
+                      {{ t.estado === 'atendido' ? '✓ Billed' : '✕ Unbilled' }}
                     </span>
                   }
                 } @else {
                   <button
                     (click)="startTelemedicine(t)"
                     class="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition cursor-pointer inline-flex items-center gap-1 mr-1"
-                    title="Ingresar a la Consulta Virtual WebRTC"
+                    title="Join WebRTC Virtual Consultation"
                   >
-                    <span>📹 Sala Virtual</span>
+                    <span>📹 Virtual Room</span>
                   </button>
                   @if (t.estado === 'pendiente') {
                     <button
                       (click)="cancelMyAppointment(t.idTurno)"
                       class="px-2.5 py-1 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition cursor-pointer"
                     >
-                      Cancelar cita
+                      Cancel appointment
                     </button>
                   }
                 }
@@ -566,9 +566,9 @@
               <td colspan="5" class="px-5 py-12 text-center text-slate-500">
                 <div class="max-w-sm mx-auto space-y-1">
                   <span class="text-3xl block mb-2">📅</span>
-                  <p class="font-bold text-slate-700 text-sm">No hay citas médicas para mostrar</p>
+                  <p class="font-bold text-slate-700 text-sm">No medical appointments to display</p>
                   <p class="text-xs text-slate-400">
-                    {{ auth.isBasicUser() ? 'Actualmente no tienes citas programadas. Puedes solicitar una cita pulsando el botón superior.' : 'No se encontraron turnos con los filtros seleccionados.' }}
+                    {{ auth.isBasicUser() ? 'You currently have no scheduled appointments. You can request one using the button above.' : 'No appointments found matching the selected filters.' }}
                   </p>
                 </div>
               </td>
@@ -579,11 +579,11 @@
     </div>
   </div>
 
-    <!-- Paginación de Citas Médicas -->
+    <!-- Medical Appointments Pagination -->
     @if (totalPages() > 1) {
       <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
         <div class="text-xs text-slate-500 font-medium">
-          Mostrando página <span class="font-bold text-slate-800">{{ currentPage() }}</span> de <span class="font-bold text-slate-800">{{ totalPages() }}</span> (<span class="font-bold text-slate-800">{{ totalItems() }}</span> citas médicas)
+          Showing page <span class="font-bold text-slate-800">{{ currentPage() }}</span> of <span class="font-bold text-slate-800">{{ totalPages() }}</span> (<span class="font-bold text-slate-800">{{ totalItems() }}</span> appointments)
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -592,11 +592,11 @@
             [disabled]="currentPage() === 1"
             class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
           >
-            &larr; Anterior
+            &larr; Previous
           </button>
 
           <span class="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 rounded-xl border border-slate-200">
-            Pág {{ currentPage() }} / {{ totalPages() }}
+            Page {{ currentPage() }} / {{ totalPages() }}
           </span>
 
           <button
@@ -604,18 +604,18 @@
             [disabled]="currentPage() === totalPages()"
             class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
           >
-            Siguiente &rarr;
+            Next &rarr;
           </button>
         </div>
       </div>
     }
 
-  <!-- Modal de Agendar/Solicitar Cita (Centrado Clínico) -->
+  <!-- Schedule/Request Appointment Modal (Centered Clinical) -->
   <app-clinical-modal
     [isOpen]="showModal()"
-    [title]="auth.isBasicUser() ? 'Solicitar Cita Médica' : 'Agendar Cita Médica de Paciente'"
-    [subtitle]="auth.isBasicUser() ? 'Selecciona la especialidad médica y horario deseado para tu valoración clínica.' : 'Selecciona el paciente, asigna al médico especialista y confirma el consultorio físico.'"
-    badgeText="Cita Médica"
+    [title]="auth.isBasicUser() ? 'Request Medical Appointment' : 'Schedule Patient Medical Appointment'"
+    [subtitle]="auth.isBasicUser() ? 'Select your desired medical specialty and time slot for your clinical evaluation.' : 'Select the patient, assign the specialist physician, and confirm the physical consultation room.'"
+    badgeText="Appointment"
     badgeColor="blue"
     variant="center"
     maxWidth="max-w-xl"
@@ -630,7 +630,7 @@
           </div>
         }
 
-        <!-- Campo Paciente -->
+        <!-- Patient Field -->
         @if (auth.isBasicUser()) {
           <div class="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50/70 border border-blue-200/80 rounded-2xl flex items-center gap-3.5">
             <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -640,15 +640,15 @@
               <div class="flex items-center justify-between gap-2">
                 <span class="font-bold text-slate-900 text-sm">Juan Pérez García</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                  Paciente Titular
+                  Primary Patient
                 </span>
               </div>
-              <span class="block text-slate-500 mt-0.5 text-xs">CURP / DNI: 28456123 • Póliza OSDE 310 (88992)</span>
+              <span class="block text-slate-500 mt-0.5 text-xs">ID / SSN: 28456123 • Policy OSDE 310 (88992)</span>
             </div>
           </div>
         } @else {
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Paciente</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Patient</label>
             <select
               [(ngModel)]="newApp.idPaciente"
               name="idPaciente"
@@ -656,16 +656,16 @@
               class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               @for (p of patients(); track p.idPaciente) {
-                <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (DNI: {{ p.dni }})</option>
+                <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (ID: {{ p.dni }})</option>
               }
             </select>
           </div>
         }
 
-        <!-- Especialista y Especialidad -->
+        <!-- Specialist & Specialty -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Especialidad Clínica</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Clinical Specialty</label>
             <select
               [(ngModel)]="newApp.idEspecialidad"
               name="idEspecialidad"
@@ -678,7 +678,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Médico Especialista</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Specialist Physician</label>
             <select
               [(ngModel)]="newApp.idMedico"
               name="idMedico"
@@ -686,17 +686,17 @@
               class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
             >
               @for (d of doctors(); track d.idMedico) {
-                <option [value]="d.idMedico">Dr/a. {{ d.nombre }} {{ d.apellido }}</option>
+                <option [value]="d.idMedico">Dr. {{ d.nombre }} {{ d.apellido }}</option>
               }
             </select>
           </div>
         </div>
 
-        <!-- Horario de Cita Adaptativo -->
+        <!-- Adaptive Appointment Schedule -->
         @if (auth.isBasicUser()) {
           <div class="space-y-1.5">
             <label class="block text-xs font-semibold text-slate-700">
-              Fecha y Hora Preferida de Consulta
+              Preferred Consultation Date & Time
             </label>
             <input
               type="datetime-local"
@@ -708,17 +708,17 @@
             />
             <div class="flex items-center justify-between text-xs text-slate-500 pt-0.5 px-0.5">
               <span class="inline-flex items-center gap-1 text-blue-700 font-medium">
-                ⏱️ Consulta médica: 30 minutos
+                ⏱️ Medical consultation: 30 minutes
               </span>
               @if (newApp.fin) {
-                <span>Finalización estimada: {{ newApp.fin | date:'shortTime' }}</span>
+                <span>Estimated end: {{ newApp.fin | date:'shortTime' }}</span>
               }
             </div>
           </div>
         } @else {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha y Hora de Inicio</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Start Date & Time</label>
               <input
                 type="datetime-local"
                 [(ngModel)]="newApp.inicio"
@@ -729,7 +729,7 @@
               />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Fin Estimado</label>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Estimated End</label>
               <input
                 type="datetime-local"
                 [(ngModel)]="newApp.fin"
@@ -741,56 +741,56 @@
           </div>
         }
 
-        <!-- Consultorio (para Recepción) o Asignación automática para Paciente -->
+        <!-- Consultation Room (for Reception) or Automatic assignment for Patient -->
         @if (auth.isAdmin()) {
           <div>
-            <label class="block text-xs font-semibold text-slate-700 mb-1">Consultorio Físico Asignado</label>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Assigned Physical Room</label>
             <select
               [(ngModel)]="newApp.idConsultorio"
               name="idConsultorio"
               class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
-              <option [ngValue]="null">Asignación automática de consultorio</option>
+              <option [ngValue]="null">Automatic room assignment</option>
               @for (c of offices(); track c.idConsultorio) {
-                <option [value]="c.idConsultorio">{{ c.codigo }} - Piso {{ c.piso }} ({{ c.descripcion }})</option>
+                <option [value]="c.idConsultorio">{{ c.codigo }} - Floor {{ c.piso }} ({{ c.descripcion }})</option>
               }
             </select>
           </div>
         }
 
-        <!-- Motivo de consulta -->
+        <!-- Reason for visit -->
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Motivo o Síntomas Principales</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Reason or Main Symptoms</label>
           <textarea
             [(ngModel)]="newApp.motivoConsulta"
             name="motivoConsulta"
             rows="2"
-            placeholder="Ej: Control de presión arterial, valoración periódica, dolor de cabeza o revisión general"
+            placeholder="E.g.: Blood pressure check, routine evaluation, headache, or general checkup"
             class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
           ></textarea>
         </div>
       </div>
 
-      <!-- Pie del Modal Pinned al Fondo -->
+      <!-- Modal Footer Pinned to Bottom -->
       <div class="clinical-modal-footer">
         <button
           type="button"
           (click)="closeModal()"
           class="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-xl transition cursor-pointer"
         >
-          Cancelar
+          Cancel
         </button>
         <button
           type="submit"
           class="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
         >
-          {{ auth.isBasicUser() ? 'Confirmar Solicitud de Cita' : 'Registrar Cita Médica' }}
+          {{ auth.isBasicUser() ? 'Confirm Appointment Request' : 'Register Appointment' }}
         </button>
       </div>
     </form>
   </app-clinical-modal>
 
-  <!-- Modal de Sala Virtual WebRTC (Pilar 4) -->
+  <!-- WebRTC Virtual Room Modal (Pillar 4) -->
   @if (showVirtualRoomModal() && virtualRoomData()) {
     <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
@@ -800,8 +800,8 @@
               📹
             </div>
             <div>
-              <h3 class="text-base font-bold text-slate-800">Sala Virtual de Telemedicina WebRTC</h3>
-              <p class="text-xs text-slate-500">Sesión P2P cifrada de extremo a extremo</p>
+              <h3 class="text-base font-bold text-slate-800">WebRTC Telemedicine Virtual Room</h3>
+              <p class="text-xs text-slate-500">End-to-end encrypted P2P session</p>
             </div>
           </div>
           <button (click)="closeVirtualRoomModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
@@ -809,25 +809,25 @@
 
         <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200/70 text-xs">
           <div class="flex justify-between py-1 border-b border-slate-200/50">
-            <span class="text-slate-500 font-medium">ID Sala:</span>
+            <span class="text-slate-500 font-medium">Room ID:</span>
             <span class="font-mono font-bold text-teal-800">{{ virtualRoomData()?.idSala }}</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-200/50">
-            <span class="text-slate-500 font-medium">Paciente:</span>
+            <span class="text-slate-500 font-medium">Patient:</span>
             <span class="font-semibold text-slate-700">{{ virtualRoomData()?.paciente }}</span>
           </div>
           <div class="flex justify-between py-1 border-b border-slate-200/50">
-            <span class="text-slate-500 font-medium">Médico / Especialidad:</span>
+            <span class="text-slate-500 font-medium">Physician / Specialty:</span>
             <span class="font-semibold text-slate-700">{{ virtualRoomData()?.medico }} ({{ virtualRoomData()?.especialidad }})</span>
           </div>
           <div class="flex justify-between py-1">
-            <span class="text-slate-500 font-medium">Servidores STUN / ICE:</span>
-            <span class="font-mono text-emerald-700 font-semibold">{{ virtualRoomData()?.iceServers?.length || 2 }} servidores activos</span>
+            <span class="text-slate-500 font-medium">STUN / ICE Servers:</span>
+            <span class="font-mono text-emerald-700 font-semibold">{{ virtualRoomData()?.iceServers?.length || 2 }} active servers</span>
           </div>
         </div>
 
         <div class="space-y-2">
-          <label class="block text-xs font-bold text-slate-700">Enlace de Acceso Seguro (Paciente / Médico):</label>
+          <label class="block text-xs font-bold text-slate-700">Secure Access Link (Patient / Physician):</label>
           <div class="flex items-center gap-2">
             <input
               type="text"
@@ -839,12 +839,12 @@
               type="button"
               (click)="copyRoomUrl(virtualRoomData()?.accesoPaciente)"
               class="px-3 py-2 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg transition cursor-pointer"
-              title="Copiar enlace"
+              title="Copy link"
             >
-              Copiar
+              Copy
             </button>
           </div>
-          <p class="text-[11px] text-slate-400">Token firmado con expiración temporal de 60 minutos.</p>
+          <p class="text-[11px] text-slate-400">Signed token with 60-minute temporary expiration.</p>
         </div>
 
         <div class="pt-2 flex justify-end gap-2">
@@ -853,14 +853,14 @@
             (click)="closeVirtualRoomModal()"
             class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
           >
-            Cerrar
+            Close
           </button>
           <a
             [href]="virtualRoomData()?.accesoPaciente"
             target="_blank"
             class="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 rounded-xl shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"
           >
-            <span>Ingresar a Sala Virtual</span>
+            <span>Enter Virtual Room</span>
             <span>→</span>
           </a>
         </div>

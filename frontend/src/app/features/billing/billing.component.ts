@@ -47,14 +47,14 @@ export class BillingComponent implements OnInit {
         nombre: doc.nombre,
         apellido: doc.apellido,
         matricula: doc.matricula,
-        especialidad: doc.especialidad || 'Especialista',
+        especialidad: doc.especialidad || 'Specialist',
         attendedCount: attended.length,
         pendingCount: pending.length,
         canceledCount: canceled.length,
         totalApps: docApps.length,
         amountToPay,
         amountProjected,
-        status: amountToPay > 0 ? 'Pendiente de Liquidación' : 'Al Día',
+        status: amountToPay > 0 ? 'Pending Settlement' : 'Up to Date',
       };
     });
   });
@@ -143,7 +143,7 @@ export class BillingComponent implements OnInit {
   }
 
   settleDoctorFee(doc: any): void {
-    this.toast.success(`Liquidación de $${doc.amountToPay.toLocaleString('es-MX')} MXN para Dr/a. ${doc.nombre} ${doc.apellido} registrada exitosamente.`);
+    this.toast.success(`Settlement of $${doc.amountToPay.toLocaleString('en-US')} USD for Dr. ${doc.nombre} ${doc.apellido} registered successfully.`);
   }
 
   openModal(): void {
@@ -160,25 +160,25 @@ export class BillingComponent implements OnInit {
       next: () => {
         this.closeModal();
         this.loadData();
-        this.toast.success('Comprobante fiscal y pago registrados exitosamente.');
+        this.toast.success('Tax receipt and payment registered successfully.');
       },
       error: (err) => {
-        this.toast.error(err.error?.message || 'Error al emitir comprobante de pago.');
+        this.toast.error(err.error?.message || 'Error issuing payment receipt.');
       },
     });
   }
 
   printReceipt(p: any): void {
-    const patName = p.paciente ? `${p.paciente.nombre} ${p.paciente.apellido}` : 'Público General';
+    const patName = p.paciente ? `${p.paciente.nombre} ${p.paciente.apellido}` : 'General Public';
     const patDni = p.paciente?.dni || 'N/A';
     const folio = p.comprobanteFiscal || `REC-${p.idPago}`;
-    const dateStr = new Date(p.fechaPago || Date.now()).toLocaleDateString('es-MX', {
+    const dateStr = new Date(p.fechaPago || Date.now()).toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
-    const concepto = p.concepto?.nombre || 'Consulta / Servicio Hospitalario';
-    const bruto = Number(p.montoBruto || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 });
-    const desc = Number(p.descuentoCobertura || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 });
-    const neto = Number(p.montoNeto || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+    const concepto = p.concepto?.nombre || 'Consultation / Hospital Service';
+    const bruto = Number(p.montoBruto || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    const desc = Number(p.descuentoCobertura || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+    const neto = Number(p.montoNeto || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
     const metodo = (p.metodoPago || 'efectivo').replace('_', ' ').toUpperCase();
 
     const printWindow = window.open('', '_blank', 'width=750,height=850');
@@ -186,9 +186,9 @@ export class BillingComponent implements OnInit {
 
     printWindow.document.write(`
       <!DOCTYPE html>
-      <html lang="es">
+      <html lang="en">
       <head>
-        <title>Recibo de Cobro Hospitalario - Folio ${folio}</title>
+        <title>Hospital Payment Receipt - Invoice ${folio}</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; color: #1e293b; }
           .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #d97706; padding-bottom: 12px; margin-bottom: 20px; }
@@ -210,57 +210,57 @@ export class BillingComponent implements OnInit {
       <body>
         <div class="header">
           <div>
-            <div class="logo">🏥 CENTRO MÉDICO NACIONAL</div>
-            <div class="sub">Unidad Hospitalaria de Alta Especialidad • RFC: CMN-240210-9A1</div>
+            <div class="logo">🏥 NATIONAL MEDICAL CENTER</div>
+            <div class="sub">High-Specialty Hospital Unit • Tax ID: CMN-240210-9A1</div>
           </div>
           <div style="text-align: right;">
-            <span class="badge">RECIBO DE CAJA</span>
-            <div class="sub" style="margin-top: 6px;">Folio Fiscal: <strong>${folio}</strong></div>
+            <span class="badge">CASHIER RECEIPT</span>
+            <div class="sub" style="margin-top: 6px;">Invoice ID: <strong>${folio}</strong></div>
           </div>
         </div>
 
         <div class="section">
           <div class="grid">
-            <div><strong>Paciente:</strong> ${patName}</div>
-            <div><strong>Identificación / DNI:</strong> ${patDni}</div>
-            <div><strong>Fecha de Emisión:</strong> ${dateStr}</div>
-            <div><strong>Forma de Pago:</strong> ${metodo}</div>
+            <div><strong>Patient:</strong> ${patName}</div>
+            <div><strong>ID / DNI:</strong> ${patDni}</div>
+            <div><strong>Issue Date:</strong> ${dateStr}</div>
+            <div><strong>Payment Method:</strong> ${metodo}</div>
           </div>
         </div>
 
         <table>
           <thead>
             <tr>
-              <th>Concepto Clínico / Prestación</th>
-              <th style="text-align: right;">Importe Bruto</th>
-              <th style="text-align: right;">Descuento Cobertura</th>
-              <th style="text-align: right;">Copago / Neto</th>
+              <th>Clinical Concept / Service</th>
+              <th style="text-align: right;">Gross Amount</th>
+              <th style="text-align: right;">Coverage Discount</th>
+              <th style="text-align: right;">Copay / Net</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td><strong>${concepto}</strong></td>
-              <td style="text-align: right;">$${bruto} MXN</td>
-              <td style="text-align: right; color: #16a34a;">-$${desc} MXN</td>
-              <td style="text-align: right; font-weight: bold;">$${neto} MXN</td>
+              <td style="text-align: right;">$${bruto} USD</td>
+              <td style="text-align: right; color: #16a34a;">-$${desc} USD</td>
+              <td style="text-align: right; font-weight: bold;">$${neto} USD</td>
             </tr>
           </tbody>
         </table>
 
         <div class="totals">
-          <div class="total-line"><span>Subtotal Arancelario:</span> <strong>$${bruto} MXN</strong></div>
-          <div class="total-line" style="color: #16a34a;"><span>Bonificación Seguro / Obra Social:</span> <strong>-$${desc} MXN</strong></div>
-          <div class="total-line grand-total"><span>Total Cobrado:</span> <strong>$${neto} MXN</strong></div>
+          <div class="total-line"><span>Fee Subtotal:</span> <strong>$${bruto} USD</strong></div>
+          <div class="total-line" style="color: #16a34a;"><span>Insurance Coverage Credit:</span> <strong>-$${desc} USD</strong></div>
+          <div class="total-line grand-total"><span>Total Charged:</span> <strong>$${neto} USD</strong></div>
         </div>
 
         <div class="footer">
-          Comprobante emitido de acuerdo a la legislación fiscal vigente para servicios médicos y hospitalarios.<br>
-          ¡Gracias por su confianza en Centro Médico Nacional!
+          Receipt issued in accordance with applicable tax regulations for medical and hospital services.<br>
+          Thank you for trusting National Medical Center!
         </div>
 
         <div class="no-print" style="margin-top: 25px; text-align: center;">
           <button onclick="window.print()" style="padding: 10px 24px; font-size: 14px; font-weight: bold; background: #d97706; color: white; border: none; border-radius: 8px; cursor: pointer;">
-            🖨️ Imprimir Recibo Fiscal
+            🖨️ Print Tax Receipt
           </button>
         </div>
       </body>
@@ -279,7 +279,7 @@ export class BillingComponent implements OnInit {
       },
       error: (err) => {
         this.isLoadingSettlement.set(false);
-        this.toast.error('Error al calcular liquidación médica: ' + (err.error?.message || err.message));
+        this.toast.error('Error calculating medical fee settlement: ' + (err.error?.message || err.message));
       },
     });
   }

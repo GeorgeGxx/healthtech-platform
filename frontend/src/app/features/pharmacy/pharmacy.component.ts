@@ -55,6 +55,18 @@ export class PharmacyComponent implements OnInit {
     'Soluciones y Terapia IV',
   ];
 
+  readonly categoryLabels: Record<string, string> = {
+    'Analgésicos y Antipiréticos': 'Analgesics & Antipyretics',
+    'Analgésicos Controlados UCI': 'ICU Controlled Analgesics',
+    'Antibióticos y Antimicrobianos': 'Antibiotics & Antimicrobials',
+    'Cardiología y Antihipertensivos': 'Cardiology & Antihypertensives',
+    'Endocrinología y Diabetes': 'Endocrinology & Diabetes',
+    'Hematología y Anticoagulantes': 'Hematology & Anticoagulants',
+    'Neumología y Vías Respiratorias': 'Pulmonology & Respiratory',
+    'Urgencias y Soporte Vital': 'Emergency & Life Support',
+    'Soluciones y Terapia IV': 'IV Solutions & Therapy',
+  };
+
   ngOnInit(): void {
     this.loadSummary();
     this.loadMedicamentos();

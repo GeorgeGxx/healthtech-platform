@@ -1,37 +1,37 @@
 <div class="space-y-6 animate-fade-in">
-  <!-- Encabezado contextual según rol -->
+  <!-- Contextual header by role -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
     <div>
       @if (auth.isBasicUser()) {
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-          Mi Historial Clínico y Recetas Médicas
+          My Clinical History & Prescriptions
         </h1>
         <p class="text-sm text-slate-600 mt-1">
-          Consulta tus notas de evolución médica, diagnósticos, constantes vitales y prescripciones farmacológicas.
+          View your clinical progress notes, diagnoses, vital signs, and medication prescriptions.
         </p>
       } @else {
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
-          Expediente Clínico Electrónico (ECE)
+          Electronic Health Record (EHR)
         </h1>
         <p class="text-sm text-slate-600 mt-1">
-          Notas de evolución médica, constantes vitales y prescripción de fármacos conforme a normativa clínica.
+          Clinical progress notes, vital signs, and medication prescriptions compliant with clinical regulations.
         </p>
       }
     </div>
 
-    <!-- Botón de nueva nota para Administrador o Médico Tratante -->
+    <!-- New note button for Administrator or Attending Physician -->
     @if (auth.canManageRecords()) {
       <button
         (click)="openNewModal()"
         class="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-all shadow-md shadow-indigo-500/20"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        Nueva Nota de Evolución
+        New Progress Note
       </button>
     }
   </div>
 
-  <!-- Ficha de identidad fija para Juan Pérez García -->
+  <!-- Fixed identity card for Juan Pérez García -->
   @if (auth.isBasicUser()) {
     <div class="glass-panel p-4 rounded-xl flex items-center justify-between border-l-4 border-l-indigo-600">
       <div class="flex items-center gap-3">
@@ -40,16 +40,16 @@
         </div>
         <div>
           <h2 class="font-bold text-slate-900 text-sm">Juan Pérez García</h2>
-          <p class="text-xs text-slate-500">ID / CURP: 28456123 • Cobertura: GNP Seguros (Póliza 88992) • Grupo Sanguíneo: O+</p>
+          <p class="text-xs text-slate-500">ID / SSN: 28456123 • Coverage: GNP Insurance (Policy 88992) • Blood Type: O+</p>
         </div>
       </div>
       <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
-        Expediente Activo
+        Active Record
       </span>
     </div>
   }
 
-  <!-- Buscador Clínico -->
+  <!-- Clinical Search -->
   <div class="glass-panel p-4 rounded-xl flex flex-wrap items-center gap-4">
     <div class="flex-1 min-w-[260px] flex items-center gap-2">
       <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -57,7 +57,7 @@
         type="text"
         [(ngModel)]="ftsQuery"
         (keyup.enter)="searchFts()"
-        [placeholder]="auth.isBasicUser() ? 'Buscar en mis diagnósticos o tratamientos...' : 'Buscar notas clínicas por diagnóstico, síntoma o tratamiento (ej: hipertensión, lumbago)...'"
+        [placeholder]="auth.isBasicUser() ? 'Search my diagnoses or treatments...' : 'Search clinical notes by diagnosis, symptom, or treatment (e.g., hypertension, back pain)...'"
         class="flex-1 bg-transparent border-none focus:outline-none text-sm text-slate-800"
       />
     </div>
@@ -65,19 +65,19 @@
       (click)="searchFts()"
       class="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition"
     >
-      Buscar en Expediente
+      Search Record
     </button>
     @if (ftsQuery) {
       <button
         (click)="clearSearch()"
         class="text-xs text-slate-500 hover:text-slate-800 underline transition"
       >
-        Limpiar búsqueda
+        Clear search
       </button>
     }
   </div>
 
-  <!-- Resumen de Stock en Farmacia Hospitalaria para la Doctora -->
+  <!-- Hospital Pharmacy Stock Summary for Physician -->
   @if (auth.isDoctor()) {
     <div class="glass-panel p-4 rounded-xl border border-purple-200/80 bg-gradient-to-r from-purple-50/70 via-indigo-50/30 to-white flex flex-col md:flex-row md:items-center md:justify-between gap-3 shadow-xs">
       <div class="flex items-center gap-3">
@@ -86,13 +86,13 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-purple-900">Existencias en Farmacia Hospitalaria</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-purple-900">Hospital Pharmacy Stock</span>
             <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full bg-purple-200 text-purple-900">
-              {{ (pharmacySummary()?.totalUnidadesStock || 6379) | number }} unidades disponibles
+              {{ (pharmacySummary()?.totalUnidadesStock || 6379) | number }} units available
             </span>
           </div>
           <p class="text-xs text-slate-600 mt-0.5">
-            Consulta rápida de disponibilidad de fármacos para la emisión de recetas médicas NOM-004.
+            Quick medication availability check for issuing NOM-004 medical prescriptions.
           </p>
         </div>
       </div>
@@ -103,28 +103,28 @@
           (click)="showStockPanel.set(!showStockPanel())"
           class="px-3 py-1.5 text-xs font-bold text-purple-700 bg-white hover:bg-purple-100/70 border border-purple-200 rounded-lg transition-colors cursor-pointer shadow-xs"
         >
-          {{ showStockPanel() ? 'Ocultar Detalle' : 'Ver Stock de Medicamentos' }}
+          {{ showStockPanel() ? 'Hide Details' : 'View Medication Stock' }}
         </button>
         <a
           routerLink="/pharmacy"
           class="px-3 py-1.5 text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors shadow-xs"
         >
-          Ir a Farmacia &rarr;
+          Go to Pharmacy &rarr;
         </a>
       </div>
     </div>
 
     @if (showStockPanel()) {
       <div class="p-4 rounded-xl bg-white border border-purple-200 shadow-sm animate-fade-in space-y-2">
-        <span class="text-xs font-bold text-slate-700 block uppercase tracking-wider">Principales Fármacos en Inventario Hospitalario:</span>
+        <span class="text-xs font-bold text-slate-700 block uppercase tracking-wider">Key Medications in Hospital Inventory:</span>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           @for (m of (pharmacyStock().length > 0 ? pharmacyStock().slice(0, 6) : [
-            { nombreComercial: 'Losartán', presentacion: '50mg', stockActual: 450, nivelAlerta: 'Normal' },
-            { nombreComercial: 'Metformina', presentacion: '850mg', stockActual: 320, nivelAlerta: 'Normal' },
-            { nombreComercial: 'Omeprazol', presentacion: '20mg', stockActual: 600, nivelAlerta: 'Normal' },
-            { nombreComercial: 'Atorvastatina', presentacion: '20mg', stockActual: 280, nivelAlerta: 'Normal' },
-            { nombreComercial: 'Amoxicilina', presentacion: '500mg', stockActual: 55, nivelAlerta: 'Bajo' },
-            { nombreComercial: 'Paracetamol', presentacion: '500mg', stockActual: 1200, nivelAlerta: 'Normal' }
+            { nombreComercial: 'Losartan', presentacion: '50mg', stockActual: 450, nivelAlerta: 'Normal' },
+            { nombreComercial: 'Metformin', presentacion: '850mg', stockActual: 320, nivelAlerta: 'Normal' },
+            { nombreComercial: 'Omeprazole', presentacion: '20mg', stockActual: 600, nivelAlerta: 'Normal' },
+            { nombreComercial: 'Atorvastatin', presentacion: '20mg', stockActual: 280, nivelAlerta: 'Normal' },
+            { nombreComercial: 'Amoxicillin', presentacion: '500mg', stockActual: 55, nivelAlerta: 'Bajo' },
+            { nombreComercial: 'Acetaminophen', presentacion: '500mg', stockActual: 1200, nivelAlerta: 'Normal' }
           ]); track m.nombreComercial) {
             <div class="p-2.5 rounded-lg border border-slate-100 bg-slate-50/70 text-xs">
               <span class="font-bold text-slate-800 block truncate">{{ m.nombreComercial }}</span>
@@ -132,7 +132,7 @@
               <div class="mt-1 flex items-center justify-between">
                 <span class="font-extrabold text-slate-900 text-xs">{{ m.stockActual }} un.</span>
                 <span [class]="m.nivelAlerta === 'Normal' ? 'text-emerald-700 font-bold text-[10px]' : 'text-amber-700 font-bold text-[10px]'">
-                  {{ m.nivelAlerta }}
+                  {{ m.nivelAlerta === 'Normal' ? 'Normal' : (m.nivelAlerta === 'Bajo' ? 'Low' : (m.nivelAlerta === 'Crítico' ? 'Critical' : m.nivelAlerta)) }}
                 </span>
               </div>
             </div>
@@ -142,18 +142,18 @@
     }
   }
 
-  <!-- Selector de Paciente para Recepción y Médico Tratante -->
+  <!-- Patient Selector for Reception and Attending Physician -->
   @if (auth.canManageRecords() && !isFtsMode()) {
     <div class="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-slate-50/80 rounded-xl border border-slate-200">
       <div class="flex items-center gap-3">
-        <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">Paciente en Consulta:</label>
+        <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">Patient in Consultation:</label>
         <select
           [(ngModel)]="selectedPatientId"
           (change)="loadPatientRecords()"
           class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
         >
           @for (p of filteredPatients(); track p.idPaciente) {
-            <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (DNI: {{ p.dni }})</option>
+            <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (ID: {{ p.dni }})</option>
           }
         </select>
       </div>
@@ -165,25 +165,25 @@
             (click)="filterOnlyMyPatients.set(true)"
             [class]="filterOnlyMyPatients() ? 'px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow-sm' : 'px-3 py-1.5 text-xs font-medium rounded-lg bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'"
           >
-            Mis Pacientes Asignados
+            My Assigned Patients
           </button>
           <button
             type="button"
             (click)="filterOnlyMyPatients.set(false)"
             [class]="!filterOnlyMyPatients() ? 'px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow-sm' : 'px-3 py-1.5 text-xs font-medium rounded-lg bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'"
           >
-            Todos los Pacientes
+            All Patients
           </button>
         </div>
       }
     </div>
   }
 
-  <!-- Línea de Tiempo de Notas de Evolución -->
+  <!-- Progress Notes Timeline -->
   <div class="space-y-6">
     @for (r of records(); track r.id_historia || r.idHistoria) {
       <div class="glass-panel p-6 rounded-2xl shadow-sm border border-slate-200 relative">
-        <!-- Encabezado de la nota -->
+        <!-- Note header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-slate-100">
           <div class="flex items-center gap-3">
             <span class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
@@ -194,9 +194,9 @@
                 {{ r.diagnostico_descripcion || r.diagnosticoDescripcion }}
               </h3>
               <p class="text-xs text-slate-500">
-                Médico tratante: <span class="font-medium text-slate-700">Dr/a. {{ r.medico?.nombre || r.medico }} {{ r.medico?.apellido }}</span>
+                Attending physician: <span class="font-medium text-slate-700">Dr. {{ r.medico?.nombre || r.medico }} {{ r.medico?.apellido }}</span>
                 @if (!auth.isBasicUser() && r.paciente?.nombre) {
-                  • Paciente: <span class="font-medium text-slate-700">{{ r.paciente.nombre }} {{ r.paciente.apellido }}</span>
+                  • Patient: <span class="font-medium text-slate-700">{{ r.paciente.nombre }} {{ r.paciente.apellido }}</span>
                 }
               </p>
             </div>
@@ -204,17 +204,17 @@
           <div class="flex flex-wrap items-center gap-2">
             @if (r.diagnostico_codigo_cie || r.diagnosticoCodigoCie) {
               <span class="px-2.5 py-1 text-xs font-mono font-bold rounded-md bg-purple-100 text-purple-800">
-                CIE-10: {{ r.diagnostico_codigo_cie || r.diagnosticoCodigoCie }}
+                ICD-10: {{ r.diagnostico_codigo_cie || r.diagnosticoCodigoCie }}
               </span>
             }
             <span class="text-xs font-medium text-slate-500">
-              {{ (r.fecha_atencion || r.fechaAtencion) | date: 'dd/MM/yyyy HH:mm' }} hrs
+              {{ (r.fecha_atencion || r.fechaAtencion) | date: 'MM/dd/yyyy HH:mm' }} hrs
             </span>
             <button
               type="button"
               (click)="openFhirModal(r)"
               class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors cursor-pointer border border-teal-200/60"
-              title="Ver Recurso Interoperable HL7 FHIR R4 Encounter"
+              title="View Interoperable HL7 FHIR R4 Encounter Resource"
             >
               <span>🧬</span>
               <span>HL7 FHIR</span>
@@ -224,10 +224,10 @@
                 type="button"
                 (click)="emitDigitalPrescription(r)"
                 class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors cursor-pointer border border-emerald-200/60"
-                title="Emitir Receta Médica Criptográfica con Verificación QR (Pilar 2)"
+                title="Issue Cryptographic Medical Prescription with QR Verification (Pillar 2)"
               >
                 <span>🔐</span>
-                <span>Receta Digital QR</span>
+                <span>QR Digital Rx</span>
               </button>
               <button
                 type="button"
@@ -235,7 +235,7 @@
                 class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors cursor-pointer border border-amber-200/60"
               >
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                Editar Nota
+                Edit Note
               </button>
             }
             <button
@@ -244,43 +244,43 @@
               class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors cursor-pointer border border-indigo-200/60"
             >
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-              Imprimir Receta
+              Print Prescription
             </button>
           </div>
         </div>
 
-        <!-- Constantes y Signos Vitales -->
+        <!-- Vital Signs -->
         @if (r.signos_vitales || r.signosVitales; as sv) {
           <div class="mt-4">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Signos y Constantes Vitales</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Vital Signs</span>
             <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
               @if (sv.presion_arterial) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-semibold text-slate-400 block">Tensión Arterial</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Blood Pressure</span>
                   <span class="font-bold text-sm text-slate-800">{{ sv.presion_arterial }} mmHg</span>
                 </div>
               }
               @if (sv.frecuencia_cardiaca_lpm) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-semibold text-slate-400 block">Frecuencia Cardíaca</span>
-                  <span class="font-bold text-sm text-rose-600">{{ sv.frecuencia_cardiaca_lpm }} lpm</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Heart Rate</span>
+                  <span class="font-bold text-sm text-rose-600">{{ sv.frecuencia_cardiaca_lpm }} bpm</span>
                 </div>
               }
               @if (sv.temperatura_c) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-semibold text-slate-400 block">Temperatura</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Temperature</span>
                   <span class="font-bold text-sm text-amber-600">{{ sv.temperatura_c }} °C</span>
                 </div>
               }
               @if (sv.peso_kg) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-semibold text-slate-400 block">Peso Corporal</span>
+                  <span class="text-xs font-semibold text-slate-400 block">Body Weight</span>
                   <span class="font-bold text-sm text-blue-600">{{ sv.peso_kg }} kg</span>
                 </div>
               }
               @if (sv.oxigeno_pct) {
                 <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span class="text-xs font-semibold text-slate-400 block">Oximetría SpO2</span>
+                  <span class="text-xs font-semibold text-slate-400 block">SpO2 Oximetry</span>
                   <span class="font-bold text-sm text-emerald-600">{{ sv.oxigeno_pct }}%</span>
                 </div>
               }
@@ -288,26 +288,26 @@
           </div>
         }
 
-        <!-- Plan de tratamiento e indicaciones -->
+        <!-- Treatment plan and instructions -->
         @if (r.tratamiento) {
           <div class="mt-4 text-xs text-slate-600">
-            <span class="font-bold text-slate-600 uppercase block mb-1">Plan de Tratamiento e Indicaciones Médicas:</span>
+            <span class="font-bold text-slate-600 uppercase block mb-1">Treatment Plan & Medical Instructions:</span>
             <p class="p-3 bg-slate-50/80 rounded-xl leading-relaxed text-slate-700 border border-slate-100">
               {{ r.tratamiento }}
             </p>
           </div>
         }
 
-        <!-- Medicamentos Prescritos -->
+        <!-- Prescribed Medications -->
         @if (r.receta_medicamentos || r.recetaMedicamentos; as recetas) {
           @if (recetas.length > 0) {
             <div class="mt-4">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Prescripción y Medicamentos</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Prescription & Medications</span>
               <div class="flex flex-wrap gap-2">
                 @for (m of recetas; track m.medicamento) {
                   <span class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
                     <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/></svg>
-                    <strong>{{ m.medicamento }}</strong> ({{ m.dosis }}) • Toma: {{ m.frecuencia }} • Duración: {{ m.dias }} días
+                    <strong>{{ m.medicamento }}</strong> ({{ m.dosis }}) • Frequency: {{ m.frecuencia }} • Duration: {{ m.dias }} days
                   </span>
                 }
               </div>
@@ -317,20 +317,20 @@
       </div>
     } @empty {
       <div class="glass-panel py-12 text-center text-slate-500 rounded-2xl">
-        <p class="font-medium text-slate-700">No hay notas de evolución registradas</p>
+        <p class="font-medium text-slate-700">No progress notes registered</p>
         <p class="text-xs text-slate-400 mt-1">
-          {{ auth.isBasicUser() ? 'Aún no cuentas con registros de consulta en tu expediente médico.' : 'No se encontraron notas clínicas con los criterios indicados.' }}
+          {{ auth.isBasicUser() ? 'You do not have any consultation records in your medical history yet.' : 'No clinical notes found matching the specified criteria.' }}
         </p>
       </div>
     }
   </div>
 
-<!-- Modal Clínico Estandarizado de Nota de Evolución (NOM-004) -->
+<!-- Standardized Clinical Progress Note Modal (NOM-004) -->
 <app-clinical-modal
   [isOpen]="showModal() && auth.canManageRecords()"
-  [title]="editingRecordId ? 'Editar Nota Médica de Evolución' : 'Nueva Nota Médica de Evolución'"
-  [subtitle]="editingRecordId ? 'Modificación y actualización autorizada del registro clínico conforme a NOM-004.' : 'Registro clínico para el expediente del paciente conforme a la norma NOM-004-SSA3-2012.'"
-  [badgeText]="editingRecordId ? 'NOM-004 (Edición)' : 'NOM-004'"
+  [title]="editingRecordId ? 'Edit Clinical Progress Note' : 'New Clinical Progress Note'"
+  [subtitle]="editingRecordId ? 'Authorized modification and update of the clinical record per NOM-004.' : 'Clinical record entry for the patient chart compliant with NOM-004-SSA3-2012.'"
+  [badgeText]="editingRecordId ? 'NOM-004 (Edit)' : 'NOM-004'"
   badgeColor="indigo"
   variant="center"
   maxWidth="max-w-2xl"
@@ -340,18 +340,18 @@
     <div class="clinical-modal-body space-y-4">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Paciente</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Patient</label>
           <select [(ngModel)]="newRecord.idPaciente" name="idPaciente" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
             @for (p of filteredPatients(); track p.idPaciente) {
-              <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (DNI: {{ p.dni }})</option>
+              <option [value]="p.idPaciente">{{ p.nombre }} {{ p.apellido }} (ID: {{ p.dni }})</option>
             }
           </select>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Médico Tratante</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Attending Physician</label>
           <select [(ngModel)]="newRecord.idMedico" name="idMedico" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
             @for (d of doctors(); track d.idMedico) {
-              <option [value]="d.idMedico">Dr/a. {{ d.nombre }} {{ d.apellido }}</option>
+              <option [value]="d.idMedico">Dr. {{ d.nombre }} {{ d.apellido }}</option>
             }
           </select>
         </div>
@@ -359,25 +359,25 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
         <div class="sm:col-span-1">
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Código CIE-10</label>
-          <input type="text" [(ngModel)]="newRecord.diagnosticoCodigoCie" name="diagnosticoCodigoCie" placeholder="Ej: I10, E11.9" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+          <label class="block text-xs font-semibold text-slate-700 mb-1">ICD-10 Code</label>
+          <input type="text" [(ngModel)]="newRecord.diagnosticoCodigoCie" name="diagnosticoCodigoCie" placeholder="E.g.: I10, E11.9" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
         </div>
         <div class="sm:col-span-2">
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Diagnóstico Clínico</label>
-          <input type="text" [(ngModel)]="newRecord.diagnosticoDescripcion" name="diagnosticoDescripcion" required placeholder="Descripción médica del diagnóstico" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Clinical Diagnosis</label>
+          <input type="text" [(ngModel)]="newRecord.diagnosticoDescripcion" name="diagnosticoDescripcion" required placeholder="Medical description of the diagnosis" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
         </div>
       </div>
 
-      <!-- Signos Vitales -->
+      <!-- Vital Signs -->
       <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
-        <span class="text-xs font-bold text-slate-700 block mb-2">Constantes y Signos Vitales</span>
+        <span class="text-xs font-bold text-slate-700 block mb-2">Vital Signs</span>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           <div>
-            <label class="text-xs font-medium text-slate-500">Tensión (mmHg)</label>
+            <label class="text-xs font-medium text-slate-500">BP (mmHg)</label>
             <input type="text" [(ngModel)]="newRecord.signosVitales.presion_arterial" name="pa" placeholder="120/80" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
           </div>
           <div>
-            <label class="text-xs font-medium text-slate-500">Pulso (lpm)</label>
+            <label class="text-xs font-medium text-slate-500">Pulse (bpm)</label>
             <input type="number" [(ngModel)]="newRecord.signosVitales.frecuencia_cardiaca_lpm" name="fc" placeholder="72" class="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
           </div>
           <div>
@@ -388,42 +388,42 @@
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Indicaciones y Plan Terapéutico</label>
-        <textarea [(ngModel)]="newRecord.tratamiento" name="tratamiento" rows="2" placeholder="Indicaciones para el paciente, cuidados y seguimiento..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"></textarea>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Instructions & Therapeutic Plan</label>
+        <textarea [(ngModel)]="newRecord.tratamiento" name="tratamiento" rows="2" placeholder="Patient instructions, care, and follow-up..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"></textarea>
       </div>
 
-      <!-- Prescripción médica -->
+      <!-- Medication Prescription -->
       <div>
-        <label class="block text-xs font-semibold text-slate-700 mb-1">Prescripción de Fármaco (Opcional)</label>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Medication Prescription (Optional)</label>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <input type="text" [(ngModel)]="drugName" placeholder="Medicamento" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-          <input type="text" [(ngModel)]="drugDose" placeholder="Dosis (500mg)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-          <input type="text" [(ngModel)]="drugFreq" placeholder="Frecuencia (c/12h)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-          <input type="number" [(ngModel)]="drugDays" placeholder="Días (30)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+          <input type="text" [(ngModel)]="drugName" placeholder="Medication" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+          <input type="text" [(ngModel)]="drugDose" placeholder="Dose (500mg)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+          <input type="text" [(ngModel)]="drugFreq" placeholder="Frequency (q12h)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+          <input type="number" [(ngModel)]="drugDays" placeholder="Days (30)" class="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
         </div>
         <div class="mt-2 text-[11px] text-slate-500 flex flex-wrap items-center gap-1.5">
-          <span class="font-semibold text-slate-700">Stock en farmacia:</span>
-          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Losartán'; drugDose='50mg'; drugFreq='cada 12 horas'">Losartán (450 un.)</button>
-          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Metformina'; drugDose='850mg'; drugFreq='con cena'">Metformina (320 un.)</button>
-          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Omeprazol'; drugDose='20mg'; drugFreq='ayunas'">Omeprazol (600 un.)</button>
-          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Atorvastatina'; drugDose='20mg'; drugFreq='noche'">Atorvastatina (280 un.)</button>
-          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Paracetamol'; drugDose='500mg'; drugFreq='cada 8 horas'">Paracetamol (1,200 un.)</button>
+          <span class="font-semibold text-slate-700">Pharmacy stock:</span>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Losartan'; drugDose='50mg'; drugFreq='every 12 hours'">Losartan (450 un.)</button>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Metformin'; drugDose='850mg'; drugFreq='with dinner'">Metformin (320 un.)</button>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Omeprazole'; drugDose='20mg'; drugFreq='before breakfast'">Omeprazole (600 un.)</button>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Atorvastatin'; drugDose='20mg'; drugFreq='at bedtime'">Atorvastatin (280 un.)</button>
+          <button type="button" class="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium hover:bg-purple-100 transition-colors" (click)="drugName='Acetaminophen'; drugDose='500mg'; drugFreq='every 8 hours'">Acetaminophen (1,200 un.)</button>
         </div>
       </div>
     </div>
 
     <div class="clinical-modal-footer">
       <button type="button" (click)="closeModal()" class="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-xl transition cursor-pointer">
-        Cancelar
+        Cancel
       </button>
       <button type="submit" class="px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 rounded-xl shadow-md shadow-indigo-500/20 transition-all cursor-pointer">
-        {{ editingRecordId ? 'Guardar Cambios en Expediente' : 'Guardar en Expediente' }}
+        {{ editingRecordId ? 'Save Changes to Record' : 'Save to Record' }}
       </button>
     </div>
   </form>
 </app-clinical-modal>
 
-<!-- Modal de Interoperabilidad HL7 FHIR R4 (Pilar 2) -->
+<!-- HL7 FHIR R4 Interoperability Modal (Pillar 2) -->
 @if (showFhirModal() && fhirEncounterData()) {
   <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-4">
@@ -433,8 +433,8 @@
             🧬
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-800">Recurso HL7 FHIR R4 Encounter</h3>
-            <p class="text-xs text-slate-500">Estándar internacional de interoperabilidad clínica</p>
+            <h3 class="text-base font-bold text-slate-800">HL7 FHIR R4 Encounter Resource</h3>
+            <p class="text-xs text-slate-500">International clinical interoperability standard</p>
           </div>
         </div>
         <button (click)="closeFhirModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
@@ -442,13 +442,13 @@
 
       <div class="space-y-2">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-600">Representación JSON canónica:</span>
+          <span class="text-xs font-semibold text-slate-600">Canonical JSON representation:</span>
           <button
             type="button"
             (click)="copyFhirJson()"
             class="px-2.5 py-1 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-lg transition border border-teal-200/60 cursor-pointer"
           >
-            Copiar FHIR JSON
+            Copy FHIR JSON
           </button>
         </div>
         <pre class="bg-slate-900 text-teal-300 p-4 rounded-xl text-xs font-mono max-h-80 overflow-y-auto leading-relaxed border border-slate-800 select-all">{{ fhirEncounterData() | json }}</pre>
@@ -460,14 +460,14 @@
           (click)="closeFhirModal()"
           class="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
         >
-          Cerrar
+          Close
         </button>
       </div>
     </div>
   </div>
 }
 
-<!-- Modal de Receta Digital Criptográfica HMAC-SHA256 (Pilar 2) -->
+<!-- Cryptographic Digital Prescription Modal HMAC-SHA256 (Pillar 2) -->
 @if (showPrescriptionModal() && digitalPrescriptionData()) {
   <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
@@ -477,8 +477,8 @@
             🔐
           </div>
           <div>
-            <h3 class="text-base font-bold text-slate-800">Receta Médica Digital Certificada</h3>
-            <p class="text-xs text-slate-500">Firma criptográfica HMAC-SHA256 & Validación QR</p>
+            <h3 class="text-base font-bold text-slate-800">Certified Digital Medical Prescription</h3>
+            <p class="text-xs text-slate-500">HMAC-SHA256 Cryptographic Signature & QR Validation</p>
           </div>
         </div>
         <button (click)="closePrescriptionModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold p-1 cursor-pointer">✕</button>
@@ -486,19 +486,19 @@
 
       <div class="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200/80 space-y-2 text-xs">
         <div class="flex justify-between py-1 border-b border-emerald-200/50">
-          <span class="text-slate-600 font-medium">Código de Verificación QR:</span>
+          <span class="text-slate-600 font-medium">QR Verification Code:</span>
           <span class="font-mono font-bold text-emerald-900">{{ digitalPrescriptionData()?.codigoVerif }}</span>
         </div>
         <div class="flex justify-between py-1 border-b border-emerald-200/50">
-          <span class="text-slate-600 font-medium">Estado de la Receta:</span>
-          <span class="font-semibold text-emerald-700">{{ digitalPrescriptionData()?.estado || 'EMITIDA' }}</span>
+          <span class="text-slate-600 font-medium">Prescription Status:</span>
+          <span class="font-semibold text-emerald-700">{{ digitalPrescriptionData()?.estado || 'ISSUED' }}</span>
         </div>
         <div class="flex justify-between py-1 border-b border-emerald-200/50">
-          <span class="text-slate-600 font-medium">Vigencia Legal:</span>
-          <span class="font-semibold text-slate-700">Hasta {{ digitalPrescriptionData()?.fechaVencimiento | date: 'dd/MM/yyyy' }}</span>
+          <span class="text-slate-600 font-medium">Legal Validity:</span>
+          <span class="font-semibold text-slate-700">Until {{ digitalPrescriptionData()?.fechaVencimiento | date: 'MM/dd/yyyy' }}</span>
         </div>
         <div class="py-1">
-          <span class="text-slate-600 font-medium block mb-1">Hash de Firma Criptográfica:</span>
+          <span class="text-slate-600 font-medium block mb-1">Cryptographic Signature Hash:</span>
           <span class="font-mono text-[10px] text-slate-600 break-all bg-white/80 p-2 rounded block border border-emerald-100">{{ digitalPrescriptionData()?.firmaDigitalSha256 }}</span>
         </div>
       </div>
@@ -510,7 +510,7 @@
           class="px-3 py-2 text-xs font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 rounded-xl transition cursor-pointer inline-flex items-center gap-1.5"
         >
           <span>🔍</span>
-          <span>Verificar Integridad de Firma</span>
+          <span>Verify Signature Integrity</span>
         </button>
 
         <div class="flex gap-2">
@@ -519,14 +519,14 @@
             (click)="closePrescriptionModal()"
             class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
           >
-            Cerrar
+            Close
           </button>
           <a
             [href]="digitalPrescriptionData()?.qrCheckUrl"
             target="_blank"
             class="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition inline-flex items-center gap-1 cursor-pointer"
           >
-            <span>Verificar QR en API</span>
+            <span>Verify QR via API</span>
             <span>↗</span>
           </a>
         </div>

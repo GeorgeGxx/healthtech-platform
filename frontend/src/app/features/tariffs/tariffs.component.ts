@@ -91,7 +91,7 @@ export class TariffsComponent implements OnInit {
     return (
       this.insurances().find((i) => i.idObraSocial === this.simInsuranceId()) ||
       this.insurances()[0] || {
-        nombre: 'Particular / Sin Cobertura',
+        nombre: 'Self-Pay / Uninsured',
         porcentajeCobertura: 0,
       }
     );
@@ -143,7 +143,7 @@ export class TariffsComponent implements OnInit {
       this.router.navigate(['/appointments'], { state: { openModal: true } });
     } else {
       this.router.navigate(['/login'], {
-        queryParams: { returnUrl: '/appointments', service: service?.nombre || 'Consulta' },
+        queryParams: { returnUrl: '/appointments', service: service?.nombre || 'Consultation' },
       });
     }
   }

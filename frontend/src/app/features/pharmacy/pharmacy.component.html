@@ -1,5 +1,5 @@
 <div class="space-y-6 animate-fade-in">
-  <!-- Encabezado de Página -->
+  <!-- Page Header -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
     <div>
       <div class="flex items-center gap-3">
@@ -9,106 +9,106 @@
           </svg>
         </div>
         <div>
-          <h1 class="text-2xl font-black tracking-tight text-slate-900">Farmacia & Stock Hospitalario</h1>
-          <p class="text-xs sm:text-sm text-slate-500 font-medium">Control de existencias, lotes, caducidades y semáforo de reorden en tiempo real</p>
+          <h1 class="text-2xl font-black tracking-tight text-slate-900">Pharmacy & Hospital Stock</h1>
+          <p class="text-xs sm:text-sm text-slate-500 font-medium">Real-time inventory control, batches, expiration dates, and reorder status</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Métricas y KPIs de Farmacia -->
+  <!-- Pharmacy Metrics & KPIs -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-    <!-- KPI 1: Líneas de Fármacos -->
+    <!-- KPI 1: Medication Lines -->
     <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Líneas en Catálogo</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Catalog Lines</span>
         <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
         </div>
       </div>
       <div class="mt-3">
         <span class="text-2xl font-black text-slate-900 block">{{ summary()?.totalMedicamentos || 20 }}</span>
-        <span class="text-xs text-slate-500 block">Fármacos activos</span>
+        <span class="text-xs text-slate-500 block">Active medications</span>
       </div>
     </div>
 
-    <!-- KPI 2: Total Unidades en Existencia -->
+    <!-- KPI 2: Total Units in Stock -->
     <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Unidades en Almacén</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Units in Warehouse</span>
         <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
         </div>
       </div>
       <div class="mt-3">
         <span class="text-2xl font-black text-slate-900 block">{{ (summary()?.totalUnidadesStock || 6379) | number }}</span>
-        <span class="text-xs text-slate-500 block">Dosis y cajas disponibles</span>
+        <span class="text-xs text-slate-500 block">Doses and boxes available</span>
       </div>
     </div>
 
-    <!-- KPI 3: Alerta Crítica -->
+    <!-- KPI 3: Critical Alert -->
     <div class="glass-card p-5 rounded-2xl relative overflow-hidden group border-l-4 border-l-rose-500">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-rose-600">Alerta Crítica</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-rose-600">Critical Alert</span>
         <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
         </div>
       </div>
       <div class="mt-3">
         <span class="text-2xl font-black text-rose-700 block">{{ summary()?.criticosCount || 4 }}</span>
-        <span class="text-xs text-rose-500 block">Bajo el mínimo de seguridad</span>
+        <span class="text-xs text-rose-500 block">Below safety minimum</span>
       </div>
     </div>
 
-    <!-- KPI 4: Stock Bajo -->
+    <!-- KPI 4: Low Stock -->
     <div class="glass-card p-5 rounded-2xl relative overflow-hidden group border-l-4 border-l-amber-500">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-amber-600">Stock Próximo a Mínimo</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-amber-600">Near Minimum Stock</span>
         <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </div>
       </div>
       <div class="mt-3">
         <span class="text-2xl font-black text-amber-700 block">{{ summary()?.bajoCount || 4 }}</span>
-        <span class="text-xs text-amber-500 block">Sugerencia de reabastecimiento</span>
+        <span class="text-xs text-amber-500 block">Restock suggested</span>
       </div>
     </div>
 
-    <!-- KPI 5: Valor de Inventario (Solo Recepción / Admin) vs Almacenes Clínicos (Médico) -->
+    <!-- KPI 5: Inventory Value (Reception / Admin Only) vs Clinical Warehouses (Physician) -->
     @if (auth.isAdmin()) {
       <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Valor Total Almacén</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Inventory Value</span>
           <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           </div>
         </div>
         <div class="mt-3">
           <span class="text-2xl font-black text-emerald-700 block">${{ (summary()?.valorInventarioMxn || 902950) | number:'1.2-2' }}</span>
-          <span class="text-xs text-slate-500 block">Valuación en MXN</span>
+          <span class="text-xs text-slate-500 block">Valuation in USD</span>
         </div>
       </div>
     } @else if (auth.isDoctor()) {
-      <!-- KPI 5 Alternativo Clínico para Médico (Sin datos de valuación/costos) -->
+      <!-- Alternative Clinical KPI 5 for Physician (No valuation/cost data) -->
       <div class="glass-card p-5 rounded-2xl relative overflow-hidden group">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Almacenes Hospitalarios</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Hospital Warehouses</span>
           <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
           </div>
         </div>
         <div class="mt-3">
-          <span class="text-2xl font-black text-purple-900 block">{{ summary()?.almacenesCount || 5 }} Depósitos</span>
-          <span class="text-xs text-slate-500 block">Farmacia Central, UCI y Urgencias</span>
+          <span class="text-2xl font-black text-purple-900 block">{{ summary()?.almacenesCount || 5 }} Storage Units</span>
+          <span class="text-xs text-slate-500 block">Central Pharmacy, ICU & Emergency</span>
         </div>
       </div>
     }
   </div>
 
-  <!-- Barra de Filtros Dinámicos -->
+  <!-- Dynamic Filter Bar -->
   <div class="glass-panel p-4 rounded-2xl border border-slate-200/90 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
     <div class="flex-1 flex flex-col sm:flex-row gap-3">
-      <!-- Input de Búsqueda -->
+      <!-- Search Input -->
       <div class="relative flex-1">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -117,77 +117,77 @@
           type="text"
           [(ngModel)]="searchTerm"
           (input)="onFilterChange()"
-          placeholder="Buscar por nombre, principio activo, lote o almacén..."
+          placeholder="Search by name, active ingredient, batch, or warehouse..."
           class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all placeholder:text-slate-400"
         />
       </div>
 
-      <!-- Filtro por Categoría -->
+      <!-- Category Filter -->
       <select
         [(ngModel)]="selectedCategory"
         (change)="onFilterChange()"
         class="text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
       >
-        <option value="">Todas las Categorías</option>
+        <option value="">All Categories</option>
         @for (cat of categories; track cat) {
-          <option [value]="cat">{{ cat }}</option>
+          <option [value]="cat">{{ categoryLabels[cat] || cat }}</option>
         }
       </select>
 
-      <!-- Filtro por Semáforo de Alerta -->
+      <!-- Alert Status Filter -->
       <select
         [(ngModel)]="selectedAlert"
         (change)="onFilterChange()"
         class="text-sm bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
       >
-        <option value="">Todos los Estados</option>
-        <option value="Normal">🟢 Normal (Abastecido)</option>
-        <option value="Bajo">🟡 Stock Bajo</option>
-        <option value="Crítico">🔴 Alerta Crítica</option>
+        <option value="">All Statuses</option>
+        <option value="Normal">🟢 Normal (In Stock)</option>
+        <option value="Bajo">🟡 Low Stock</option>
+        <option value="Crítico">🔴 Critical Alert</option>
       </select>
     </div>
 
-    <!-- Acciones -->
+    <!-- Actions -->
     <div class="flex items-center gap-2">
       <button
         (click)="resetFilters()"
         class="px-3.5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
-        title="Restablecer filtros"
+        title="Reset filters"
       >
-        Limpiar
+        Clear
       </button>
       <button
         (click)="loadMedicamentos(); loadSummary()"
         class="px-3.5 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-        Actualizar
+        Refresh
       </button>
     </div>
   </div>
 
-  <!-- Tabla Dinámica de Medicamentos -->
+  <!-- Dynamic Medications Table -->
   <div class="glass-panel rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="border-b border-slate-200 bg-slate-50/80 text-xs font-bold uppercase tracking-wider text-slate-500">
-            <th class="px-5 py-3.5">Código / Fármaco</th>
-            <th class="px-4 py-3.5">Categoría Terapéutica</th>
-            <th class="px-4 py-3.5">Presentación & Lote</th>
-            <th class="px-4 py-3.5">Caducidad</th>
-            <th class="px-4 py-3.5">Almacén Asignado</th>
-            <th class="px-5 py-3.5 min-w-[180px]">Nivel de Stock (Actual / Máx)</th>
-            <th class="px-4 py-3.5 text-center">Semáforo</th>
+            <th class="px-5 py-3.5">Code / Medication</th>
+            <th class="px-4 py-3.5">Therapeutic Category</th>
+            <th class="px-4 py-3.5">Presentation & Batch</th>
+            <th class="px-4 py-3.5">Expiration</th>
+            <th class="px-4 py-3.5">Assigned Warehouse</th>
+            <th class="px-5 py-3.5 min-w-[180px]">Stock Level (Current / Max)</th>
+            <th class="px-4 py-3.5 text-center">Status</th>
             @if (auth.isAdmin()) {
-              <th class="px-5 py-3.5 text-right">Precio Unitario</th>
+              <th class="px-5 py-3.5 text-right">Unit Price</th>
             }
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-sm">
           @for (m of pagedMedicamentos(); track m.idMedicamento) {
             <tr class="hover:bg-slate-50/70 transition-colors">
-              <!-- Código y Nombre -->
+              <!-- Code and Name -->
               <td class="px-5 py-3.5">
                 <div class="flex items-center gap-2.5">
                   <span class="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
@@ -200,25 +200,25 @@
                 </div>
               </td>
 
-              <!-- Categoría -->
+              <!-- Category -->
               <td class="px-4 py-3.5">
                 <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700">
-                  {{ m.categoriaTerapeutica }}
+                  {{ categoryLabels[m.categoriaTerapeutica] || m.categoriaTerapeutica }}
                 </span>
               </td>
 
-              <!-- Presentación & Lote -->
+              <!-- Presentation & Batch -->
               <td class="px-4 py-3.5">
                 <span class="text-xs font-medium text-slate-800 block">{{ m.presentacion }}</span>
-                <span class="text-[11px] font-mono text-slate-400 block">Lote: {{ m.lote }}</span>
+                <span class="text-[11px] font-mono text-slate-400 block">Batch: {{ m.lote }}</span>
               </td>
 
-              <!-- Caducidad -->
+              <!-- Expiration -->
               <td class="px-4 py-3.5 text-xs text-slate-600 font-medium whitespace-nowrap">
                 {{ m.caducidad }}
               </td>
 
-              <!-- Ubicación de Almacén -->
+              <!-- Warehouse Location -->
               <td class="px-4 py-3.5">
                 <div class="flex items-center gap-1.5 text-xs font-medium text-slate-700">
                   <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -226,12 +226,12 @@
                 </div>
               </td>
 
-              <!-- Progreso de Stock -->
+              <!-- Stock Progress -->
               <td class="px-5 py-3.5">
                 <div class="space-y-1">
                   <div class="flex items-center justify-between text-xs font-semibold">
-                    <span class="text-slate-900">{{ m.stockActual }} unid.</span>
-                    <span class="text-slate-400 text-[11px]">Mín: {{ m.stockMinimo }} / Máx: {{ m.stockMaximo }}</span>
+                    <span class="text-slate-900">{{ m.stockActual }} un.</span>
+                    <span class="text-slate-400 text-[11px]">Min: {{ m.stockMinimo }} / Max: {{ m.stockMaximo }}</span>
                   </div>
                   <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                     <div
@@ -243,7 +243,7 @@
                 </div>
               </td>
 
-              <!-- Semáforo de Alerta -->
+              <!-- Alert Status -->
               <td class="px-4 py-3.5 text-center">
                 <span
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border"
@@ -252,14 +252,14 @@
                   @if (m.nivelAlerta === 'Normal') { 🟢 }
                   @else if (m.nivelAlerta === 'Bajo') { 🟡 }
                   @else { 🔴 }
-                  <span class="ml-1">{{ m.nivelAlerta }}</span>
+                  <span class="ml-1">{{ m.nivelAlerta === 'Normal' ? 'Normal' : (m.nivelAlerta === 'Bajo' ? 'Low' : (m.nivelAlerta === 'Crítico' ? 'Critical' : m.nivelAlerta)) }}</span>
                 </span>
               </td>
 
-              <!-- Precio Unitario (Solo Recepción / Admin) -->
+              <!-- Unit Price (Reception / Admin Only) -->
               @if (auth.isAdmin()) {
                 <td class="px-5 py-3.5 text-right font-bold text-slate-900">
-                  ${{ m.precioUnitarioMxn | number:'1.2-2' }} <span class="text-xs text-slate-400 font-normal">MXN</span>
+                  ${{ m.precioUnitarioMxn | number:'1.2-2' }} <span class="text-xs text-slate-400 font-normal">USD</span>
                 </td>
               }
             </tr>
@@ -268,7 +268,7 @@
               <td [attr.colspan]="auth.isAdmin() ? 8 : 7" class="px-6 py-12 text-center text-slate-400">
                 <div class="flex flex-col items-center gap-2">
                   <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <span class="text-sm font-medium">No se encontraron medicamentos con los filtros aplicados.</span>
+                  <span class="text-sm font-medium">No medications found matching the applied filters.</span>
                 </div>
               </td>
             </tr>
@@ -278,15 +278,15 @@
     </div>
   </div>
 
-  <!-- Paginación Reactiva de Farmacia -->
+  <!-- Reactive Pharmacy Pagination -->
   @if (medicamentos().length > 0) {
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
       <div class="flex items-center gap-3 text-xs text-slate-500 font-medium">
         <span>
-          Mostrando <span class="font-bold text-slate-800">{{ startIndex() }} - {{ endIndex() }}</span> de <span class="font-bold text-slate-800">{{ medicamentos().length }}</span> fármacos
+          Showing <span class="font-bold text-slate-800">{{ startIndex() }} - {{ endIndex() }}</span> of <span class="font-bold text-slate-800">{{ medicamentos().length }}</span> medications
         </span>
         <div class="hidden sm:flex items-center gap-1.5 pl-3 border-l border-slate-200">
-          <span>Por página:</span>
+          <span>Per page:</span>
           <select
             [ngModel]="pageSize()"
             (ngModelChange)="setPageSize($event)"
@@ -306,11 +306,11 @@
           [disabled]="currentPage() === 1"
           class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
         >
-          &larr; Anterior
+          &larr; Previous
         </button>
 
         <span class="px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 rounded-xl border border-slate-200">
-          Pág {{ currentPage() }} de {{ totalPages() }}
+          Page {{ currentPage() }} of {{ totalPages() }}
         </span>
 
         <button
@@ -318,7 +318,7 @@
           [disabled]="currentPage() === totalPages()"
           class="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer"
         >
-          Siguiente &rarr;
+          Next &rarr;
         </button>
       </div>
     </div>
