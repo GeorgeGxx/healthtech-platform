@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsInt,
   IsNotEmpty,
@@ -6,7 +6,11 @@ import {
   IsOptional,
   IsObject,
   IsArray,
+  ValidateNested,
+  ArrayMinSize,
+  Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import type {
   SignosVitales,
   MedicamentoRecetado,
@@ -78,4 +82,58 @@ export class CreateMedicalRecordDto {
   @IsOptional()
   @IsArray()
   recetaMedicamentos?: MedicamentoRecetado[];
+}
+
+export class UpdateMedicalRecordDto extends PartialType(CreateMedicalRecordDto) {}
+
+export class MedicamentoPrescritoDto {
+  @ApiProperty({ example: 'Enalapril' })
+  @IsString()
+  @IsNotEmpty()
+  nombre!: string;
+
+  @ApiProperty({ example: '10mg' })
+  @IsString()
+  @IsNotEmpty()
+  dosis!: string;
+
+  @ApiProperty({ example: 'Cada 12 horas' })
+  @IsString()
+  @IsNotEmpty()
+  frecuencia!: string;
+
+  @ApiProperty({ example: 30 })
+  @IsInt()
+  @Min(1)
+  duracionDias!: number;
+}
+
+export class CreateDigitalPrescriptionDto {
+  @ApiProperty({ example: 1 })
+  @IsInt()
+  @Min(1)
+  idPaciente!: number;
+
+  @ApiProperty({ example: 2 })
+  @IsInt()
+  @Min(1)
+  idMedico!: number;
+
+  @ApiProperty({ example: 'Hipertensión Arterial Primaria' })
+  @IsString()
+  @IsNotEmpty()
+  diagnostico!: string;
+
+  @ApiProperty({ type: [MedicamentoPrescritoDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => MedicamentoPrescritoDto)
+  medicamentos!: MedicamentoPrescritoDto[];
+
+  @ApiPropertyOptional({ example: 30 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  vigenciaDias?: number;
 }

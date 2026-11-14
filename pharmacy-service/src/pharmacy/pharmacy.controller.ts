@@ -7,18 +7,37 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PharmacyService } from './pharmacy.service.js';
+import { DispenseMedicationDto, AdjustStockDto } from './dto/pharmacy.dto.js';
+import { Public, Roles } from '../auth/auth.decorators.js';
 
 @ApiTags('Farmacia & Existencias Hospitalarias (Pharmacy Service)')
+@Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 @Controller('pharmacy')
 export class PharmacyController {
   constructor(private readonly pharmacyService: PharmacyService) {}
 
+  @Public()
   @Get('health')
   @ApiOperation({ summary: 'Health check del microservicio de farmacia' })
   getHealth() {
     return this.pharmacyService.getHealth();
+  }
+
+  @Public()
+  @Get('health/liveness')
+  @ApiOperation({ summary: 'Liveness probe (K8s)' })
+  liveness() {
+    return { status: 'UP', service: 'pharmacy-service' };
+  }
+
+  @Public()
+  @Get('health/readiness')
+  @ApiOperation({ summary: 'Readiness probe (PostgreSQL)' })
+  async readiness() {
+    const summary = await this.pharmacyService.getSummary();
+    return { ok: true, service: 'pharmacy-service', medicamentos: summary.totalMedicamentos };
   }
 
   @Get('summary')
@@ -48,31 +67,13 @@ export class PharmacyController {
 
   @Post(':id/dispense')
   @ApiOperation({ summary: 'Dispensar medicamento y emitir alerta si se cruza stock mínimo' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        cantidad: { type: 'number', example: 5 },
-      },
-      required: ['cantidad'],
-    },
-  })
-  async dispense(@Param('id') id: string, @Body('cantidad') cantidad: number) {
-    return await this.pharmacyService.dispense(id, Number(cantidad));
+  async dispense(@Param('id') id: string, @Body() dto: DispenseMedicationDto) {
+    return await this.pharmacyService.dispense(id, dto.cantidad);
   }
 
   @Patch(':id/stock')
   @ApiOperation({ summary: 'Ajustar stock de medicamento en almacén central' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        nuevoStock: { type: 'number', example: 50 },
-      },
-      required: ['nuevoStock'],
-    },
-  })
-  async adjustStock(@Param('id') id: string, @Body('nuevoStock') nuevoStock: number) {
-    return await this.pharmacyService.adjustStock(id, Number(nuevoStock));
+  async adjustStock(@Param('id') id: string, @Body() dto: AdjustStockDto) {
+    return await this.pharmacyService.adjustStock(id, dto.nuevoStock);
   }
 }

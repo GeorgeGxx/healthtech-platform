@@ -5,6 +5,7 @@ import {
   IsDateString,
   IsOptional,
   IsString,
+  IsIn,
 } from 'class-validator';
 
 export class CreateAppointmentDto {
@@ -60,6 +61,7 @@ export class UpdateAppointmentStatusDto {
   })
   @IsString()
   @IsNotEmpty()
+  @IsIn(['pendiente', 'confirmado', 'atendido', 'cancelado', 'ausente', 'reprogramado'])
   estado!: 'pendiente' | 'confirmado' | 'atendido' | 'cancelado' | 'ausente' | 'reprogramado';
 
   @ApiPropertyOptional({ example: 'Cancelación médica', description: 'Motivo del cambio de estado' })

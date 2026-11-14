@@ -1,42 +1,71 @@
-import { Injectable } from '@nestjs/common';
-import { createCipheriv, createDecipheriv, randomBytes, createHmac } from 'node:crypto';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { createCipheriv, createDecipheriv, randomBytes, createHmac, hkdfSync } from 'node:crypto';
 
 @Injectable()
 export class PhiCryptoService {
+  private readonly logger = new Logger(PhiCryptoService.name);
   private readonly algorithm = 'aes-256-gcm';
-  // Llave simétrica de 256 bits derivada o por defecto para cifrado PHI
+  private readonly cipherPrefix = 'gcm:';
   private readonly secretKey: Buffer;
   private readonly hmacSecret: string;
 
   constructor() {
-    const rawKey = process.env.PHI_ENCRYPTION_KEY || 'centromediconacional-healthtech-phi-secret-key-32b';
-    this.secretKey = Buffer.from(rawKey.padEnd(32, '0').slice(0, 32), 'utf-8');
-    this.hmacSecret = process.env.PRESCRIPTION_HMAC_SECRET || 'healthtech-prescription-signature-key-2026';
+    const isProd = process.env.NODE_ENV === 'production';
+    const rawKey = process.env.PHI_ENCRYPTION_KEY;
+    const rawHmac = process.env.PRESCRIPTION_HMAC_SECRET;
+
+    if (isProd && (!rawKey || !rawHmac)) {
+      throw new Error(
+        'CRÍTICO HIPAA: PHI_ENCRYPTION_KEY y PRESCRIPTION_HMAC_SECRET son obligatorios en producción.',
+      );
+    }
+
+    if (!rawKey || !rawHmac) {
+      this.logger.warn(
+        '⚠️ Usando llaves criptográficas de desarrollo. Define PHI_ENCRYPTION_KEY y PRESCRIPTION_HMAC_SECRET en .env.',
+      );
+    }
+
+    const effectiveKey = rawKey || 'dev-only-healthtech-phi-master-key-2026';
+    this.secretKey = Buffer.from(
+      hkdfSync('sha256', effectiveKey, 'healthtech-phi-salt-2026', 'aes-256-gcm-phi', 32),
+    );
+    this.hmacSecret = rawHmac || 'dev-only-healthtech-prescription-hmac-2026';
   }
 
   /**
-   * Cifra datos médicos protegidos (PHI) mediante AES-256-GCM
-   * Retorna cadena en formato: iv:authTag:encryptedData (hex)
+   * Cifra datos médicos protegidos (PHI) mediante AES-256-GCM.
+   * Retorna cadena en formato: gcm:iv:authTag:encryptedData (hex)
    */
   encryptPhi(plainText: string): string {
     if (!plainText) return '';
+    if (plainText.startsWith(this.cipherPrefix)) return plainText;
     const iv = randomBytes(16);
     const cipher = createCipheriv(this.algorithm, this.secretKey, iv);
     let encrypted = cipher.update(plainText, 'utf8', 'hex');
     encrypted += cipher.final('hex');
     const authTag = cipher.getAuthTag().toString('hex');
-    return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+    return `${this.cipherPrefix}${iv.toString('hex')}:${authTag}:${encrypted}`;
   }
 
   /**
-   * Descifra datos PHI cifrados con AES-256-GCM
+   * Descifra datos PHI cifrados con AES-256-GCM.
+   * Rechaza explícitamente si un registro cifrado falla la verificación de integridad (AuthTag).
    */
   decryptPhi(cipherText: string): string {
-    if (!cipherText || !cipherText.includes(':')) return cipherText;
-    try {
-      const [ivHex, authTagHex, encryptedHex] = cipherText.split(':');
-      if (!ivHex || !authTagHex || !encryptedHex) return cipherText;
+    if (!cipherText) return cipherText;
+    if (!cipherText.startsWith(this.cipherPrefix)) {
+      // Compatibilidad controlada para registros históricos previos sin prefijo gcm:
+      return cipherText;
+    }
 
+    const payload = cipherText.slice(this.cipherPrefix.length);
+    const [ivHex, authTagHex, encryptedHex] = payload.split(':');
+    if (!ivHex || !authTagHex || !encryptedHex) {
+      throw new InternalServerErrorException('Formato de dato PHI cifrado inválido');
+    }
+
+    try {
       const iv = Buffer.from(ivHex, 'hex');
       const authTag = Buffer.from(authTagHex, 'hex');
       const decipher = createDecipheriv(this.algorithm, this.secretKey, iv);
@@ -45,8 +74,9 @@ export class PhiCryptoService {
       decrypted += decipher.final('utf8');
       return decrypted;
     } catch {
-      // Si no fue cifrado o falla la autenticación, retorna texto original
-      return cipherText;
+      throw new InternalServerErrorException(
+        'Fallo de integridad criptográfica (AuthTag) al descifrar registro PHI',
+      );
     }
   }
 

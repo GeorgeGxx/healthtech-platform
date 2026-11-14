@@ -188,12 +188,12 @@ export class BillingService {
       descuentoCobertura: Number(fullPayment.descuentoCobertura),
       metodoPago: fullPayment.metodoPago,
       comprobanteFiscal: fullPayment.comprobanteFiscal,
-      concepto: fullPayment.concepto?.nombre ?? 'Atención Médica Integral',
+      concepto: fullPayment.concepto?.nombre ?? 'Comprehensive Medical Care',
       fechaPago: fullPayment.fechaPago,
     });
 
     this.logger.log(
-      `💳 Pago #${saved.idPago} registrado exitosamente (${fullPayment.comprobanteFiscal}) por $${calculation.basePrice} MXN`,
+      `💳 Payment #${saved.idPago} recorded successfully (${fullPayment.comprobanteFiscal}) for $${calculation.basePrice} USD`,
     );
 
     return fullPayment;
@@ -297,7 +297,7 @@ export class BillingService {
         porcentajeComisionClinica: '20%',
         retencionClinica: comisionClinica,
         honorarioNetoMedico: montoNetoMedico,
-        moneda: 'MXN',
+        moneda: 'USD',
       },
       estado: saved.estado,
       calculadoEn: saved.calculadoEn,

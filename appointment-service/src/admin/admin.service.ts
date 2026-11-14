@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InstanciaSaga } from '../entities/instancia-saga.entity.js';
 import { OutboxEvento } from '../entities/outbox-evento.entity.js';
+import { AppointmentKafkaProducerService } from '../kafka/kafka-producer.service.js';
+import { OutboxService } from '../kafka/outbox.service.js';
 
 @Injectable()
 export class AdminService {
@@ -11,6 +13,8 @@ export class AdminService {
     private readonly sagaRepo: Repository<InstanciaSaga>,
     @InjectRepository(OutboxEvento)
     private readonly outboxRepo: Repository<OutboxEvento>,
+    private readonly kafkaProducer: AppointmentKafkaProducerService,
+    private readonly outboxService: OutboxService,
   ) {}
 
   async getSagas(limit = 50): Promise<InstanciaSaga[]> {
@@ -57,6 +61,20 @@ export class AdminService {
     event.estado = 'PENDIENTE';
     event.intentos = 0;
     event.errorDetalle = undefined;
-    return this.outboxRepo.save(event);
+    await this.outboxRepo.save(event);
+    await this.kafkaProducer.relayPendingEvents();
+    return (await this.outboxRepo.findOne({ where: { idEvento: id } }))!;
+  }
+
+  async retryFailedOutbox(): Promise<{ resetCount: number; relay: { processed: number; failed: number } }> {
+    const resetCount = await this.outboxService.resetAllFailed();
+    const relay = await this.kafkaProducer.relayPendingEvents();
+    return { resetCount, relay };
+  }
+
+  async relayOutboxNow(): Promise<{ processed: number; failed: number; stats: any }> {
+    const result = await this.kafkaProducer.relayPendingEvents();
+    const stats = await this.getOutboxStats();
+    return { ...result, stats };
   }
 }

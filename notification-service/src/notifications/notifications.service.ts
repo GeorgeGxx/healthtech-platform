@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Subject, Observable } from 'rxjs';
 import { RedisService } from '../redis/redis.service.js';
-import { NOTIFICATION_TEMPLATES } from './templates/email-templates.js';
+import { BitacoraDlq } from '../entities/bitacora-dlq.entity.js';
+import { NOTIFICATION_TEMPLATES, escapeHtml } from './templates/email-templates.js';
 
 export interface DispatchedNotification {
   id: string;
@@ -22,7 +25,11 @@ export class NotificationsService {
   private readonly stream$ = new Subject<DispatchedNotification>();
   private totalEnviados = 0;
 
-  constructor(private readonly redis: RedisService) {}
+  constructor(
+    private readonly redis: RedisService,
+    @InjectRepository(BitacoraDlq)
+    private readonly dlqRepo: Repository<BitacoraDlq>,
+  ) {}
 
   getStream(): Observable<DispatchedNotification> {
     return this.stream$.asObservable();
@@ -237,42 +244,66 @@ export class NotificationsService {
     return [notif];
   }
 
-  private readonly dlq: DispatchedNotification[] = [];
-
   getHistory(limit = 50): DispatchedNotification[] {
     return this.history.slice(0, limit);
   }
 
-  getDlq(limit = 50): DispatchedNotification[] {
-    return this.dlq.slice(0, limit);
+  async getDlq(limit = 50): Promise<any[]> {
+    return await this.dlqRepo.find({
+      where: { resuelto: false },
+      order: { creadoEn: 'DESC' },
+      take: limit,
+    });
   }
 
-  sendToDlq(notif: DispatchedNotification, motivo: string) {
+  async sendToDlq(notif: DispatchedNotification, motivo: string): Promise<void> {
     notif.estado = 'FALLIDO';
-    notif.metadatos = { ...notif.metadatos, dlqReason: motivo, dlqTimestamp: new Date().toISOString() };
-    this.dlq.unshift(notif);
-    this.logger.error(`☠️ [DLQ] Notificación agregada a Dead Letter Queue: ${notif.id} (Motivo: ${motivo})`);
-    if (this.dlq.length > 100) this.dlq.pop();
+    const entry = this.dlqRepo.create({
+      idEvento: notif.eventId,
+      tipoEvento: notif.asunto,
+      canal: notif.canal,
+      destinatario: notif.destinatario,
+      errorCausa: motivo,
+      reintentos: 1,
+      resuelto: false,
+    });
+    await this.dlqRepo.save(entry);
+    this.logger.error(`☠️ [DLQ Persistente] Evento ${notif.eventId} guardado en notifications.bitacora_dlq (Motivo: ${motivo})`);
   }
 
   async retryDlqItem(id: string): Promise<DispatchedNotification | null> {
-    const index = this.dlq.findIndex((item) => item.id === id);
-    if (index === -1) return null;
-    const [item] = this.dlq.splice(index, 1);
-    item.estado = 'ENVIADO';
-    item.fechaEnvio = new Date().toISOString();
-    this.history.unshift(item);
+    const entry = await this.dlqRepo.findOne({ where: { idDlq: id, resuelto: false } });
+    if (!entry) return null;
+
+    entry.resuelto = true;
+    entry.resueltoEn = new Date();
+    entry.reintentos += 1;
+    await this.dlqRepo.save(entry);
+
+    const dispatched: DispatchedNotification = {
+      id: `dlq-retry-${entry.idDlq}-${Date.now()}`,
+      eventId: entry.idEvento,
+      canal: (entry.canal as any) || 'EMAIL',
+      destinatario: entry.destinatario,
+      asunto: entry.tipoEvento,
+      contenido: `Reintento exitoso tras error: ${entry.errorCausa}`,
+      estado: 'ENVIADO',
+      fechaEnvio: new Date().toISOString(),
+    };
+    this.history.unshift(dispatched);
     this.totalEnviados++;
-    this.logger.log(`♻️ [DLQ Retry] Notificación ${id} re-despachada exitosamente`);
-    return item;
+    this.stream$.next(dispatched);
+    this.logger.log(`♻️ [DLQ Retry] Registro #${id} re-despachado y marcado resuelto en PostgreSQL`);
+    return dispatched;
   }
 
-  getMetrics() {
+  async getMetrics() {
+    const dlqCount = await this.dlqRepo.count({ where: { resuelto: false } });
     return {
       servicio: 'notification-service',
       totalEnviados: this.totalEnviados,
       enMemoriaBuffer: this.history.length,
-      enDeadLetterQueue: this.dlq.length,
+      enDeadLetterQueue: dlqCount,
       timestamp: new Date().toISOString(),
       canalesActivos: ['EMAIL', 'SMS', 'WHATSAPP', 'IN_APP'],
     };
@@ -317,7 +348,7 @@ export class NotificationsService {
       canal: 'EMAIL',
       destinatario: pEmail,
       asunto: `Recordatorio de Cita Médica - ${mNombre}`,
-      contenido: `<div style="font-family:sans-serif;padding:20px;"><h2>Recordatorio Asistencial de Turno</h2><p>Estimado(a) <strong>${pNombre}</strong>,</p><p>Le recordamos su consulta programada con <strong>${mNombre}</strong> en la especialidad de <strong>${esp}</strong>.</p><p><strong>Fecha y Hora:</strong> ${fecha}</p><p>Por favor preséntese 15 minutos antes con su identificación oficial.</p></div>`,
+      contenido: `<div style="font-family:sans-serif;padding:20px;"><h2>Recordatorio Asistencial de Turno</h2><p>Estimado(a) <strong>${escapeHtml(pNombre)}</strong>,</p><p>Le recordamos su consulta programada con <strong>${escapeHtml(mNombre)}</strong> en la especialidad de <strong>${escapeHtml(esp)}</strong>.</p><p><strong>Fecha y Hora:</strong> ${escapeHtml(fecha)}</p><p>Por favor preséntese 15 minutos antes con su identificación oficial.</p></div>`,
       estado: 'ENVIADO',
       fechaEnvio: new Date().toISOString(),
       metadatos: { idTurno, tipo: 'RECORDATORIO_24H' },

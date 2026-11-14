@@ -14,8 +14,10 @@ import {
   CreateHospitalizationDto,
   DischargePatientDto,
 } from './dto/create-hospitalization.dto.js';
+import { Roles } from '../auth/auth.decorators.js';
 
 @ApiTags('Internaciones y Censo de Camas (Hospital Stay)')
+@Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 @Controller('hospitalizations')
 export class HospitalizationsController {
   constructor(private readonly hospitalizationsService: HospitalizationsService) {}

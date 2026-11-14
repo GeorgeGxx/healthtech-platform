@@ -7,17 +7,20 @@ import {
   Body,
   Param,
   Query,
+  Headers,
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AppointmentsService } from './appointments.service.js';
 import { CreateAppointmentDto, UpdateAppointmentStatusDto } from './dto/create-appointment.dto.js';
+import { Public, Roles } from '../auth/auth.decorators.js';
 
 @ApiTags('Turnos y Citas Médicas (Appointment Service)')
 @Controller('appointments')
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
 
+  @Public()
   @Get('health')
   @ApiOperation({ summary: 'Health check del microservicio appointment-service' })
   health() {
@@ -29,18 +32,21 @@ export class AppointmentsController {
     };
   }
 
+  @Public()
   @Get('health/liveness')
   @ApiOperation({ summary: 'Liveness probe (K8s)' })
   liveness() {
     return { status: 'UP', service: 'appointment-service' };
   }
 
+  @Public()
   @Get('health/readiness')
   @ApiOperation({ summary: 'Readiness probe (Postgres + Kafka connectivity)' })
   async readiness() {
     return await this.appointmentsService.checkReadiness();
   }
 
+  @Public()
   @Get('virtual-room/:roomId')
   @ApiOperation({ summary: 'Consultar estado e ICE servers de una sala virtual de telemedicina' })
   async getVirtualRoom(
@@ -91,9 +97,11 @@ export class AppointmentsController {
   async createWithSaga(
     @Body() dto: CreateAppointmentDto,
     @Query('simularFallo') simularFallo?: string,
+    @Headers('authorization') authHeader?: string,
   ) {
     return await this.appointmentsService.executeBookingSaga(dto, {
       simularFallo: simularFallo === 'true',
+      authHeader,
     });
   }
 

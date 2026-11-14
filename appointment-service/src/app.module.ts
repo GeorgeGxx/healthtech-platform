@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
@@ -14,6 +15,8 @@ import {
 import { KafkaModule } from './kafka/kafka.module.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { KeycloakAuthGuard } from './auth/keycloak-auth.guard.js';
+import { OtelTracingInterceptor } from './telemetry/otel-tracing.interceptor.js';
 
 @Module({
   imports: [
@@ -48,6 +51,10 @@ import { AdminModule } from './admin/admin.module.js';
     KafkaModule,
     AppointmentsModule,
     AdminModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: KeycloakAuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: OtelTracingInterceptor },
   ],
 })
 export class AppModule {}

@@ -2,28 +2,33 @@ import { Controller, Get, Post, Body, Query, Param, Sse, MessageEvent } from '@n
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { NotificationsService } from './notifications.service.js';
+import { TriggerReminderDto, TestDispatchDto } from './dto/notification.dto.js';
+import { Public, Roles } from '../auth/auth.decorators.js';
 
 @Controller('notifications')
 export class NotificationsHttpController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
+  @Public()
   @Get('health')
-  getHealth() {
+  async getHealth() {
     return {
       status: 'UP',
       timestamp: new Date().toISOString(),
       microservicio: 'notification-service',
       version: '1.0.0',
-      transport: 'Kafka 8.x + Redis 8.8.1',
-      metrics: this.notificationsService.getMetrics(),
+      transport: 'Kafka 8.x + Redis 8.8.1 + PostgreSQL 18 (DLQ)',
+      metrics: await this.notificationsService.getMetrics(),
     };
   }
 
+  @Public()
   @Get('health/liveness')
   liveness() {
     return { status: 'UP', service: 'notification-service' };
   }
 
+  @Public()
   @Get('health/readiness')
   readiness() {
     return {
@@ -36,8 +41,9 @@ export class NotificationsHttpController {
     };
   }
 
+  @Roles('admin_user')
   @Post('reminders/trigger')
-  async triggerReminders(@Body() body?: any) {
+  async triggerReminders(@Body() body?: TriggerReminderDto) {
     return await this.notificationsService.triggerAutomatedReminders(body);
   }
 
@@ -57,18 +63,9 @@ export class NotificationsHttpController {
     );
   }
 
+  @Roles('admin_user')
   @Post('test-dispatch')
-  async testDispatch(
-    @Body()
-    body: {
-      tipo: string;
-      pacienteNombre: string;
-      pacienteEmail: string;
-      medicoNombre: string;
-      especialidad: string;
-      idTurno?: number;
-    },
-  ) {
+  async testDispatch(@Body() body: TestDispatchDto) {
     const mockEvent = {
       eventId: `test-${Date.now()}`,
       eventType: body.tipo || 'appointment.created',
@@ -76,11 +73,11 @@ export class NotificationsHttpController {
       payload: {
         idTurno: body.idTurno || 999,
         pacienteNombre: body.pacienteNombre || 'Juan Pérez García',
-        pacienteEmail: body.pacienteEmail || 'juan.perez@centromedico.mx',
+        pacienteEmail: body.destinatario || 'juan.perez@centromedico.mx',
         medicoNombre: body.medicoNombre || 'Dra. Laura Gómez',
         especialidad: body.especialidad || 'Cardiología',
-        consultorio: 'Consultorio 204',
-        fechaInicio: new Date().toISOString(),
+        consultorio: body.consultorio || 'Consultorio 204',
+        fechaInicio: body.fechaHora || new Date().toISOString(),
       },
     };
 
@@ -91,15 +88,18 @@ export class NotificationsHttpController {
     };
   }
 
+  @Roles('admin_user')
   @Get('dlq')
-  getDlq(@Query('limit') limit?: string) {
+  async getDlq(@Query('limit') limit?: string) {
     const lim = limit ? parseInt(limit, 10) : 50;
+    const items = await this.notificationsService.getDlq(lim);
     return {
-      totalEnDlq: this.notificationsService.getDlq(lim).length,
-      items: this.notificationsService.getDlq(lim),
+      totalEnDlq: items.length,
+      items,
     };
   }
 
+  @Roles('admin_user')
   @Post('dlq/:id/retry')
   async retryDlq(@Param('id') id: string) {
     const reintento = await this.notificationsService.retryDlqItem(id);

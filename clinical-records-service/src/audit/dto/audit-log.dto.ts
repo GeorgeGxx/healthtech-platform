@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class AuditLogDto {
   @ApiPropertyOptional({ example: 'auth0|12345' })
@@ -29,6 +30,8 @@ export class AuditLogDto {
 
   @ApiPropertyOptional({ example: '10' })
   @IsOptional()
+  @Type(() => String)
+  @IsString()
   idEntidad?: string | number;
 
   @ApiPropertyOptional({ example: '192.168.1.100' })
@@ -43,5 +46,6 @@ export class AuditLogDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsObject()
   metadatos?: Record<string, any>;
 }

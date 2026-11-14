@@ -25,6 +25,16 @@ export class MedicalRecordsService {
     private readonly phiCrypto: PhiCryptoService,
   ) {}
 
+  private decryptRecord(record: HistoriaClinica): HistoriaClinica {
+    if (record.diagnosticoDescripcion) {
+      record.diagnosticoDescripcion = this.phiCrypto.decryptPhi(record.diagnosticoDescripcion);
+    }
+    if (record.tratamiento) {
+      record.tratamiento = this.phiCrypto.decryptPhi(record.tratamiento);
+    }
+    return record;
+  }
+
   async findByPatient(patientId: number): Promise<HistoriaClinica[]> {
     const records = await this.recordRepo.find({
       where: { idPaciente: patientId },
@@ -41,7 +51,7 @@ export class MedicalRecordsService {
       idEntidad: patientId,
     });
 
-    return records;
+    return records.map((r) => this.decryptRecord(r));
   }
 
   async findOne(id: number): Promise<HistoriaClinica> {
@@ -63,7 +73,7 @@ export class MedicalRecordsService {
       idEntidad: id,
     });
 
-    return record;
+    return this.decryptRecord(record);
   }
 
   async create(dto: CreateMedicalRecordDto): Promise<HistoriaClinica> {
@@ -72,8 +82,8 @@ export class MedicalRecordsService {
     record.idMedico = dto.idMedico;
     record.idTurno = dto.idTurno ?? null;
     record.diagnosticoCodigoCie = dto.diagnosticoCodigoCie ?? undefined;
-    record.diagnosticoDescripcion = dto.diagnosticoDescripcion;
-    record.tratamiento = dto.tratamiento ?? undefined;
+    record.diagnosticoDescripcion = this.phiCrypto.encryptPhi(dto.diagnosticoDescripcion);
+    record.tratamiento = dto.tratamiento ? this.phiCrypto.encryptPhi(dto.tratamiento) : undefined;
     record.signosVitales = dto.signosVitales ?? {};
     record.recetaMedicamentos = dto.recetaMedicamentos ?? [];
 
@@ -98,15 +108,19 @@ export class MedicalRecordsService {
   }
 
   async update(id: number, dto: Partial<CreateMedicalRecordDto>): Promise<HistoriaClinica> {
-    const record = await this.findOne(id);
+    const record = await this.recordRepo.findOne({ where: { idHistoria: id } });
+    if (!record) {
+      throw new NotFoundException(`Historia clínica con ID ${id} no encontrada`);
+    }
+
     if (dto.diagnosticoCodigoCie !== undefined) {
       record.diagnosticoCodigoCie = dto.diagnosticoCodigoCie ?? undefined;
     }
     if (dto.diagnosticoDescripcion !== undefined) {
-      record.diagnosticoDescripcion = dto.diagnosticoDescripcion;
+      record.diagnosticoDescripcion = this.phiCrypto.encryptPhi(dto.diagnosticoDescripcion);
     }
     if (dto.tratamiento !== undefined) {
-      record.tratamiento = dto.tratamiento ?? undefined;
+      record.tratamiento = dto.tratamiento ? this.phiCrypto.encryptPhi(dto.tratamiento) : undefined;
     }
     if (dto.signosVitales !== undefined) {
       record.signosVitales = dto.signosVitales;
@@ -133,7 +147,7 @@ export class MedicalRecordsService {
   }
 
   async findByDoctor(doctorId: number): Promise<HistoriaClinica[]> {
-    return await this.recordRepo.find({
+    const records = await this.recordRepo.find({
       where: { idMedico: doctorId },
       relations: {
         paciente: true,
@@ -142,20 +156,16 @@ export class MedicalRecordsService {
       },
       order: { fechaAtencion: 'DESC' },
     });
+    return records.map((r) => this.decryptRecord(r));
   }
 
   async searchClinicalText(term: string): Promise<any[]> {
-    if (!term || term.trim().length === 0) {
+    const sanitizedTerm = term?.trim();
+    if (!sanitizedTerm) {
       return [];
     }
 
-    const formattedQuery = term
-      .trim()
-      .split(/\s+/)
-      .map((w) => `${w}:*`)
-      .join(' & ');
-
-    return await this.recordRepo.query(
+    const rows = await this.recordRepo.query(
       `
       SELECT 
         hc.id_historia,
@@ -169,16 +179,28 @@ export class MedicalRecordsService {
         hc.tratamiento,
         hc.signos_vitales,
         hc.receta_medicamentos,
-        ts_rank(hc.documento_busqueda, to_tsquery('spanish', $1)) AS relevancia
+        ts_rank(hc.documento_busqueda, plainto_tsquery('spanish', $1)) AS relevancia
       FROM historia_clinica hc
       JOIN paciente p ON hc.id_paciente = p.id_paciente
       JOIN medico m ON hc.id_medico = m.id_medico
-      WHERE hc.documento_busqueda @@ to_tsquery('spanish', $1)
-      ORDER BY relevancia DESC
+      WHERE hc.documento_busqueda @@ plainto_tsquery('spanish', $1)
+         OR LOWER(hc.diagnostico_codigo_cie) LIKE LOWER($2)
+         OR LOWER(p.nombre || ' ' || p.apellido) LIKE LOWER($2)
+      ORDER BY relevancia DESC, hc.fecha_atencion DESC
       LIMIT 20;
     `,
-      [formattedQuery],
+      [sanitizedTerm, `%${sanitizedTerm}%`],
     );
+
+    return rows.map((row: any) => ({
+      ...row,
+      diagnostico_descripcion: row.diagnostico_descripcion
+        ? this.phiCrypto.decryptPhi(row.diagnostico_descripcion)
+        : row.diagnostico_descripcion,
+      tratamiento: row.tratamiento
+        ? this.phiCrypto.decryptPhi(row.tratamiento)
+        : row.tratamiento,
+    }));
   }
 
   async findOneFhir(id: number): Promise<FhirEncounterResource> {

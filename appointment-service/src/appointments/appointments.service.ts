@@ -188,9 +188,15 @@ export class AppointmentsService {
   }
 
   /**
-   * Saga Orquestada de Citas (Reserva -> Elegibilidad -> Coaseguro -> Confirmación)
+   * Saga Orquestada de Citas (Reserva -> Elegibilidad Real en Patient-Service -> Confirmación)
    */
-  async executeBookingSaga(dto: CreateAppointmentDto, options?: { simularFallo?: boolean }) {
+  async executeBookingSaga(
+    dto: CreateAppointmentDto,
+    options?: { simularFallo?: boolean; authHeader?: string },
+  ) {
+    const patientServiceUrl =
+      process.env.PATIENT_SERVICE_URL || 'http://patient-service:3002';
+
     const pasos = [
       {
         nombrePaso: 'RESERVAR_SLOT_AGENDA',
@@ -218,7 +224,29 @@ export class AppointmentsService {
           if (options?.simularFallo) {
             throw new Error('Póliza o Cobertura de Aseguradora Inactiva / Rechazada');
           }
-          return { resultado: { elegible: true, porcentajeCobertura: 80 } };
+          const headers: Record<string, string> = {
+            'x-user-roles': 'admin_user',
+          };
+          if (options?.authHeader) {
+            headers['Authorization'] = options.authHeader;
+          }
+
+          const resp = await fetch(`${patientServiceUrl}/api/patients/${dto.idPaciente}`, {
+            headers,
+            signal: AbortSignal.timeout(3000),
+          });
+          if (!resp.ok) {
+            throw new Error(`Paciente #${dto.idPaciente} no elegible o no encontrado en patient-service (${resp.status})`);
+          }
+          const patient: any = await resp.json();
+          const cobertura = Number(patient?.obraSocial?.porcentajeCobertura ?? 0);
+          return {
+            resultado: {
+              elegible: true,
+              aseguradora: patient?.obraSocial?.nombre || 'Particular',
+              porcentajeCobertura: cobertura,
+            },
+          };
         },
         compensar: async () => {
           this.logger.debug('Compensando verificación de cobertura');

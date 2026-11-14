@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Pago, ConceptoPago, Paciente, ObraSocial, LiquidacionMedico } from './entities/index.js';
 import { KafkaModule } from './kafka/kafka.module.js';
 import { BillingModule } from './billing/billing.module.js';
+import { KeycloakAuthGuard } from './auth/keycloak-auth.guard.js';
+import { OtelTracingInterceptor } from './telemetry/otel-tracing.interceptor.js';
 
 @Module({
   imports: [
@@ -25,6 +28,10 @@ import { BillingModule } from './billing/billing.module.js';
     }),
     KafkaModule,
     BillingModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: KeycloakAuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: OtelTracingInterceptor },
   ],
 })
 export class AppModule {}

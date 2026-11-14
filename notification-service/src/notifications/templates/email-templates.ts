@@ -1,6 +1,16 @@
 /**
- * Plantillas HTML Responsivas y Texto Plano con Branding Centro Médico Nacional
+ * Responsive HTML & Plain-Text Notification Templates - National Medical Center
  */
+
+export function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
 
 export const NOTIFICATION_TEMPLATES = {
   appointmentCreated: (data: {
@@ -11,35 +21,35 @@ export const NOTIFICATION_TEMPLATES = {
     fechaInicio: string;
     idTurno: number | string;
   }) => ({
-    asunto: `Confirmación de Cita Médica #${data.idTurno} - Centro Médico Nacional`,
+    asunto: `Medical Appointment Confirmation #${data.idTurno} - National Medical Center`,
     html: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
         <div style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); padding: 24px; text-align: center; color: white;">
-          <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">🏥 Centro Médico Nacional</h1>
-          <p style="margin: 6px 0 0; opacity: 0.9; font-size: 14px;">Confirmación Asistencial y Recordatorio de Turno</p>
+          <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">🏥 National Medical Center</h1>
+          <p style="margin: 6px 0 0; opacity: 0.9; font-size: 14px;">Care Confirmation & Appointment Reminder</p>
         </div>
         <div style="padding: 24px; color: #1e293b;">
-          <p style="font-size: 16px; margin-top: 0;">Estimado(a) <strong>${data.pacienteNombre}</strong>,</p>
-          <p style="line-height: 1.5; color: #475569;">Su turno médico ha sido registrado y confirmado exitosamente en nuestro sistema asistencial.</p>
+          <p style="font-size: 16px; margin-top: 0;">Dear <strong>${escapeHtml(data.pacienteNombre)}</strong>,</p>
+          <p style="line-height: 1.5; color: #475569;">Your medical appointment has been successfully scheduled and confirmed in our clinical system.</p>
           
           <div style="background: #f8fafc; border-left: 4px solid #0284c7; padding: 16px; border-radius: 6px; margin: 20px 0;">
-            <p style="margin: 4px 0;"><strong>Folio de Cita:</strong> #${data.idTurno}</p>
-            <p style="margin: 4px 0;"><strong>Especialista:</strong> ${data.medicoNombre}</p>
-            <p style="margin: 4px 0;"><strong>Especialidad:</strong> ${data.especialidad}</p>
-            <p style="margin: 4px 0;"><strong>Ubicación:</strong> ${data.consultorio}</p>
-            <p style="margin: 4px 0;"><strong>Fecha y Hora:</strong> ${data.fechaInicio}</p>
+            <p style="margin: 4px 0;"><strong>Appointment ID:</strong> #${escapeHtml(data.idTurno)}</p>
+            <p style="margin: 4px 0;"><strong>Specialist:</strong> ${escapeHtml(data.medicoNombre)}</p>
+            <p style="margin: 4px 0;"><strong>Specialty:</strong> ${escapeHtml(data.especialidad)}</p>
+            <p style="margin: 4px 0;"><strong>Location:</strong> ${escapeHtml(data.consultorio)}</p>
+            <p style="margin: 4px 0;"><strong>Date & Time:</strong> ${escapeHtml(data.fechaInicio)}</p>
           </div>
 
           <p style="font-size: 13px; color: #64748b; line-height: 1.4;">
-            Le solicitamos presentarse en recepción 15 minutos antes de su horario con una identificación oficial con fotografía y credencial de seguro (en caso de aplicar cobertura).
+            Please arrive at reception 15 minutes before your scheduled time with a valid photo ID and insurance card (if applicable).
           </p>
         </div>
         <div style="background: #f1f5f9; padding: 16px; text-align: center; font-size: 12px; color: #64748b;">
-          Centro Médico Nacional • Cumplimiento Normativo HIPAA & NOM-024-SSA3-2012 • México
+          National Medical Center • HIPAA & HL7 FHIR R4 Compliant
         </div>
       </div>
     `,
-    sms: `Centro Medico: Cita #${data.idTurno} confirmada con ${data.medicoNombre} (${data.especialidad}) el ${data.fechaInicio}. Favor de llegar 15 min antes.`,
+    sms: `National Medical Center: Appointment #${data.idTurno} confirmed with ${data.medicoNombre} (${data.especialidad}) on ${data.fechaInicio}. Please arrive 15 min early.`,
   }),
 
   appointmentCancelled: (data: {
@@ -47,21 +57,21 @@ export const NOTIFICATION_TEMPLATES = {
     idTurno: number | string;
     motivo?: string;
   }) => ({
-    asunto: `Cancelación de Turno Médico #${data.idTurno} - Centro Médico Nacional`,
+    asunto: `Appointment Cancellation #${data.idTurno} - National Medical Center`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fee2e2; border-radius: 12px; overflow: hidden; background: #ffffff;">
         <div style="background: #dc2626; padding: 20px; text-align: center; color: white;">
-          <h2 style="margin: 0; font-size: 20px;">Aviso de Cancelación de Cita</h2>
+          <h2 style="margin: 0; font-size: 20px;">Appointment Cancellation Notice</h2>
         </div>
         <div style="padding: 24px; color: #1e293b;">
-          <p>Estimado(a) <strong>${data.pacienteNombre}</strong>,</p>
-          <p>Le notificamos que el turno médico con folio <strong>#${data.idTurno}</strong> ha sido cancelado en agenda asistencial.</p>
-          ${data.motivo ? `<p style="background: #fef2f2; padding: 12px; border-radius: 6px; color: #991b1b;"><strong>Motivo:</strong> ${data.motivo}</p>` : ''}
-          <p>Puede reprogramar su cita en cualquier momento desde el portal web o comunicándose a recepción.</p>
+          <p>Dear <strong>${escapeHtml(data.pacienteNombre)}</strong>,</p>
+          <p>We inform you that medical appointment <strong>#${escapeHtml(data.idTurno)}</strong> has been cancelled in our clinical schedule.</p>
+          ${data.motivo ? `<p style="background: #fef2f2; padding: 12px; border-radius: 6px; color: #991b1b;"><strong>Reason:</strong> ${escapeHtml(data.motivo)}</p>` : ''}
+          <p>You may reschedule your appointment anytime through our web portal or by contacting reception.</p>
         </div>
       </div>
     `,
-    sms: `Centro Medico: Su cita #${data.idTurno} ha sido cancelada. Puede reprogramar en nuestro portal o llamando a recepcion.`,
+    sms: `National Medical Center: Your appointment #${data.idTurno} has been cancelled. You can reschedule via our portal or by calling reception.`,
   }),
 
   stockAlert: (data: {
@@ -71,20 +81,20 @@ export const NOTIFICATION_TEMPLATES = {
     stockMinimo: number;
     ubicacion: string;
   }) => ({
-    asunto: `🚨 ALERTA DE STOCK CRÍTICO: ${data.medicamento} - Farmacia Hospitalaria`,
+    asunto: `🚨 CRITICAL STOCK ALERT: ${data.medicamento} - Hospital Pharmacy`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px;">
-        <h3 style="color: #b45309; margin-top: 0;">⚠️ Reabastecimiento Requerido en Farmacia</h3>
-        <p>El medicamento <strong>${data.medicamento}</strong> ha alcanzado un umbral por debajo del mínimo de seguridad.</p>
+        <h3 style="color: #b45309; margin-top: 0;">⚠️ Pharmacy Restock Required</h3>
+        <p>The medication <strong>${escapeHtml(data.medicamento)}</strong> has fallen below its safety minimum threshold.</p>
         <ul>
-          <li><strong>Lote:</strong> ${data.lote}</li>
-          <li><strong>Stock Actual:</strong> ${data.stockActual} unidades</li>
-          <li><strong>Stock Mínimo:</strong> ${data.stockMinimo} unidades</li>
-          <li><strong>Ubicación en Almacén:</strong> ${data.ubicacion}</li>
+          <li><strong>Batch:</strong> ${escapeHtml(data.lote)}</li>
+          <li><strong>Current Stock:</strong> ${escapeHtml(data.stockActual)} units</li>
+          <li><strong>Minimum Stock:</strong> ${escapeHtml(data.stockMinimo)} units</li>
+          <li><strong>Warehouse Location:</strong> ${escapeHtml(data.ubicacion)}</li>
         </ul>
       </div>
     `,
-    sms: `ALERTA FARMACIA: Stock critico de ${data.medicamento} (Actual: ${data.stockActual}, Min: ${data.stockMinimo}). Ubicacion: ${data.ubicacion}.`,
+    sms: `PHARMACY ALERT: Critical stock for ${data.medicamento} (Current: ${data.stockActual}, Min: ${data.stockMinimo}). Location: ${data.ubicacion}.`,
   }),
 
   sagaAlert: (data: {
@@ -93,15 +103,15 @@ export const NOTIFICATION_TEMPLATES = {
     estado: string;
     error?: string;
   }) => ({
-    asunto: `Notificación de Transacción Distribuida (Saga: ${data.nombreSaga})`,
+    asunto: `Distributed Transaction Notification (Saga: ${data.nombreSaga})`,
     html: `
       <div style="font-family: monospace; padding: 16px; background: #0f172a; color: #38bdf8; border-radius: 8px;">
         <h4 style="margin: 0; color: #f8fafc;">Saga Coordinator Notification</h4>
-        <p>ID: ${data.idSaga} | Estado: ${data.estado}</p>
-        ${data.error ? `<p style="color: #f87171;">Compensación ejecutada: ${data.error}</p>` : '<p style="color: #4ade80;">Transacción ejecutada con éxito de punta a punta</p>'}
+        <p>ID: ${escapeHtml(data.idSaga)} | Status: ${escapeHtml(data.estado)}</p>
+        ${data.error ? `<p style="color: #f87171;">Compensation executed: ${escapeHtml(data.error)}</p>` : '<p style="color: #4ade80;">Transaction completed end-to-end successfully</p>'}
       </div>
     `,
-    sms: `SAGA [${data.nombreSaga}]: Estado final ${data.estado}.`,
+    sms: `SAGA [${data.nombreSaga}]: Final status ${data.estado}.`,
   }),
 
   paymentReceipt: (data: {
@@ -112,26 +122,25 @@ export const NOTIFICATION_TEMPLATES = {
     comprobanteFiscal: string;
     concepto: string;
   }) => ({
-    asunto: `Comprobante de Pago #${data.idPago} (${data.comprobanteFiscal}) - Centro Médico Nacional`,
+    asunto: `Payment Receipt #${data.idPago} (${data.comprobanteFiscal}) - National Medical Center`,
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
         <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 24px; text-align: center; color: white;">
-          <h1 style="margin: 0; font-size: 22px;">💳 Comprobante de Pago Electrónico</h1>
-          <p style="margin: 6px 0 0; font-size: 14px;">Centro Médico Nacional</p>
+          <h1 style="margin: 0; font-size: 22px;">💳 Electronic Payment Receipt</h1>
+          <p style="margin: 6px 0 0; font-size: 14px;">National Medical Center</p>
         </div>
         <div style="padding: 24px; color: #1e293b;">
-          <p>Estimado(a) <strong>${data.pacienteNombre}</strong>,</p>
-          <p>Hemos recibido su pago satisfactoriamente:</p>
+          <p>Dear <strong>${escapeHtml(data.pacienteNombre)}</strong>,</p>
+          <p>We have successfully received your payment:</p>
           <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; border-radius: 6px; margin: 16px 0;">
-            <p style="margin: 4px 0;"><strong>Folio Fiscal:</strong> ${data.comprobanteFiscal}</p>
-            <p style="margin: 4px 0;"><strong>Concepto:</strong> ${data.concepto}</p>
-            <p style="margin: 4px 0;"><strong>Método de Pago:</strong> ${data.metodoPago}</p>
-            <p style="margin: 4px 0; font-size: 18px; color: #047857;"><strong>Total Pagado:</strong> $${Number(data.montoNeto).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN</p>
+            <p style="margin: 4px 0;"><strong>Receipt ID:</strong> ${escapeHtml(data.comprobanteFiscal)}</p>
+            <p style="margin: 4px 0;"><strong>Concept:</strong> ${escapeHtml(data.concepto)}</p>
+            <p style="margin: 4px 0;"><strong>Payment Method:</strong> ${escapeHtml(data.metodoPago)}</p>
+            <p style="margin: 4px 0; font-size: 18px; color: #047857;"><strong>Total Paid:</strong> $${Number(data.montoNeto).toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</p>
           </div>
         </div>
       </div>
     `,
-    sms: `Centro Medico: Pago recibido por $${data.montoNeto} MXN (${data.comprobanteFiscal}). Gracias por su preferencia.`,
+    sms: `National Medical Center: Payment received for $${data.montoNeto} USD (${data.comprobanteFiscal}). Thank you.`,
   }),
 };
-

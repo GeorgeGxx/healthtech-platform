@@ -1,8 +1,10 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DataSource } from 'typeorm';
+import { Public } from './auth/auth.decorators.js';
 
 @ApiTags('Health Check')
+@Public()
 @Controller(['health', 'clinical-records/health'])
 export class HealthController {
   constructor(private readonly dataSource: DataSource) {}

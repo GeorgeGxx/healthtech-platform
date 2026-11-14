@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -9,7 +9,24 @@ async function bootstrap() {
   // 1. Crear aplicación HTTP híbrida para Health Checks y Auditoría REST
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: '*' });
+  const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost,http://localhost:80,http://localhost:4200,http://kong:8000')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  app.enableCors({ origin: allowedOrigins, credentials: true });
+  app.use((_req: any, res: any, next: () => void) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    next();
+  });
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   const kafkaBroker = process.env.KAFKA_BROKER || 'kafka:9092';
   const brokers = kafkaBroker.split(',').map((b) => b.trim());

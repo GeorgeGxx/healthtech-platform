@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
@@ -15,6 +16,8 @@ import { MedicalRecordsModule } from './medical-records/medical-records.module.j
 import { HospitalizationsModule } from './hospitalizations/hospitalizations.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { HealthController } from './health.controller.js';
+import { KeycloakAuthGuard } from './auth/keycloak-auth.guard.js';
+import { OtelTracingInterceptor } from './telemetry/otel-tracing.interceptor.js';
 
 @Module({
   imports: [
@@ -48,5 +51,9 @@ import { HealthController } from './health.controller.js';
     HospitalizationsModule,
   ],
   controllers: [HealthController],
+  providers: [
+    { provide: APP_GUARD, useClass: KeycloakAuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: OtelTracingInterceptor },
+  ],
 })
 export class AppModule {}

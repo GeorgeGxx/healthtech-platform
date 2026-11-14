@@ -11,12 +11,15 @@ import {
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PatientsService } from './patients.service.js';
 import { CreatePatientDto, UpdatePatientDto } from './dto/create-patient.dto.js';
+import { Public, Roles } from '../auth/auth.decorators.js';
 
 @ApiTags('Pacientes (Patient Care - Microservicio)')
+@Roles('admin_user', 'doctor_user', 'nurse_user', 'receptionist_user')
 @Controller('patients')
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
+  @Public()
   @Get('health')
   @ApiOperation({ summary: 'Health check del microservicio patient-service' })
   health() {
@@ -28,12 +31,14 @@ export class PatientsController {
     };
   }
 
+  @Public()
   @Get('health/liveness')
   @ApiOperation({ summary: 'Liveness probe (K8s / Orquestador)' })
   liveness() {
     return { status: 'UP', service: 'patient-service' };
   }
 
+  @Public()
   @Get('health/readiness')
   @ApiOperation({ summary: 'Readiness probe (PostgreSQL y Kafka connectivity)' })
   async readiness() {
@@ -62,12 +67,14 @@ export class PatientsController {
     return await this.patientsService.findOneFhir(id);
   }
 
+  @Public()
   @Get('catalogs/insurances')
   @ApiOperation({ summary: 'Obtener catálogo de aseguradoras / obras sociales' })
   findInsurances() {
     return this.patientsService.findInsurances();
   }
 
+  @Public()
   @Get('catalogs/countries')
   @ApiOperation({ summary: 'Obtener catálogo de países' })
   findCountries() {

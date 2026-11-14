@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Medicamento } from './entities/medicamento.entity.js';
 import { KafkaModule } from './kafka/kafka.module.js';
 import { PharmacyModule } from './pharmacy/pharmacy.module.js';
+import { KeycloakAuthGuard } from './auth/keycloak-auth.guard.js';
+import { OtelTracingInterceptor } from './telemetry/otel-tracing.interceptor.js';
 
 @Module({
   imports: [
@@ -25,6 +28,10 @@ import { PharmacyModule } from './pharmacy/pharmacy.module.js';
     }),
     KafkaModule,
     PharmacyModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: KeycloakAuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: OtelTracingInterceptor },
   ],
 })
 export class AppModule {}

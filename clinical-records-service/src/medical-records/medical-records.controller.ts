@@ -10,9 +10,15 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { MedicalRecordsService } from './medical-records.service.js';
-import { CreateMedicalRecordDto } from './dto/create-medical-record.dto.js';
+import {
+  CreateMedicalRecordDto,
+  UpdateMedicalRecordDto,
+  CreateDigitalPrescriptionDto,
+} from './dto/create-medical-record.dto.js';
+import { Public, Roles } from '../auth/auth.decorators.js';
 
 @ApiTags('Historias Clínicas (Medical Records & EHR)')
+@Roles('admin_user', 'doctor_user', 'nurse_user')
 @Controller('medical-records')
 export class MedicalRecordsController {
   constructor(private readonly recordsService: MedicalRecordsService) {}
@@ -38,10 +44,11 @@ export class MedicalRecordsController {
 
   @Post('prescriptions')
   @ApiOperation({ summary: 'Generar Receta Médica Digital con firma criptográfica HMAC-SHA256' })
-  async createPrescription(@Body() dto: any) {
+  async createPrescription(@Body() dto: CreateDigitalPrescriptionDto) {
     return await this.recordsService.createPrescription(dto);
   }
 
+  @Public()
   @Get('prescriptions/:code/verify')
   @ApiOperation({ summary: 'Verificación pública de autenticidad de Receta Médica Digital (Lector QR)' })
   async verifyPrescription(@Param('code') code: string) {
@@ -70,7 +77,7 @@ export class MedicalRecordsController {
   @ApiOperation({ summary: 'Actualizar y guardar cambios en una nota de evolución clínica' })
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: Partial<CreateMedicalRecordDto>,
+    @Body() dto: UpdateMedicalRecordDto,
   ) {
     return await this.recordsService.update(id, dto);
   }

@@ -10,24 +10,29 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { BillingService } from './billing.service.js';
 import { CreatePaymentDto } from './dto/create-payment.dto.js';
+import { Public, Roles } from '../auth/auth.decorators.js';
 
 @ApiTags('Caja, Facturación y Copagos (Billing Service)')
+@Roles('admin_user', 'receptionist_user', 'doctor_user', 'basic_user')
 @Controller('billing')
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 
+  @Public()
   @Get('health')
   @ApiOperation({ summary: 'Health check del microservicio de facturación' })
   getHealth() {
     return this.billingService.getHealth();
   }
 
+  @Public()
   @Get('health/liveness')
   @ApiOperation({ summary: 'Liveness probe (K8s)' })
   liveness() {
     return { status: 'UP', service: 'billing-service' };
   }
 
+  @Public()
   @Get('health/readiness')
   @ApiOperation({ summary: 'Readiness probe (PostgreSQL + Kafka)' })
   async readiness() {
@@ -49,12 +54,14 @@ export class BillingController {
     return await this.billingService.getRevenueSummary();
   }
 
+  @Public()
   @Get('concepts')
   @ApiOperation({ summary: 'Listar conceptos arancelarios de pago' })
   async getConcepts() {
     return await this.billingService.getConcepts();
   }
 
+  @Public()
   @Get('tariffs')
   @ApiOperation({ summary: 'Consultar tarifas y catálogo de servicios hospitalarios' })
   async getHospitalTariffs() {

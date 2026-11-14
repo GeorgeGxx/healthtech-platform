@@ -1,8 +1,10 @@
 import { Controller, Inject, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { DoctorsService } from './doctors.service.js';
+import { Public } from '../auth/auth.decorators.js';
 
 @ApiTags('Médicos y Especialidades (Clinical Staff)')
+@Public()
 @Controller('doctors')
 export class DoctorsController {
   constructor(

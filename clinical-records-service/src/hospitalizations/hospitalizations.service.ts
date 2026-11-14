@@ -195,6 +195,11 @@ export class HospitalizationsService implements OnModuleInit {
             )
           : 0;
 
+        const maskName = (n?: string | null) =>
+          n ? n.split(' ').map((p) => (p.length > 1 ? `${p[0]}***` : '*')).join(' ') : null;
+        const maskDni = (d?: string | null) =>
+          d && d.length > 4 ? `${d.slice(0, 2)}****${d.slice(-2)}` : d ? '****' : null;
+
         const doc = {
           cama_id: b.numero,
           numero: b.numero,
@@ -202,10 +207,10 @@ export class HospitalizationsService implements OnModuleInit {
           tipo: tipoLabels[b.tipo] || b.tipo,
           estado: b.ocupada ? 'Ocupada' : 'Disponible',
           tarifa_noche_mxn: Number(b.costoDia),
-          paciente_nombre: b.pacienteActual ? b.pacienteActual.nombreCompleto : null,
-          paciente_dni: b.pacienteActual ? b.pacienteActual.dni : null,
+          paciente_nombre: b.pacienteActual ? maskName(b.pacienteActual.nombreCompleto) : null,
+          paciente_dni: b.pacienteActual ? maskDni(b.pacienteActual.dni) : null,
           medico_responsable: b.pacienteActual ? b.pacienteActual.medicoResponsable : null,
-          diagnostico_ingreso: b.pacienteActual ? b.pacienteActual.diagnosticoIngreso : null,
+          diagnostico_ingreso: b.pacienteActual ? 'CONFIDENCIAL (Ver ECE)' : null,
           dias_estancia: days,
           costo_acumulado_mxn: Math.round(Number(b.costoDia) * Math.max(1, days) * 100) / 100,
           '@timestamp': now,
@@ -218,9 +223,13 @@ export class HospitalizationsService implements OnModuleInit {
       await fetch(`${esUrl}/_bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-ndjson' },
+        signal: AbortSignal.timeout(2500),
         body: bulk,
       });
-      await fetch(`${esUrl}/healthtech-beds-census/_refresh`, { method: 'POST' });
+      await fetch(`${esUrl}/healthtech-beds-census/_refresh`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(1500),
+      });
     } catch (err: any) {
       this.logger.warn(`⚠️ Error sincronizando camas con Elasticsearch: ${err?.message}`);
     }

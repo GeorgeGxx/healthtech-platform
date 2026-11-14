@@ -10,6 +10,8 @@ export class AppointmentKafkaProducerService implements OnModuleInit, OnModuleDe
   private kafka: Kafka | null = null;
   private producer: Producer | null = null;
   private isConnected = false;
+  private relayTimer: NodeJS.Timeout | null = null;
+  private isRelaying = false;
 
   constructor(
     private readonly config: ConfigService,
@@ -37,12 +39,74 @@ export class AppointmentKafkaProducerService implements OnModuleInit, OnModuleDe
       this.isConnected = false;
       this.logger.warn(`⚠️ Kafka no disponible temporalmente en appointment-service: ${err.message}`);
     }
+
+    // Worker Outbox CDC: escanea cada 15s eventos PENDIENTE/FALLIDO y los despacha
+    this.relayTimer = setInterval(() => {
+      this.relayPendingEvents().catch((e) =>
+        this.logger.warn(`Error en worker Outbox CDC: ${e?.message}`),
+      );
+    }, 15_000);
   }
 
   async onModuleDestroy() {
+    if (this.relayTimer) {
+      clearInterval(this.relayTimer);
+      this.relayTimer = null;
+    }
     if (this.producer && this.isConnected) {
       await this.producer.disconnect();
     }
+  }
+
+  async relayPendingEvents(): Promise<{ processed: number; failed: number }> {
+    if (this.isRelaying || !this.producer || !this.isConnected) {
+      return { processed: 0, failed: 0 };
+    }
+    this.isRelaying = true;
+    let processed = 0;
+    let failed = 0;
+
+    try {
+      const pending = await this.outbox.findPendingOrRetryable(25);
+      for (const evt of pending) {
+        try {
+          const envelope = {
+            eventId: evt.idEvento,
+            eventType: evt.tipoEvento,
+            aggregateType: evt.agregadoTipo,
+            aggregateId: evt.agregadoId,
+            timestamp: new Date().toISOString(),
+            metadata: evt.metadata || { producerService: 'appointment-service' },
+            payload: evt.payload,
+          };
+          await this.producer.send({
+            topic: evt.topico,
+            messages: [
+              {
+                key: evt.agregadoId,
+                value: JSON.stringify(envelope),
+                headers: {
+                  'x-event-type': evt.tipoEvento,
+                  'x-outbox-relay': 'true',
+                },
+              },
+            ],
+          });
+          await this.outbox.markAsPublished(evt.idEvento);
+          processed++;
+        } catch (err: any) {
+          await this.outbox.markAsFailed(evt.idEvento, err.message);
+          failed++;
+        }
+      }
+      if (processed > 0) {
+        this.logger.log(`🔄 Outbox Worker CDC despachó ${processed} eventos pendientes a Kafka`);
+      }
+    } finally {
+      this.isRelaying = false;
+    }
+
+    return { processed, failed };
   }
 
   isConnectedStatus(): boolean {
