@@ -196,13 +196,10 @@ function Invoke-DevSecOpsGates {
 }
 
 function Invoke-ServiceBuild {
-    Show-Banner "Building HealthTech Container Images (Minikube Docker Daemon)"
-    $targets = if ($Service -eq "all") { $HealthTechServices } else { @($HealthTechServices | Where-Object { $_.Name -eq $Service }) }
-    if ($targets.Count -eq 0) { throw "Unknown service '$Service'." }
-
-    if ($Platform -eq "minikube" -and (Get-Command minikube -ErrorAction SilentlyContinue)) {
-        & minikube -p minikube docker-env --shell powershell | Invoke-Expression
-    }
+    param([string]$TargetService = $Service)
+    Show-Banner "Building HealthTech Container Images ($TargetService)"
+    $targets = if ($TargetService -eq "all") { $HealthTechServices } else { @($HealthTechServices | Where-Object { $_.Name -eq $TargetService }) }
+    if ($targets.Count -eq 0) { throw "Unknown service '$TargetService'." }
 
     foreach ($svc in $targets) {
         $svcDir = Join-Path $root $svc.Name
@@ -211,6 +208,53 @@ function Invoke-ServiceBuild {
         & docker build -t $tag -f (Join-Path $svcDir "Dockerfile") $svcDir
         if ($LASTEXITCODE -ne 0) { throw "Docker build failed for $($svc.Name)." }
         Show-Success "Built $tag"
+    }
+}
+
+function Sync-PlatformImagesIntoMinikube {
+    param([switch]$ForceBuild)
+
+    $isMinikubeActive = (Get-Command minikube -ErrorAction SilentlyContinue) -and ((& minikube status --format='{{.Host}}' 2>$null) -eq 'Running')
+    if (-not $isMinikubeActive) { return }
+
+    $minikubeImagesRaw = @(& minikube image ls 2>$null)
+    $targets = if ($Service -eq "all") { $HealthTechServices } else { @($HealthTechServices | Where-Object { $_.Name -eq $Service }) }
+
+    if ($ForceBuild) {
+        Invoke-ServiceBuild -TargetService $Service
+    } else {
+        foreach ($svc in $targets) {
+            $expectedImg = "georgegxx/$($svc.Name):$ImageTag"
+            $hasLocal = & docker images -q $expectedImg 2>$null
+            $inMinikube = @($minikubeImagesRaw | Where-Object { $_ -match [regex]::Escape($expectedImg) }).Count -gt 0
+            if (-not $hasLocal -and -not $inMinikube) {
+                Show-Warn "Image '$expectedImg' missing in Minikube & local Docker; building automatically..."
+                Invoke-ServiceBuild -TargetService $svc.Name
+            }
+        }
+    }
+
+    Show-Info "Synchronizing local Docker images into Minikube containerd store..."
+    $loadCacheRoot = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "healthtech-platform\minikube-load-cache" } else { $null }
+    if ($loadCacheRoot) { New-Item -ItemType Directory -Path $loadCacheRoot -Force | Out-Null }
+
+    foreach ($svc in $targets) {
+        $expectedImg = "georgegxx/$($svc.Name):$ImageTag"
+        $localImgId = (& docker image inspect --format '{{.Id}}' $expectedImg 2>$null | Select-Object -First 1)
+        if (-not $localImgId) { continue }
+        $localImgId = $localImgId.Trim()
+        $inMinikube = @($minikubeImagesRaw | Where-Object { $_ -match [regex]::Escape($expectedImg) }).Count -gt 0
+        $cacheFile = if ($loadCacheRoot) { Join-Path $loadCacheRoot ("$($svc.Name)-$ImageTag.id" -replace '[^a-zA-Z0-9_.-]', '_') } else { $null }
+        $cachedId = if ($cacheFile -and (Test-Path -LiteralPath $cacheFile -PathType Leaf)) { (Get-Content -LiteralPath $cacheFile -Raw).Trim() } else { "" }
+
+        if (-not $ForceBuild -and $inMinikube -and $cachedId -eq $localImgId) {
+            continue
+        }
+
+        & minikube image load $expectedImg --overwrite 2>$null
+        if ($LASTEXITCODE -eq 0 -and $cacheFile) {
+            Set-Content -LiteralPath $cacheFile -Value $localImgId -NoNewline
+        }
     }
 }
 
@@ -364,7 +408,7 @@ switch ($Command) {
         } else {
             Show-Warn "istioctl not found in PATH — skipping Istio Service Mesh install (Kong Gateway still routes traffic)."
         }
-        if ($Build) { Invoke-ServiceBuild }
+        Sync-PlatformImagesIntoMinikube -ForceBuild:$Build
         & helm upgrade --install $helmRelease $helmChartDir --namespace $targetNs --create-namespace --values (Join-Path $helmChartDir "values-$targetCloudEnv.yaml") --wait --timeout 5m
         if ($LASTEXITCODE -ne 0) { throw "Helm deployment failed." }
         Show-Success "HealthTech Platform deployed to Minikube namespace '$targetNs'."
