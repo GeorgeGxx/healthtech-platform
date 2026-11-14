@@ -63,7 +63,6 @@ variable "api_server_authorized_ip_ranges" {
 variable "log_analytics_workspace_id" {
   description = "Log Analytics Workspace ID for AKS Container Insights (OMS Agent)."
   type        = string
-  default     = null
 }
 
 variable "azure_policy_enabled" {

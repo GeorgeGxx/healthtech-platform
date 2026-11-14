@@ -33,11 +33,8 @@ resource "azurerm_kubernetes_cluster" "this" {
   azure_policy_enabled              = var.azure_policy_enabled
   private_cluster_enabled           = var.private_cluster_enabled
 
-  dynamic "oms_agent" {
-    for_each = var.log_analytics_workspace_id != null ? [1] : []
-    content {
-      log_analytics_workspace_id = var.log_analytics_workspace_id
-    }
+  oms_agent {
+    log_analytics_workspace_id = var.log_analytics_workspace_id
   }
 
   dynamic "key_vault_secrets_provider" {
