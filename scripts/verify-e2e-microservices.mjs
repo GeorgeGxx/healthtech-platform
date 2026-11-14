@@ -449,6 +449,30 @@ async function runVerification() {
   });
   if (rPhi.ok) passed++;
 
+  // 21. Dashboard KPIs & Metrics (appointment-service)
+  total++;
+  const rDash = await logStep('Dashboard Metrics: GET /dashboard/metrics', async () => {
+    const res = await fetch(`${BASE_URL}/dashboard/metrics`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data?.kpis || typeof data.kpis.totalPatients !== 'number') {
+      throw new Error('Estructura inválida en /dashboard/metrics');
+    }
+    return data.kpis;
+  });
+  if (rDash.ok) passed++;
+
+  // 22. Catálogo de Aseguradoras alineado con Frontend (patient-service)
+  total++;
+  const rCatalogs = await logStep('Catálogo de Aseguradoras: GET /patients/catalogs/insurances', async () => {
+    const res = await fetch(`${BASE_URL}/patients/catalogs/insurances`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('Se esperaba un arreglo de aseguradoras');
+    return { count: data.length };
+  });
+  if (rCatalogs.ok) passed++;
+
   console.log('\n======================================================================');
   console.log(`🏁 Resumen de Verificación E2E: ${passed}/${total} pasos exitosos.`);
   if (passed === total) {

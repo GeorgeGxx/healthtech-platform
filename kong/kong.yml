@@ -63,6 +63,30 @@ services:
             - "*"
           credentials: true
 
+  # 2b. Dashboard KPIs & Metrics (appointment-service)
+  - name: dashboard-service
+    url: http://appointment-service:3001/api/dashboard
+    routes:
+      - name: dashboard-route
+        paths:
+          - /api/dashboard
+        strip_path: true
+        regex_priority: 10
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "http://localhost"
+            - "http://localhost:80"
+            - "http://localhost:4200"
+            - "http://localhost:8000"
+          methods:
+            - GET
+            - OPTIONS
+          headers:
+            - "*"
+          credentials: true
+
   # 3. Microservicio de Pacientes y Aseguradoras (NestJS 12)
   - name: patient-service
     url: http://patient-service:3002/api/patients

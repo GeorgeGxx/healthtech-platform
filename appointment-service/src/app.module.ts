@@ -15,6 +15,7 @@ import {
 import { KafkaModule } from './kafka/kafka.module.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 import { KeycloakAuthGuard } from './auth/keycloak-auth.guard.js';
 import { OtelTracingInterceptor } from './telemetry/otel-tracing.interceptor.js';
 
@@ -51,6 +52,7 @@ import { OtelTracingInterceptor } from './telemetry/otel-tracing.interceptor.js'
     KafkaModule,
     AppointmentsModule,
     AdminModule,
+    DashboardModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: KeycloakAuthGuard },

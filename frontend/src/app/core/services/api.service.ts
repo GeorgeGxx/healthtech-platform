@@ -219,7 +219,7 @@ export class ApiService {
   }
 
   getInsurances(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/patients/insurances`).pipe(
+    return this.http.get<any[]>(`${this.baseUrl}/patients/catalogs/insurances`).pipe(
       catchError(() => of([
         { idObraSocial: 1, nombre: 'GNP Insurance', codigoSeguro: 'GNP-MED', porcentajeCobertura: 80 },
         { idObraSocial: 2, nombre: 'MetLife', codigoSeguro: 'METLIFE-PLUS', porcentajeCobertura: 75 },
@@ -231,7 +231,7 @@ export class ApiService {
   }
 
   getCountries(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/patients/countries`).pipe(
+    return this.http.get<any[]>(`${this.baseUrl}/patients/catalogs/countries`).pipe(
       catchError(() => of([
         { idPais: 'MEX', nombre: 'Mexico', nacionalidad: 'Mexican' },
         { idPais: 'ARG', nombre: 'Argentina', nacionalidad: 'Argentine' },
