@@ -108,7 +108,7 @@ def build_drawio_xml():
     add_node(r2, "t2", "1", "<b style='font-size:22px;color:#1E293B;'>AZURE CLOUD INFRASTRUCTURE (TERRAFORM)</b><br><span style='font-size:13px;color:#64748B;'>terraform/environments/azure/ (dev • staging • prod Dual-Dataplane) • terraform/modules/azure/</span>", title_style, 250, 25, 1400, 50)
     add_node(r2, "az_edge", "1", "<b>Azure Front Door + Azure DNS Zone</b><br>WAF + TLS Termination + Static SPA Blob Storage", box_blue, 100, 130, 420, 110)
     add_node(r2, "az_aks", "1", "<b>Azure Kubernetes Service (AKS)</b><br>dev: healthtech-azure-dev-aks<br>staging: healthtech-azure-staging-aks<br>prod: Dual Dataplane (DP1 + DP2)", box_green, 100, 280, 420, 140)
-    add_node(r2, "az_acr", "1", "<b>Azure Container Registry (ACR)</b><br>AcrPull Role + Cosign Signed Images<br>OCI Helm Chart (k8s/helm/healthtech-platform)", box_purple, 600, 130, 420, 110)
+    add_node(r2, "az_acr", "1", "<b>Azure Container Registry (ACR)</b><br>AcrPull Role + Cosign Signed Images<br>OCI Helm Chart (k8s/helm)", box_purple, 600, 130, 420, 110)
     add_node(r2, "az_data", "1", "<b>Azure Managed Data & Messaging</b><br>• Azure Database for PostgreSQL Flexible Server<br>• Azure Cache for Redis (TLS 1.2)<br>• Azure Event Hubs (Kafka Protocol)", box_amber, 600, 280, 420, 140)
     add_node(r2, "az_sec", "1", "<b>Security, Identity & Observability</b><br>• Azure Key Vault (PHI & DB Secrets)<br>• Azure Workload Identity (Federated OIDC)<br>• Azure Monitor + Log Analytics + VNet", box_slate, 1100, 130, 420, 290)
 

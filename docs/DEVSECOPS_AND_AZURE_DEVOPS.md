@@ -18,4 +18,4 @@ All shift-left, supply-chain, policy, and post-deploy verification controls live
   3. Environment-gated `apply` to `dev`, `staging`, and `prod` (Dual-Dataplane)
 - **8 Service Pipelines (`azure-devops/pipelines/<service>.yml` + `templates/app-stages.yml`):**
   - `frontend.yml`, `appointment-service.yml`, `patient-service.yml`, `billing-service.yml`, `pharmacy-service.yml`, `notification-service.yml`, `clinical-records-service.yml`, `staff-service.yml`
-  - Stages: Unit Tests -> SAST/Secrets -> BuildKit Image + CycloneDX SBOM -> Trivy Container Scan -> Conftest & Cosign Gate -> Push to Azure ACR -> Helm Deploy to AKS (`k8s/helm/healthtech-platform`) -> Newman/k6/ZAP Gates -> Atomic Rollback (`steps/helm-rollback.yml`).
+  - Stages: Unit Tests -> SAST/Secrets -> BuildKit Image + CycloneDX SBOM -> Trivy Container Scan -> Conftest & Cosign Gate -> Push to Azure ACR -> Helm Deploy to AKS (`k8s/helm`) -> Newman/k6/ZAP Gates -> Atomic Rollback (`steps/helm-rollback.yml`).

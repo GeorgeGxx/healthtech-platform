@@ -103,7 +103,7 @@
         <mxCell id="az_aks" value="&lt;b&gt;Azure Kubernetes Service (AKS)&lt;/b&gt;&lt;br&gt;dev: healthtech-azure-dev-aks&lt;br&gt;staging: healthtech-azure-staging-aks&lt;br&gt;prod: Dual Dataplane (DP1 + DP2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#10B981;strokeWidth=1.5;fontColor=#064E3B;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="100" y="280" width="420" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="az_acr" value="&lt;b&gt;Azure Container Registry (ACR)&lt;/b&gt;&lt;br&gt;AcrPull Role + Cosign Signed Images&lt;br&gt;OCI Helm Chart (k8s/helm/healthtech-platform)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=1.5;fontColor=#4C1D95;fontSize=11;" vertex="1" parent="1">
+        <mxCell id="az_acr" value="&lt;b&gt;Azure Container Registry (ACR)&lt;/b&gt;&lt;br&gt;AcrPull Role + Cosign Signed Images&lt;br&gt;OCI Helm Chart (k8s/helm)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F5F3FF;strokeColor=#8B5CF6;strokeWidth=1.5;fontColor=#4C1D95;fontSize=11;" vertex="1" parent="1">
           <mxGeometry x="600" y="130" width="420" height="110" as="geometry" />
         </mxCell>
         <mxCell id="az_data" value="&lt;b&gt;Azure Managed Data &amp; Messaging&lt;/b&gt;&lt;br&gt;• Azure Database for PostgreSQL Flexible Server&lt;br&gt;• Azure Cache for Redis (TLS 1.2)&lt;br&gt;• Azure Event Hubs (Kafka Protocol)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#F59E0B;strokeWidth=1.5;fontColor=#78350F;fontSize=11;" vertex="1" parent="1">
