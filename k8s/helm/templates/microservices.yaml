@@ -35,6 +35,7 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
           ports:
@@ -65,14 +66,30 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml $svc.resources | nindent 12 }}
-          {{- if $.Values.keyVault.enabled }}
           volumeMounts:
+            - name: tmp-dir
+              mountPath: /tmp
+            {{- if eq $svc.name "frontend" }}
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+            {{- end }}
+          {{- if $.Values.keyVault.enabled }}
             - name: secrets-store-inline
               mountPath: /mnt/secrets-store
               readOnly: true
           {{- end }}
-      {{- if $.Values.keyVault.enabled }}
       volumes:
+        - name: tmp-dir
+          emptyDir: {}
+        {{- if eq $svc.name "frontend" }}
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+        {{- end }}
+      {{- if $.Values.keyVault.enabled }}
         - name: secrets-store-inline
           csi:
             driver: secrets-store.csi.k8s.io

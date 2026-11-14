@@ -126,9 +126,12 @@ spec:
           image: {{ .Values.kongGateway.image }}
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
           env:
+            - name: KONG_PREFIX
+              value: "/tmp/kong"
             - name: KONG_DATABASE
               value: "off"
             - name: KONG_DECLARATIVE_CONFIG
@@ -143,6 +146,8 @@ spec:
             - name: kong-config
               mountPath: /kong/declarative
               readOnly: true
+            - name: kong-tmp
+              mountPath: /tmp
           livenessProbe:
             httpGet:
               path: /status
@@ -161,6 +166,8 @@ spec:
         - name: kong-config
           configMap:
             name: kong-declarative-config
+        - name: kong-tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

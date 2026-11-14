@@ -68,7 +68,12 @@ export class PhiCryptoService {
     try {
       const iv = Buffer.from(ivHex, 'hex');
       const authTag = Buffer.from(authTagHex, 'hex');
-      const decipher = createDecipheriv(this.algorithm, this.secretKey, iv);
+      if (authTag.length !== 16) {
+        throw new Error('Invalid GCM authentication tag length');
+      }
+      const decipher = createDecipheriv(this.algorithm, this.secretKey, iv, {
+        authTagLength: 16,
+      });
       decipher.setAuthTag(authTag);
       let decrypted = decipher.update(encryptedHex, 'hex', 'utf8');
       decrypted += decipher.final('utf8');

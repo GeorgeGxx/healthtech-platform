@@ -19,6 +19,13 @@ COPY --from=builder /app/dist/frontend/browser ./
 # Copiar configuración Nginx con gzip, rate limiting y SPA routing
 COPY nginx.conf /etc/nginx/nginx.conf
 
+# Permitir ejecución no-root en puerto 80
+RUN apk add --no-cache libcap && \
+    setcap 'cap_net_bind_service=+ep' /usr/sbin/nginx && \
+    chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/log/nginx /etc/nginx/conf.d
+
 EXPOSE 80
+
+USER nginx
 
 CMD ["nginx", "-g", "daemon off;"]
