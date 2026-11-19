@@ -16,6 +16,9 @@ WORKDIR /usr/share/nginx/html
 
 # Copy compiled browser bundle
 COPY --from=builder /app/dist/frontend/browser ./
+# Nginx's official entrypoint renders this runtime configuration before serving the SPA.
+COPY glitchtip-config.template.js /etc/nginx/templates/glitchtip-config.js.template
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/tmp
 # Copy Nginx configuration with gzip, rate limiting, and SPA routing
 COPY nginx.conf /etc/nginx/nginx.conf
 

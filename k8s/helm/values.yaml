@@ -6,7 +6,25 @@ global:
   imageTag: "1.0.0"
   imagePullPolicy: IfNotPresent
 
+  # Azure Key Vault CSI driver - AKS only, opt-in. When enabled, syncs the
+  # secrets listed below from Key Vault into the same K8s Secret
+  # (`secret.name`) the 6 services already read via envFrom, so no service
+  # chart needs to change. Requires: the "azureKeyvaultSecretsProvider"
+  # AKS add-on (already on via terraform/modules/azure/aks), the Key Vault
+  # RBAC role granted in terraform/modules/azure/keyvault, and an AKS
+  # Workload Identity client-id for the application ServiceAccount.
+  azureKeyVault:
+    enabled: false
+    name: ""                       # e.g. georgegxx-msa-dev-kv (matches terraform/modules/azure/keyvault naming: <name>-<environment>-kv)
+    tenantId: ""
+    workloadIdentityClientId: ""   # client-id de la Workload Identity con permiso "Key Vault Secrets User"
+    secrets: []
+    # - name: db-password        # nombre del secret en Azure Key Vault
+    #   alias: DB_PASSWORD       # key resultante en el K8s Secret sincronizado
+
 secrets:
+  # Secret values must be provisioned out-of-band by the selected secret
+  # manager (Vault/External Secrets, Key Vault CSI or a protected operator step).
   secretName: healthtech-app-secrets
   create: true
   postgresPassword: "change-me-in-vault"

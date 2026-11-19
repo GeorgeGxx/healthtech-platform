@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Pago, ConceptoPago, Paciente, ObraSocial, LiquidacionMedico } from './entities/index.js';
@@ -10,6 +11,7 @@ import { OtelTracingInterceptor } from './telemetry/otel-tracing.interceptor.js'
 
 @Module({
   imports: [
+    SentryModule.forRoot(),
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -30,6 +32,7 @@ import { OtelTracingInterceptor } from './telemetry/otel-tracing.interceptor.js'
     BillingModule,
   ],
   providers: [
+    { provide: APP_FILTER, useClass: SentryGlobalFilter },
     { provide: APP_GUARD, useClass: KeycloakAuthGuard },
     { provide: APP_INTERCEPTOR, useClass: OtelTracingInterceptor },
   ],

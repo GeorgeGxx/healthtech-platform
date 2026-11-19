@@ -1,0 +1,53 @@
+# Manual Azure-only GlitchTip deployment. Database and SECRET_KEY Kubernetes
+# Secrets must be synchronized from Key Vault before this pipeline is queued.
+name: HealthTech-GlitchTip-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger: none
+pr: none
+
+parameters:
+  - name: environment
+    displayName: AKS environment
+    type: string
+    default: dev
+    values: [dev, staging, prod]
+  - name: serviceConnection
+    displayName: Azure Resource Manager service connection
+    type: string
+    default: azure-healthtech-deploy
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: DeployGlitchTip
+    displayName: Deploy GlitchTip 7.0.0 with chart 9.2.0
+    jobs:
+      - deployment: Deploy
+        environment: healthtech-${{ parameters.environment }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - task: AzureCLI@2
+                  displayName: Helm upgrade on AKS
+                  inputs:
+                    azureSubscription: ${{ parameters.serviceConnection }}
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      set -euo pipefail
+                      ENV_NAME='${{ parameters.environment }}'
+                      RESOURCE_GROUP="${HEALTHTECH_RESOURCE_GROUP:-healthtech-azure-${ENV_NAME}-rg}"
+                      CLUSTER_NAME="${HEALTHTECH_AKS_CLUSTER:-healthtech-azure-${ENV_NAME}-aks}"
+                      az aks get-credentials --resource-group "$RESOURCE_GROUP" --name "$CLUSTER_NAME" --overwrite-existing
+                      if command -v kubelogin >/dev/null 2>&1; then kubelogin convert-kubeconfig -l azurecli; fi
+                      helm repo add glitchtip https://gitlab.com/api/v4/projects/16325141/packages/helm/stable
+                      helm repo update glitchtip
+                      helm upgrade --install glitchtip glitchtip/glitchtip \
+                        --version 9.2.0 \
+                        --namespace glitchtip --create-namespace \
+                        --values k8s/helm/glitchtip/values-aks.yaml \
+                        --atomic --wait --timeout 10m
+                      kubectl rollout status deployment/glitchtip-web -n glitchtip --timeout=5m

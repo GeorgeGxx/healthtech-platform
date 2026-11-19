@@ -52,6 +52,22 @@ spec:
               value: "{{ $.Values.global.environment }}"
             - name: OTEL_SERVICE_NAME
               value: "{{ $svc.name }}"
+            - name: APP_ENV
+              value: "{{ $.Values.global.environment }}"
+            - name: APP_RELEASE
+              value: "{{ $.Values.global.imageTag }}"
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-client-dsn
+                  key: SENTRY_DSN
+                  optional: true
+            - name: GLITCHTIP_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: glitchtip-client-dsn
+                  key: SENTRY_DSN
+                  optional: true
           livenessProbe:
             httpGet:
               path: {{ $svc.livenessPath }}

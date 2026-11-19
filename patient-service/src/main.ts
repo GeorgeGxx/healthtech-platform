@@ -1,3 +1,4 @@
+import './telemetry/glitchtip.js';
 import './telemetry/tracing.js';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';

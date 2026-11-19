@@ -1,4 +1,5 @@
 import './telemetry/tracing.js';
+import './telemetry/glitchtip.js';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';

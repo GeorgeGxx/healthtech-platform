@@ -1,4 +1,5 @@
 import './telemetry/tracing.js';
+import './telemetry/glitchtip.js';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { Logger, ValidationPipe } from '@nestjs/common';
