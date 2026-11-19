@@ -280,7 +280,20 @@ stages:
                 --severity HIGH,CRITICAL \
                 --exit-code $EXIT_CODE \
                 ${{ parameters.serviceDir }}
-            displayName: "Trivy IaC Configuration Scan (Hard Gate on Protected Branches)"
+              gate trivy fs \
+                --config devsecops/compliance/trivy/trivy.yaml \
+                --ignorefile devsecops/compliance/trivy/.trivyignore \
+                --scanners vuln --include-dev-deps \
+                --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
+                --ignore-unfixed=false --exit-code 0 \
+                ${{ parameters.serviceDir }}
+              gate trivy fs \
+                --config devsecops/compliance/trivy/trivy.yaml \
+                --ignorefile devsecops/compliance/trivy/.trivyignore \
+                --scanners vuln --include-dev-deps \
+                --severity HIGH,CRITICAL --ignore-unfixed --exit-code $EXIT_CODE \
+                ${{ parameters.serviceDir }}
+            displayName: "Trivy IaC and Dependency Scan (High/Critical Gate on Protected Branches)"
 
           - ${{ if eq(parameters.serviceType, 'frontend') }}:
             - script: |
