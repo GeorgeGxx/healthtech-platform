@@ -40,7 +40,7 @@ parameters:
     default: 'v0.64.0'
   - name: trivyVersion
     type: string
-    default: 'v0.76.1'
+    default: 'v0.76.0'
   - name: environments
     type: object
     default:

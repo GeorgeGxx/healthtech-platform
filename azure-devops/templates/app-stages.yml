@@ -63,7 +63,7 @@ parameters:
   - name: canaryVirtualServicePath
     type: string
     default: ''
-  - name: enableCloudStagingProdDeploy # Paused until Azure AKS staging/prod cloud deployment is enabled
+  - name: enableCloudDeploy # Explicit opt-in; all cloud pushes and deployments stay disabled by default
     type: boolean
     default: false
   # ---- environment wiring (previously undeclared pipeline variables) ----
@@ -93,13 +93,13 @@ parameters:
     default: 'v4.3.1'
   - name: gitleaksVersion
     type: string
-    default: 'v8.21.2'
+    default: 'v8.30.1'
   - name: trivyVersion
     type: string
-    default: 'v0.76.1'
+    default: 'v0.76.0'
   - name: conftestVersion
     type: string
-    default: '0.58.0'
+    default: '0.71.1'
   - name: k6Version
     type: string
     default: '1.8.1'
@@ -447,8 +447,8 @@ stages:
   - stage: PushCandidate
     displayName: "📦 6. Push Candidate to ACR - ${{ parameters.serviceName }}"
     dependsOn: ComplianceGate
-    # Note: Staging and master ACR pushes are paused until enableCloudStagingProdDeploy=true
-    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/develop'), and(eq('${{ parameters.enableCloudStagingProdDeploy }}', 'true'), in(variables['Build.SourceBranch'], 'refs/heads/staging', 'refs/heads/master'))))
+    # Cloud publishing is disabled by default for every branch.
+    condition: and(succeeded(), eq('${{ parameters.enableCloudDeploy }}', 'true'), in(variables['Build.SourceBranch'], 'refs/heads/develop', 'refs/heads/staging', 'refs/heads/master'))
     jobs:
       - job: PushSha
         displayName: "Push <sha> tag to ACR & Sign OCI Digest"
@@ -506,7 +506,7 @@ stages:
   - stage: DeployDev
     displayName: "🌱 7. Deploy to AKS Dev - ${{ parameters.serviceName }}"
     dependsOn: PushCandidate
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    condition: and(succeeded(), eq('${{ parameters.enableCloudDeploy }}', 'true'), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
     jobs:
       - deployment: HelmDeployDev
         displayName: "Helm upgrade on AKS Dev"
@@ -553,8 +553,7 @@ stages:
   - stage: DeployStaging
     displayName: "🚀 8. Deploy to AKS Staging - ${{ parameters.serviceName }}"
     dependsOn: PushCandidate
-    # Note: Staging and master AKS deployments are paused until enableCloudStagingProdDeploy=true
-    condition: and(succeeded(), eq('${{ parameters.enableCloudStagingProdDeploy }}', 'true'), in(variables['Build.SourceBranch'], 'refs/heads/staging', 'refs/heads/master'))
+    condition: and(succeeded(), eq('${{ parameters.enableCloudDeploy }}', 'true'), in(variables['Build.SourceBranch'], 'refs/heads/staging', 'refs/heads/master'))
     jobs:
       - deployment: HelmDeployStaging
         displayName: "Helm upgrade on AKS Staging"
@@ -759,7 +758,7 @@ stages:
       - E2ETests
       - PerformanceTests
       - DASTScan
-    condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/master'))
+    condition: and(succeeded(), eq('${{ parameters.enableCloudDeploy }}', 'true'), in(variables['Build.SourceBranch'], 'refs/heads/master'))
     jobs:
       - job: PromoteTags
         displayName: "Promote immutable digest in ACR"
@@ -803,7 +802,7 @@ stages:
   - stage: DeployProduction
     displayName: "🚢 14. Deploy to AKS Production (Dual-Dataplane DP1 + DP2) - ${{ parameters.serviceName }}"
     dependsOn: PromoteImage
-    condition: and(succeeded(), in(variables['Build.SourceBranch'], 'refs/heads/master'))
+    condition: and(succeeded(), eq('${{ parameters.enableCloudDeploy }}', 'true'), in(variables['Build.SourceBranch'], 'refs/heads/master'))
     jobs:
       - deployment: HelmCanaryProductionDP1
         displayName: "Production rollout — Primary AKS Dataplane (DP1: ${{ parameters.namePrefix }}-prod-aks)"
